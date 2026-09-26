@@ -45,6 +45,7 @@ import {
   getComposedEventElement,
   injectChromeStyles
 } from './kp-chrome-shadow.js';
+import { planKeyInfoPopoverLayout } from './key-info-popover-layout.js';
 
 /** @type {{ root: HTMLElement, keybindings: Record<string, any> }|null} */
 let _activePopoverContext = null;
@@ -491,6 +492,7 @@ function hidePopover(pop, opts = {}) {
   try { pop._kpFlushInstanceSettings?.(); } catch { /* ignore */ }
   try { pop._kpFlushInstanceSettings = null; } catch { /* ignore */ }
   try { pop.classList.remove('kp-popover-has-instance-settings'); } catch { /* ignore */ }
+  releaseKeyInfoPopoverAnchor(pop);
   if (opts.clearPinned !== false) {
     _pinnedActionId = null;
     _pinnedKeyEl = null;
@@ -683,17 +685,104 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   positionKeyInfoPopover(doc, pop, targetEl);
 }
 
+/** @type {ResizeObserver|null} */
+let _keyInfoPopoverObserver = null;
+let _positioningKeyInfoPopover = false;
+
+/**
+ * Natural border-box size, including settings content currently clipped by
+ * the anchored max-height.
+ * @param {HTMLElement} pop
+ */
+function measureKeyInfoPopover(pop) {
+  const settings = pop.querySelector('.kp-popover-settings');
+  const popW = pop.offsetWidth || pop.getBoundingClientRect().width || 160;
+  const popH = pop.offsetHeight || pop.getBoundingClientRect().height || 80;
+  if (!settings || settings.hidden) return { popW, popH, settingsH: 0 };
+  const extra = Math.max(0, settings.scrollHeight - settings.clientHeight);
+  return {
+    popW,
+    popH: popH + extra,
+    settingsH: settings.offsetHeight + extra
+  };
+}
+
+/**
+ * @param {HTMLElement} pop
+ * @param {number|null} maxHeight
+ */
+function applyKeyInfoSettingsMax(pop, maxHeight) {
+  const settings = pop.querySelector('.kp-popover-settings');
+  if (!settings) return;
+  const next = maxHeight == null ? '' : `${Math.round(maxHeight)}px`;
+  if ((settings.style.maxHeight || '') === next) return;
+  if (!next) {
+    settings.style.maxHeight = '';
+    settings.style.overflowY = '';
+    settings.classList.remove('kp-nct-scroll');
+    return;
+  }
+  settings.style.boxSizing = 'border-box';
+  settings.style.maxHeight = next;
+  settings.style.overflowY = 'auto';
+  settings.classList.add('kp-nct-scroll');
+}
+
+/**
+ * @param {HTMLElement|null} pop
+ */
+function watchKeyInfoPopoverSize(pop) {
+  if (!pop || typeof ResizeObserver === 'undefined') return;
+  if (!_keyInfoPopoverObserver) {
+    _keyInfoPopoverObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const el = /** @type {HTMLElement} */ (entry.target);
+        const anchor = el._kpAnchorEl;
+        if (!anchor || !anchor.isConnected) continue;
+        positionKeyInfoPopover(el.ownerDocument || document, el, anchor);
+      }
+    });
+  }
+  try { _keyInfoPopoverObserver.observe(pop); } catch { /* ignore */ }
+}
+
+/**
+ * @param {HTMLElement|null} pop
+ */
+function releaseKeyInfoPopoverAnchor(pop) {
+  if (!pop) return;
+  try { pop._kpAnchorEl = null; } catch { /* ignore */ }
+  try { pop._kpLayoutSig = ''; } catch { /* ignore */ }
+  try { _keyInfoPopoverObserver?.unobserve?.(pop); } catch { /* ignore */ }
+  applyKeyInfoSettingsMax(pop, null);
+}
+
 /**
  * Measure the popover and place it above or below the key.
- * Call again after settings paint, because the form changes the height.
+ * The arrow edge stays on the key when later content changes the height.
  * @param {Document} doc
  * @param {HTMLElement} pop
  * @param {HTMLElement} targetEl
  */
 function positionKeyInfoPopover(doc, pop, targetEl) {
-  if (!doc || !pop || !targetEl) return;
+  if (!doc || !pop || !targetEl || _positioningKeyInfoPopover) return;
+  _positioningKeyInfoPopover = true;
+  try {
+    layoutKeyInfoPopover(doc, pop, targetEl);
+  } finally {
+    _positioningKeyInfoPopover = false;
+  }
+}
+
+/**
+ * @param {Document} doc
+ * @param {HTMLElement} pop
+ * @param {HTMLElement} targetEl
+ */
+function layoutKeyInfoPopover(doc, pop, targetEl) {
   const targetRect = targetEl.getBoundingClientRect();
   openPopoverElement(pop);
+  try { pop._kpAnchorEl = targetEl; } catch { /* ignore */ }
 
   const placeAt = (leftPx, topPx) => {
     try {
@@ -717,11 +806,10 @@ function positionKeyInfoPopover(doc, pop, targetEl) {
 
   const margin = 10;
   const gap = 10;
-  placeAt(-9999, -9999);
+  const leftNow = parseFloat(String(pop.style.left || ''));
+  if (!Number.isFinite(leftNow) || leftNow < 0) placeAt(-9999, -9999);
 
-  const popRect = pop.getBoundingClientRect();
-  const popW = popRect.width || pop.offsetWidth || 160;
-  const popH = popRect.height || pop.offsetHeight || 80;
+  const measured = measureKeyInfoPopover(pop);
   const vw = Math.max(
     doc.documentElement?.clientWidth || 0,
     (typeof window !== 'undefined' ? window.innerWidth : 0) || 0
@@ -730,32 +818,33 @@ function positionKeyInfoPopover(doc, pop, targetEl) {
     doc.documentElement?.clientHeight || 0,
     (typeof window !== 'undefined' ? window.innerHeight : 0) || 0
   );
+  const plan = planKeyInfoPopoverLayout({
+    targetTop: targetRect.top,
+    targetBottom: targetRect.bottom,
+    targetCenterX: targetRect.left + targetRect.width / 2,
+    popW: measured.popW,
+    popH: measured.popH,
+    settingsH: measured.settingsH,
+    vw,
+    vh,
+    margin,
+    gap
+  });
 
-  const spaceAbove = targetRect.top;
-  const spaceBelow = vh - targetRect.bottom;
-  const needs = popH + gap + margin;
-  const placeAbove = spaceAbove >= needs || (spaceAbove >= spaceBelow && spaceAbove >= gap + 24);
-  const placement = placeAbove ? 'top' : 'bottom';
-  pop.setAttribute('data-placement', placement);
-
-  const targetCenterX = targetRect.left + targetRect.width / 2;
-  let left = targetCenterX - popW / 2;
-  const maxLeft = Math.max(margin, vw - margin - popW);
-  left = clamp(left, margin, maxLeft);
-
-  let top;
-  if (placement === 'top') {
-    top = targetRect.top - gap - popH;
-    if (top < margin) top = margin;
-  } else {
-    top = targetRect.bottom + gap;
-    const maxTop = Math.max(margin, vh - margin - popH);
-    if (top > maxTop) top = maxTop;
+  pop.setAttribute('data-placement', plan.placement);
+  applyKeyInfoSettingsMax(pop, plan.settingsMaxHeight);
+  const actualH = pop.offsetHeight || plan.usedH;
+  const top = plan.placement === 'top'
+    ? targetRect.top - gap - actualH
+    : targetRect.bottom + gap;
+  const maxSig = plan.settingsMaxHeight == null ? '' : String(Math.round(plan.settingsMaxHeight));
+  const sig = `${plan.placement}|${Math.round(plan.left)}|${Math.round(top)}|${maxSig}`;
+  if (pop._kpLayoutSig !== sig) {
+    placeAt(plan.left, top);
+    pop.style.setProperty('--kp-arrow-left', `${Math.round(plan.arrowLeft)}px`);
+    pop._kpLayoutSig = sig;
   }
-
-  placeAt(left, top);
-  const arrowLeft = clamp(targetCenterX - left - 9, 12, Math.max(12, popW - 24));
-  pop.style.setProperty('--kp-arrow-left', `${Math.round(arrowLeft)}px`);
+  watchKeyInfoPopoverSize(pop);
 }
 
 /**

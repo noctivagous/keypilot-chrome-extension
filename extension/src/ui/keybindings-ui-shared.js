@@ -27,6 +27,7 @@ export const KEYBINDINGS_UI_FONT_PLACEHOLDERS = {
 
 import { DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
 import { STOCK_ACTIONS } from '../config/stock-actions.js';
+import { getNctDarkUiScrollbarCss } from './nct-dark-ui.js';
 
 /**
  * Canonical keyboard layout used by both early-inject and the bundled UI.
@@ -571,6 +572,10 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   const urlDosis = (fontUrls && fontUrls.dosis) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
 
   const keyIconCss = getKeyboardKeyIconCss();
+  const scrollCss = [
+    getNctDarkUiScrollbarCss({ className: 'kp-bookmark-folder-scroll' }),
+    getNctDarkUiScrollbarCss({ scopeSelector: '.kp-keybindings-popover', className: 'kp-popover-settings' })
+  ].join('\n');
   const fontFaceCss = getKeybindingsUiFontFaceCss({
     robotech: urlRobotech,
     titillium: urlTitillium,
@@ -1374,6 +1379,7 @@ ${fontFaceCss}
   --kp-key-mid: #343a48;
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
+  color-scheme: dark;
 
   position: fixed !important;
   /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
@@ -1558,6 +1564,8 @@ ${fontFaceCss}
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
+  min-height: 0;
 }
 
 .kp-keybindings-popover .kp-popover-settings[hidden] {
@@ -1606,14 +1614,33 @@ ${fontFaceCss}
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  height: 24px;
+  height: 22px;
   padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.28);
-  color: rgba(248, 250, 252, 0.95);
-  font: inherit;
+  border-radius: var(--kp-radius-field, 2px) !important;
+  border: var(--kp-field-border, 1px solid #0a0a0a) !important;
+  background: var(--kp-field-bg, #141414) !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  box-shadow: var(--kp-field-shadow, inset 0 1px 0 #333) !important;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif) !important;
   font-size: 11px;
+  color-scheme: dark !important;
+  outline: none;
+}
+
+.kp-keybindings-popover textarea.kp-popover-field {
+  height: auto !important;
+  min-height: 48px;
+}
+
+.kp-string-table input::placeholder,
+.kp-keybindings-popover .kp-popover-field::placeholder {
+  color: var(--kp-color-fg-mute, #777) !important;
+}
+
+.kp-string-table input:focus,
+.kp-keybindings-popover .kp-popover-field:focus {
+  border-color: var(--kp-color-accent, #4a90c8) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kp-color-accent, #4a90c8) 35%, transparent) !important;
 }
 
 .kp-string-table-remove,
@@ -1654,38 +1681,54 @@ ${fontFaceCss}
 
 .kp-bookmark-folder-scroll {
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
+  border: var(--kp-panel-border, 1px solid #111) !important;
+  border-radius: var(--kp-radius-panel, 3px) !important;
+  background: var(--kp-panel-bg, #232323) !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  color-scheme: dark;
+  box-shadow: var(--kp-field-shadow, inset 0 1px 0 #333);
 }
 
 .kp-bookmark-folder-btn {
-  appearance: none;
+  appearance: none !important;
+  -webkit-appearance: none !important;
   display: block;
   width: 100%;
   box-sizing: border-box;
   min-height: var(--kp-string-table-row, 30px);
-  padding: 4px 8px;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: transparent;
-  color: rgba(248, 250, 252, 0.92);
-  font: inherit;
-  font-size: 11px;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  box-shadow: none !important;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
   line-height: 1.3;
-  text-align: left;
+  letter-spacing: normal !important;
+  text-align: left !important;
+  text-transform: none !important;
   cursor: pointer;
 }
 
+.kp-bookmark-folder-btn:hover {
+  background: var(--kp-color-hover, rgba(255, 255, 255, 0.08)) !important;
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: -1px;
+}
+
 .kp-bookmark-folder-btn[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--kp-color-selected, rgba(74, 144, 200, 0.28)) !important;
+  color: var(--kp-color-selected-text, #e8f0f8) !important;
 }
 
 .kp-bookmark-folder-status,
 .kp-bookmark-folder-hint {
   font-size: 10px;
   line-height: 1.35;
-  color: rgba(248, 250, 252, 0.62);
+  color: var(--kp-color-fg-mute, #777) !important;
 }
 
 .kp-bookmark-folder-status {
@@ -1802,6 +1845,8 @@ ${fontFaceCss}
 
 /* Font Awesome-style faded key background icons (behind white labels) */
 ${keyIconCss}
+
+${scrollCss}
 
 /*
  * TEMP suspended: Floating Keyboard Reference flex-scale keys with panel resize.

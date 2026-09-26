@@ -6242,5 +6242,17 @@
   "reader_mode_show_images_aria": {
     "message": "在阅读模式中显示图片",
     "description": "Accessible name for the Reader Mode show-images checkbox."
+  },
+  "reader_mode_contents": {
+    "message": "目录",
+    "description": "Heading for the Reader Mode table-of-contents column."
+  },
+  "reader_mode_contents_show": {
+    "message": "显示目录",
+    "description": "Accessible name for the control that expands the Reader Mode contents column."
+  },
+  "reader_mode_contents_hide": {
+    "message": "隐藏目录",
+    "description": "Accessible name for the control that collapses the Reader Mode contents column."
   }
 }

@@ -6242,5 +6242,17 @@
   "reader_mode_show_images_aria": {
     "message": "リーダーモードで画像を表示",
     "description": "Accessible name for the Reader Mode show-images checkbox."
+  },
+  "reader_mode_contents": {
+    "message": "目次",
+    "description": "Heading for the Reader Mode table-of-contents column."
+  },
+  "reader_mode_contents_show": {
+    "message": "目次を表示",
+    "description": "Accessible name for the control that expands the Reader Mode contents column."
+  },
+  "reader_mode_contents_hide": {
+    "message": "目次を隠す",
+    "description": "Accessible name for the control that collapses the Reader Mode contents column."
   }
 }

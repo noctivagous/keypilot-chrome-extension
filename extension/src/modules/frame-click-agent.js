@@ -34,6 +34,10 @@ import {
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
+import {
+  FRAME_LAYOUT_STORE_KEY,
+  loadFrameLocalKeybindingsForUserLayout
+} from './frame-agent-user-keys.js';
 import { getFocusColorPalette, normalizeFocusColor } from '../config/focus-color.js';
 import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint, findScrollTargetAtPoint, scrollElementBy } from '../utils/scroll-at-point.js';
 import { ScrollHoldController } from '../utils/scroll-hold.js';
@@ -687,12 +691,13 @@ export function installFrameClickAgent() {
       try {
         const keys = assignment?.keys;
         if (!Array.isArray(keys) || !event) return false;
-        if (assignment.bindingType === 'physical') {
-          return keys.includes(String(event.code || ''));
-        }
-        if (assignment.bindingType === 'character') {
-          return keys.includes(String(event.key || ''));
-        }
+        const matchOn = Array.isArray(assignment.matchOn) && assignment.matchOn.length
+          ? assignment.matchOn
+          : (assignment.bindingType === 'character'
+            ? ['key']
+            : (assignment.bindingType === 'physical' ? ['code'] : []));
+        if (matchOn.includes('code') && keys.includes(String(event.code || ''))) return true;
+        if (matchOn.includes('key') && keys.includes(String(event.key || ''))) return true;
         return false;
       } catch {
         return false;
@@ -702,11 +707,18 @@ export function installFrameClickAgent() {
     const refreshKeybindings = async () => {
       try {
         const settings = await getSettings();
-        // Exclusive user layouts are top-frame only: skip built-in KP key actions in child frames.
+        // A focused cross-origin iframe does not deliver keys to the top frame.
+        // Keep the actions this agent can run (Click Element, new tab, scroll)
+        // from the custom layout. Macros and every other Function stay top-frame only.
         const currentSel = String(settings?.currentKeyboardLayoutId || 'builtin');
         if (currentSel.startsWith('user:')) {
-          // Exclusive user layouts: only the always-on system layer in child frames.
-          keybindings = buildSystemKeybindings(settings?.keyboardHandedness);
+          const fromUser = await loadFrameLocalKeybindingsForUserLayout(
+            currentSel.slice('user:'.length)
+          );
+          keybindings = {
+            ...fromUser,
+            ...buildSystemKeybindings(settings?.keyboardHandedness)
+          };
         } else {
           const layoutId = resolveKeyboardLayoutId({
             familyId: settings?.keyboardLayoutFamilyId,
@@ -1545,7 +1557,12 @@ export function installFrameClickAgent() {
         if (changes?.keypilot_enabled && typeof changes.keypilot_enabled.newValue === 'boolean') {
           setEnabled(changes.keypilot_enabled.newValue);
         }
-        if (changes && Object.prototype.hasOwnProperty.call(changes, SETTINGS_STORAGE_KEY)) {
+        if (
+          changes && (
+            Object.prototype.hasOwnProperty.call(changes, SETTINGS_STORAGE_KEY) ||
+            Object.prototype.hasOwnProperty.call(changes, FRAME_LAYOUT_STORE_KEY)
+          )
+        ) {
           void refreshKeybindings();
         }
       } catch {

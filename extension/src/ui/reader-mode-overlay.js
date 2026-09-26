@@ -17,13 +17,20 @@ import {
 } from './nct-dark-ui.js';
 import { Z_INDEX } from '../config/constants.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
-import { sanitizeArticleHtml } from '../utils/reader-mode-extract.js';
+import {
+  collectReaderToc,
+  isSamePageHashHref,
+  normalizeElementId,
+  sanitizeArticleHtml
+} from '../utils/reader-mode-extract.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from './popover-titlebar.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 
 const OVERLAY_ID = 'kpv2-reader-overlay';
 /** Reader Mode toolbar: show article images. Default on. */
 const SHOW_IMAGES_STORAGE_KEY = 'kp_reader_mode_show_images';
+/** Contents column collapsed to a rail. Default open the first time a list appears. */
+const TOC_COLLAPSED_STORAGE_KEY = 'kp_reader_mode_toc_collapsed';
 
 /** @type {HTMLElement|null} */
 let _overlay = null;
@@ -41,6 +48,10 @@ let _mountGeneration = 0;
 let _showImages = true;
 /** @type {boolean} */
 let _showImagesLoaded = false;
+/** @type {boolean} */
+let _tocCollapsed = false;
+/** @type {boolean} */
+let _tocCollapsedLoaded = false;
 
 function getOverlayRoot() {
   return _overlay?.shadowRoot || _overlay;
@@ -107,7 +118,7 @@ export function openReaderModeOverlay({ title, html, byline, siteName, published
  * @param {{ title?: string, html: string, byline?: string, siteName?: string, publishedTime?: string, closeKey?: string }} opts
  */
 async function mountReaderModeOverlay(generation, { title, html, byline, siteName, publishedTime, closeKey }) {
-  const showImages = await readShowImages();
+  const [showImages, tocCollapsed] = await Promise.all([readShowImages(), readTocCollapsed()]);
   if (generation !== _mountGeneration) return;
 
   const overlay = document.createElement('div');
@@ -175,10 +186,17 @@ async function mountReaderModeOverlay(generation, { title, html, byline, siteNam
   }
   article.appendChild(sanitizeArticleHtml(html, document));
   content.appendChild(article);
+  bindSamePageHashLinks(content);
+
+  const body = document.createElement('div');
+  body.className = 'kpv2-reader-body';
+  const toc = createReaderToc(content, collectReaderToc(article), tocCollapsed);
+  if (toc) body.appendChild(toc);
+  body.appendChild(content);
 
   shell.appendChild(titlebarApi.titlebar);
   shell.appendChild(createReaderToolbar(showImages));
-  shell.appendChild(content);
+  shell.appendChild(body);
   mount.appendChild(backdrop);
   mount.appendChild(shell);
 
@@ -241,6 +259,140 @@ async function readShowImages() {
   }
   _showImagesLoaded = true;
   return _showImages;
+}
+
+/**
+ * @returns {Promise<boolean>}
+ */
+async function readTocCollapsed() {
+  if (_tocCollapsedLoaded) return _tocCollapsed;
+  try {
+    const stored = await storageGetValue(TOC_COLLAPSED_STORAGE_KEY, false);
+    _tocCollapsed = stored === true;
+  } catch {
+    _tocCollapsed = false;
+  }
+  _tocCollapsedLoaded = true;
+  return _tocCollapsed;
+}
+
+/**
+ * @param {boolean} collapsed
+ */
+function persistTocCollapsed(collapsed) {
+  _tocCollapsed = !!collapsed;
+  _tocCollapsedLoaded = true;
+  try {
+    void storageSetValue(TOC_COLLAPSED_STORAGE_KEY, _tocCollapsed);
+  } catch { /* ignore */ }
+}
+
+/**
+ * Scroll a heading inside the reader pane. Does not move the page behind the overlay.
+ * @param {HTMLElement} scroller
+ * @param {string} id
+ */
+function scrollReaderToId(scroller, id) {
+  const safe = normalizeElementId(id);
+  if (!safe || !scroller) return;
+  let target = null;
+  try {
+    target = scroller.querySelector(`#${CSS.escape(safe)}`);
+  } catch {
+    target = null;
+  }
+  if (!(target instanceof HTMLElement)) return;
+  try {
+    const scrollerRect = scroller.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const top = scroller.scrollTop + (targetRect.top - scrollerRect.top) - 16;
+    scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  } catch {
+    try { target.scrollIntoView({ block: 'start' }); } catch { /* ignore */ }
+  }
+}
+
+/**
+ * Fragment links stay in the reader pane. Other links keep target=_blank from sanitize.
+ * @param {HTMLElement} scroller
+ */
+function bindSamePageHashLinks(scroller) {
+  scroller.addEventListener('click', (event) => {
+    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    const anchor = path.find((node) => node && node.tagName === 'A')
+      || event.target?.closest?.('a');
+    if (!anchor || !scroller.contains(anchor)) return;
+    const href = anchor.getAttribute('href') || '';
+    if (!isSamePageHashHref(href)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    let id = href.slice(1);
+    try { id = decodeURIComponent(id); } catch { /* keep the raw fragment */ }
+    scrollReaderToId(scroller, id);
+  });
+}
+
+/**
+ * @param {HTMLElement} scroller
+ * @param {Array<{ id: string, text: string, level: 2|3 }>} entries
+ * @param {boolean} collapsed
+ * @returns {HTMLElement|null}
+ */
+function createReaderToc(scroller, entries, collapsed) {
+  if (!entries.length) return null;
+
+  const toc = document.createElement('aside');
+  toc.className = 'kpv2-reader-toc';
+  toc.setAttribute('aria-label', getMessage('reader_mode_contents'));
+
+  const head = document.createElement('div');
+  head.className = 'kpv2-reader-toc-head';
+
+  const label = document.createElement('span');
+  label.className = 'kpv2-reader-toc-label';
+  label.textContent = getMessage('reader_mode_contents');
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'kpv2-reader-toc-toggle';
+
+  const list = document.createElement('div');
+  list.className = `kpv2-reader-toc-list ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
+  list.setAttribute('role', 'navigation');
+
+  for (const entry of entries) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = entry.level === 3 ? 'kpv2-reader-toc-item is-h3' : 'kpv2-reader-toc-item';
+    item.textContent = entry.text;
+    item.addEventListener('click', () => {
+      scrollReaderToId(scroller, entry.id);
+    });
+    list.appendChild(item);
+  }
+
+  const applyCollapsed = (next) => {
+    const on = !!next;
+    toc.classList.toggle('is-collapsed', on);
+    list.hidden = on;
+    label.hidden = on;
+    toggle.setAttribute('aria-expanded', on ? 'false' : 'true');
+    toggle.setAttribute('aria-label', getMessage(on ? 'reader_mode_contents_show' : 'reader_mode_contents_hide'));
+    toggle.textContent = on ? '›' : '‹';
+  };
+
+  toggle.addEventListener('click', () => {
+    const next = !toc.classList.contains('is-collapsed');
+    applyCollapsed(next);
+    persistTocCollapsed(next);
+  });
+
+  applyCollapsed(collapsed);
+  head.appendChild(label);
+  head.appendChild(toggle);
+  toc.appendChild(head);
+  toc.appendChild(list);
+  return toc;
 }
 
 /**
@@ -360,8 +512,99 @@ ${getNctDarkUiScrollbarCss()}
   font-size: 0.85em;
   color: ${c.fgDim};
 }
+.kpv2-reader-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.kpv2-reader-toc {
+  flex: 0 0 15rem;
+  width: 15rem;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: ${c.panel};
+  border-right: 1px solid ${c.panelEdgeDark};
+}
+.kpv2-reader-toc.is-collapsed {
+  flex-basis: 36px;
+  width: 36px;
+}
+.kpv2-reader-toc-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-bottom: 1px solid ${c.panelEdgeDark};
+}
+.kpv2-reader-toc.is-collapsed .kpv2-reader-toc-head {
+  justify-content: center;
+  padding: 6px 4px;
+  border-bottom: 0;
+}
+.kpv2-reader-toc-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: ${c.fgDim};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kpv2-reader-toc-toggle {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid ${c.panelEdge};
+  border-radius: 4px;
+  background: ${c.fieldBg};
+  color: ${c.fg};
+  font: 700 14px/1 ${NCT_DARK_UI_FONT};
+  cursor: pointer;
+}
+.kpv2-reader-toc-toggle:hover {
+  color: ${c.accent};
+  border-color: ${c.accent};
+}
+.kpv2-reader-toc-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 0 12px;
+}
+.kpv2-reader-toc-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: ${c.fg};
+  font: 600 12px/1.35 ${NCT_DARK_UI_FONT};
+  text-align: left;
+  cursor: pointer;
+}
+.kpv2-reader-toc-item.is-h3 {
+  padding-left: 22px;
+  font-weight: 500;
+  color: ${c.fgDim};
+}
+.kpv2-reader-toc-item:hover {
+  color: ${c.accent};
+  background: rgba(74, 144, 200, 0.12);
+}
 .kpv2-reader-content {
   flex: 1;
+  min-width: 0;
   overflow: auto;
   padding: 24px 16px 40px;
 }
@@ -380,6 +623,7 @@ ${getNctDarkUiScrollbarCss()}
 .kpv2-reader-article h4 {
   line-height: 1.25;
   margin: 1.4em 0 0.5em;
+  scroll-margin-top: 16px;
 }
 .kpv2-reader-article .kpv2-reader-article-head h1 {
   margin: 0;

@@ -6,9 +6,10 @@ Open a clutter-free overlay of the current article, or of text you already selec
 
 1. Press <kbd>P</kbd> on the default right-handed Browsing layout (<kbd>I</kbd> on left-handed).
 2. KeyPilot extracts the main article. If you have a text selection, that selection is shown instead.
-3. Read in the overlay. Links open in a new tab.
-4. Use the toolbar under the title bar to show or hide images. That choice is remembered.
-5. Close with <kbd>P</kbd> / <kbd>I</kbd> again, <kbd>Esc</kbd>, or the overlay close control.
+3. Read in the overlay. Links to other pages open in a new tab. A link to a section in the same article scrolls the reader.
+4. When the article has at least three section headings (`h2` or `h3`), a contents column lists them. Collapse it to a rail; that choice is remembered.
+5. Use the toolbar under the title bar to show or hide images. That choice is remembered.
+6. Close with <kbd>P</kbd> / <kbd>I</kbd> again, <kbd>Esc</kbd>, or the overlay close control.
 
 If the page has no extractable article (maps, login screens, players, empty pages), KeyPilot shows a short notice and leaves the page as-is.
 

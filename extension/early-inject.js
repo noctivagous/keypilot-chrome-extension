@@ -4433,6 +4433,7 @@
   --kp-key-mid: #343a48;
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
+  color-scheme: dark;
 
   position: fixed !important;
   /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
@@ -4617,6 +4618,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
+  min-height: 0;
 }
 
 .kp-keybindings-popover .kp-popover-settings[hidden] {
@@ -4665,14 +4668,33 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  height: 24px;
+  height: 22px;
   padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.28);
-  color: rgba(248, 250, 252, 0.95);
-  font: inherit;
+  border-radius: var(--kp-radius-field, 2px) !important;
+  border: var(--kp-field-border, 1px solid #0a0a0a) !important;
+  background: var(--kp-field-bg, #141414) !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  box-shadow: var(--kp-field-shadow, inset 0 1px 0 #333) !important;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif) !important;
   font-size: 11px;
+  color-scheme: dark !important;
+  outline: none;
+}
+
+.kp-keybindings-popover textarea.kp-popover-field {
+  height: auto !important;
+  min-height: 48px;
+}
+
+.kp-string-table input::placeholder,
+.kp-keybindings-popover .kp-popover-field::placeholder {
+  color: var(--kp-color-fg-mute, #777) !important;
+}
+
+.kp-string-table input:focus,
+.kp-keybindings-popover .kp-popover-field:focus {
+  border-color: var(--kp-color-accent, #4a90c8) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kp-color-accent, #4a90c8) 35%, transparent) !important;
 }
 
 .kp-string-table-remove,
@@ -4713,38 +4735,54 @@
 
 .kp-bookmark-folder-scroll {
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
+  border: var(--kp-panel-border, 1px solid #111) !important;
+  border-radius: var(--kp-radius-panel, 3px) !important;
+  background: var(--kp-panel-bg, #232323) !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  color-scheme: dark;
+  box-shadow: var(--kp-field-shadow, inset 0 1px 0 #333);
 }
 
 .kp-bookmark-folder-btn {
-  appearance: none;
+  appearance: none !important;
+  -webkit-appearance: none !important;
   display: block;
   width: 100%;
   box-sizing: border-box;
   min-height: var(--kp-string-table-row, 30px);
-  padding: 4px 8px;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: transparent;
-  color: rgba(248, 250, 252, 0.92);
-  font: inherit;
-  font-size: 11px;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  box-shadow: none !important;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
   line-height: 1.3;
-  text-align: left;
+  letter-spacing: normal !important;
+  text-align: left !important;
+  text-transform: none !important;
   cursor: pointer;
 }
 
+.kp-bookmark-folder-btn:hover {
+  background: var(--kp-color-hover, rgba(255, 255, 255, 0.08)) !important;
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: -1px;
+}
+
 .kp-bookmark-folder-btn[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--kp-color-selected, rgba(74, 144, 200, 0.28)) !important;
+  color: var(--kp-color-selected-text, #e8f0f8) !important;
 }
 
 .kp-bookmark-folder-status,
 .kp-bookmark-folder-hint {
   font-size: 10px;
   line-height: 1.35;
-  color: rgba(248, 250, 252, 0.62);
+  color: var(--kp-color-fg-mute, #777) !important;
 }
 
 .kp-bookmark-folder-status {
@@ -4993,6 +5031,105 @@
 .kp-keybindings-ui .key[data-kp-action-id="TRANSLATE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M478.3%2073.8c-5.7-10.7-16.8-17.3-28.7-17.3l-51.1%200c-12.5%200-24.7%204.9-33.7%2013.7L192%20242.7%2096%20146.7c-9-8.8-21.2-13.7-33.7-13.7L11.2%20133C-.7%20133-11.8%20139.6-17.5%20150.3S-24%20174.1-18.5%20185.3L73.1%20352%2018.5%20454.7C13%20465.9%2016.1%20478.9%2024.9%20486.6S47.1%20496%2058.5%20490.5L160%20432.9%20261.5%20490.5c11.4%205.5%2024.9%202.6%2033.7-5.1s11.9-20.7%206.4-32.1L246.9%20352%20338.5%20185.3c5.5-11.2%202.4-24.2-6.4-31.9zM192%20309.3L128%20192l64%20117.3zm192-245.3L480%20192%20384%2064z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M478.3%2073.8c-5.7-10.7-16.8-17.3-28.7-17.3l-51.1%200c-12.5%200-24.7%204.9-33.7%2013.7L192%20242.7%2096%20146.7c-9-8.8-21.2-13.7-33.7-13.7L11.2%20133C-.7%20133-11.8%20139.6-17.5%20150.3S-24%20174.1-18.5%20185.3L73.1%20352%2018.5%20454.7C13%20465.9%2016.1%20478.9%2024.9%20486.6S47.1%20496%2058.5%20490.5L160%20432.9%20261.5%20490.5c11.4%205.5%2024.9%202.6%2033.7-5.1s11.9-20.7%206.4-32.1L246.9%20352%20338.5%20185.3c5.5-11.2%202.4-24.2-6.4-31.9zM192%20309.3L128%20192l64%20117.3zm192-245.3L480%20192%20384%2064z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="ADD_URL_TO_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2080c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V224H48c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032H192V432c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V288H400c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H256V80z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2080c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V224H48c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032H192V432c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V288H400c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H256V80z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-macro-id] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2096l224-80%20224%2080L256%20176%2032%2096zM32%20192l224%2080%20224-80%200%2032L256%20304%2032%20224l0-32zm0%2096l224%2080%20224-80%200%2032L256%20400%2032%20320l0-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2096l224-80%20224%2080L256%20176%2032%2096zM32%20192l224%2080%20224-80%200%2032L256%20304%2032%20224l0-32zm0%2096l224%2080%20224-80%200%2032L256%20400%2032%20320l0-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+
+.kp-bookmark-folder-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kp-scrollbar-thumb, #4a4a4a) var(--kp-scrollbar-track, #141414);
+}
+/* Blink: scrollbar-width uses overlay bars that only appear on scroll and
+   suppress ::-webkit-scrollbar. Unset so the themed classic bar paints as
+   soon as the region overflows (Dark Pro tokens by default). */
+@supports selector(::-webkit-scrollbar) {
+  .kp-bookmark-folder-scroll {
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+}
+.kp-bookmark-folder-scroll::-webkit-scrollbar,
+.kp-bookmark-folder-scroll ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  background: var(--kp-scrollbar-track, #141414);
+}
+.kp-bookmark-folder-scroll::-webkit-scrollbar-corner,
+.kp-bookmark-folder-scroll ::-webkit-scrollbar-corner {
+  background: var(--kp-scrollbar-track, #141414);
+}
+.kp-bookmark-folder-scroll::-webkit-scrollbar-track,
+.kp-bookmark-folder-scroll ::-webkit-scrollbar-track {
+  background: var(--kp-scrollbar-track, #141414);
+  border-left: 1px solid var(--kp-color-panel-edge-dark, #111);
+  border-top: 1px solid var(--kp-color-panel-edge-dark, #111);
+}
+.kp-bookmark-folder-scroll::-webkit-scrollbar-thumb,
+.kp-bookmark-folder-scroll ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #555 0%, var(--kp-scrollbar-thumb, #4a4a4a) 45%, #3a3a3a 100%);
+  border: 1px solid var(--kp-color-panel-edge-dark, #111);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  min-height: 28px;
+  min-width: 28px;
+}
+.kp-bookmark-folder-scroll::-webkit-scrollbar-thumb:hover,
+.kp-bookmark-folder-scroll ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #666 0%, var(--kp-scrollbar-thumb-hover, #5c5c5c) 45%, #444 100%);
+}
+.kp-bookmark-folder-scroll::-webkit-scrollbar-thumb:active,
+.kp-bookmark-folder-scroll ::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, var(--kp-color-accent, #4a90c8) 0%, #3a6a94 100%);
+  border-color: var(--kp-color-lit-edge, #2a4a66);
+}
+.kp-keybindings-popover .kp-popover-settings {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kp-scrollbar-thumb, #4a4a4a) var(--kp-scrollbar-track, #141414);
+}
+/* Blink: scrollbar-width uses overlay bars that only appear on scroll and
+   suppress ::-webkit-scrollbar. Unset so the themed classic bar paints as
+   soon as the region overflows (Dark Pro tokens by default). */
+@supports selector(::-webkit-scrollbar) {
+  .kp-keybindings-popover .kp-popover-settings {
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+}
+.kp-keybindings-popover .kp-popover-settings::-webkit-scrollbar,
+.kp-keybindings-popover .kp-popover-settings ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  background: var(--kp-scrollbar-track, #141414);
+}
+.kp-keybindings-popover .kp-popover-settings::-webkit-scrollbar-corner,
+.kp-keybindings-popover .kp-popover-settings ::-webkit-scrollbar-corner {
+  background: var(--kp-scrollbar-track, #141414);
+}
+.kp-keybindings-popover .kp-popover-settings::-webkit-scrollbar-track,
+.kp-keybindings-popover .kp-popover-settings ::-webkit-scrollbar-track {
+  background: var(--kp-scrollbar-track, #141414);
+  border-left: 1px solid var(--kp-color-panel-edge-dark, #111);
+  border-top: 1px solid var(--kp-color-panel-edge-dark, #111);
+}
+.kp-keybindings-popover .kp-popover-settings::-webkit-scrollbar-thumb,
+.kp-keybindings-popover .kp-popover-settings ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #555 0%, var(--kp-scrollbar-thumb, #4a4a4a) 45%, #3a3a3a 100%);
+  border: 1px solid var(--kp-color-panel-edge-dark, #111);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  min-height: 28px;
+  min-width: 28px;
+}
+.kp-keybindings-popover .kp-popover-settings::-webkit-scrollbar-thumb:hover,
+.kp-keybindings-popover .kp-popover-settings ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #666 0%, var(--kp-scrollbar-thumb-hover, #5c5c5c) 45%, #444 100%);
+}
+.kp-keybindings-popover .kp-popover-settings::-webkit-scrollbar-thumb:active,
+.kp-keybindings-popover .kp-popover-settings ::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, var(--kp-color-accent, #4a90c8) 0%, #3a6a94 100%);
+  border-color: var(--kp-color-lit-edge, #2a4a66);
+}
 
 /*
  * TEMP suspended: Floating Keyboard Reference flex-scale keys with panel resize.

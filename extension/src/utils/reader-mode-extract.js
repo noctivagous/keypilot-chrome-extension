@@ -325,6 +325,94 @@ const ALLOWED_ATTRS = {
   TH: ['colspan', 'rowspan', 'scope']
 };
 
+/** Section headings that can form a Reader Mode contents list. */
+const TOC_HEADING_TAGS = new Set(['H2', 'H3']);
+
+/** Contents column appears only when the article has at least this many sections. */
+export const MIN_READER_TOC_HEADINGS = 3;
+
+/**
+ * Same-document fragment link (`#section`), not a new URL.
+ * @param {string|null|undefined} href
+ * @returns {boolean}
+ */
+export function isSamePageHashHref(href) {
+  const s = String(href || '').trim();
+  return s.startsWith('#') && s.length > 1;
+}
+
+/**
+ * Keep a source id only when it is a single fragment token.
+ * @param {string|null|undefined} value
+ * @returns {string}
+ */
+export function normalizeElementId(value) {
+  let id = String(value ?? '').trim();
+  if (!id) return '';
+  if (id.includes('%')) {
+    try { id = decodeURIComponent(id); } catch { /* keep the raw token */ }
+  }
+  if (!id || id.length > 240) return '';
+  if (/[\s"'<>]/.test(id)) return '';
+  return id;
+}
+
+/**
+ * Reserve `raw` in `used` when it is a free, safe id.
+ * @param {string|null|undefined} raw
+ * @param {Set<string>} used
+ * @returns {string}
+ */
+export function claimElementId(raw, used) {
+  const id = normalizeElementId(raw);
+  if (!id || used.has(id)) return '';
+  used.add(id);
+  return id;
+}
+
+/**
+ * Fresh heading id that does not collide with ids already kept.
+ * @param {Set<string>} used
+ * @returns {string}
+ */
+export function mintHeadingId(used) {
+  let n = 1;
+  let id = `kp-reader-h-${n}`;
+  while (used.has(id)) {
+    n += 1;
+    id = `kp-reader-h-${n}`;
+  }
+  used.add(id);
+  return id;
+}
+
+/**
+ * h2/h3 outline for the contents column. Empty when there are fewer than
+ * {@link MIN_READER_TOC_HEADINGS} labeled sections.
+ * @param {ParentNode|null|undefined} root
+ * @returns {Array<{ id: string, text: string, level: 2|3 }>}
+ */
+export function collectReaderToc(root) {
+  if (!root || typeof root.querySelectorAll !== 'function') return [];
+  /** @type {Array<{ id: string, text: string, level: 2|3 }>} */
+  const entries = [];
+  let nodes = [];
+  try {
+    nodes = [...root.querySelectorAll('h2, h3')];
+  } catch {
+    return [];
+  }
+  for (const node of nodes) {
+    const tag = String(node.tagName || '').toUpperCase();
+    if (!TOC_HEADING_TAGS.has(tag)) continue;
+    const text = String(node.textContent || '').replace(/\s+/g, ' ').trim();
+    const id = normalizeElementId(node.id || node.getAttribute?.('id'));
+    if (!text || !id) continue;
+    entries.push({ id, text, level: tag === 'H2' ? 2 : 3 });
+  }
+  return entries.length >= MIN_READER_TOC_HEADINGS ? entries : [];
+}
+
 /**
  * @param {string} value
  * @param {'href'|'src'} kind
@@ -361,7 +449,7 @@ export function sanitizeArticleHtml(html, ownerDocument) {
   const root = parsed.getElementById('kp-reader-root') || parsed.body;
   if (!root) return frag;
 
-  const clean = sanitizeNode(root, ownerDocument);
+  const clean = sanitizeNode(root, ownerDocument, { usedIds: new Set() });
   if (!clean) return frag;
   while (clean.firstChild) frag.appendChild(clean.firstChild);
   return frag;
@@ -370,9 +458,10 @@ export function sanitizeArticleHtml(html, ownerDocument) {
 /**
  * @param {Node} node
  * @param {Document} ownerDocument
+ * @param {{ usedIds: Set<string> }} ctx
  * @returns {Node|null}
  */
-function sanitizeNode(node, ownerDocument) {
+function sanitizeNode(node, ownerDocument, ctx) {
   if (node.nodeType === Node.TEXT_NODE) {
     return ownerDocument.createTextNode(node.nodeValue || '');
   }
@@ -391,7 +480,7 @@ function sanitizeNode(node, ownerDocument) {
   if (tag === 'DIV' && el.id === 'kp-reader-root') {
     const wrap = ownerDocument.createElement('div');
     for (const child of Array.from(el.childNodes)) {
-      const cleaned = sanitizeNode(child, ownerDocument);
+      const cleaned = sanitizeNode(child, ownerDocument, ctx);
       if (cleaned) wrap.appendChild(cleaned);
     }
     return wrap;
@@ -400,7 +489,7 @@ function sanitizeNode(node, ownerDocument) {
   if (!ALLOWED_TAGS.has(tag)) {
     const wrap = ownerDocument.createDocumentFragment();
     for (const child of Array.from(el.childNodes)) {
-      const cleaned = sanitizeNode(child, ownerDocument);
+      const cleaned = sanitizeNode(child, ownerDocument, ctx);
       if (cleaned) wrap.appendChild(cleaned);
     }
     return wrap;
@@ -417,12 +506,33 @@ function sanitizeNode(node, ownerDocument) {
       if (value != null) out.setAttribute(name, value);
     }
   }
-  if (tag === 'A') out.setAttribute('target', '_blank');
-  if (tag === 'A') out.setAttribute('rel', 'noopener noreferrer');
+  applySanitizedId(out, el, tag, ctx);
+  if (tag === 'A' && !isSamePageHashHref(out.getAttribute('href'))) {
+    out.setAttribute('target', '_blank');
+    out.setAttribute('rel', 'noopener noreferrer');
+  }
 
   for (const child of Array.from(el.childNodes)) {
-    const cleaned = sanitizeNode(child, ownerDocument);
+    const cleaned = sanitizeNode(child, ownerDocument, ctx);
     if (cleaned) out.appendChild(cleaned);
   }
   return out;
+}
+
+/**
+ * Keep a safe source id. h2/h3 without one get a generated id for the contents list.
+ * @param {Element} out
+ * @param {Element} source
+ * @param {string} tag
+ * @param {{ usedIds: Set<string> }} ctx
+ */
+function applySanitizedId(out, source, tag, ctx) {
+  const kept = claimElementId(source.getAttribute('id'), ctx.usedIds);
+  if (kept) {
+    out.setAttribute('id', kept);
+    return;
+  }
+  if (TOC_HEADING_TAGS.has(tag)) {
+    out.setAttribute('id', mintHeadingId(ctx.usedIds));
+  }
 }

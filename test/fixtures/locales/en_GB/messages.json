@@ -6248,5 +6248,17 @@
   "reader_mode_show_images_aria": {
     "message": "[GB] Show images in Reader Mode",
     "description": "Accessible name for the Reader Mode show-images checkbox."
+  },
+  "reader_mode_contents": {
+    "message": "[GB] Contents",
+    "description": "Heading for the Reader Mode table-of-contents column."
+  },
+  "reader_mode_contents_show": {
+    "message": "[GB] Show contents",
+    "description": "Accessible name for the control that expands the Reader Mode contents column."
+  },
+  "reader_mode_contents_hide": {
+    "message": "[GB] Hide contents",
+    "description": "Accessible name for the control that collapses the Reader Mode contents column."
   }
 }

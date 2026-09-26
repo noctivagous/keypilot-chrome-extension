@@ -26,6 +26,11 @@ const OVERLAY_KEYS = [
     'media_library_download_selected',
     'media_library_delete_selected'
   ]],
+  ['extension/src/ui/reader-mode-overlay.js', [
+    'reader_mode_contents',
+    'reader_mode_contents_show',
+    'reader_mode_contents_hide'
+  ]],
   ['extension/src/ui/page-media-overlay.js', [
     'page_media_tab_image',
     'page_media_empty',

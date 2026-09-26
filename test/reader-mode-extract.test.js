@@ -11,7 +11,13 @@ import {
   extractIsTooNarrow,
   isReaderChromeElement,
   pruneReaderChrome,
+  isSamePageHashHref,
+  normalizeElementId,
+  claimElementId,
+  mintHeadingId,
+  collectReaderToc,
   MIN_ARTICLE_CHARS,
+  MIN_READER_TOC_HEADINGS,
   READABILITY_MIN_CHARS
 } from '../extension/src/utils/reader-mode-extract.js';
 
@@ -187,6 +193,47 @@ describe('reader mode extract', () => {
     assert.match(selector, /banner/);
     assert.match(selector, /contentinfo/);
     assert.doesNotMatch(selector, /(^|,\s*)header(\s*,|$)/);
+  });
+
+  it('builds a contents list from three or more h2 and h3 headings', () => {
+    assert.equal(isSamePageHashHref('#Introduction'), true);
+    assert.equal(isSamePageHashHref('#foo%20bar'), true);
+    assert.equal(isSamePageHashHref('#'), false);
+    assert.equal(isSamePageHashHref('https://example.com/a#b'), false);
+    assert.equal(normalizeElementId(' Historical_example '), 'Historical_example');
+    assert.equal(normalizeElementId('bad id'), '');
+
+    const used = new Set();
+    assert.equal(claimElementId('intro', used), 'intro');
+    assert.equal(claimElementId('intro', used), '');
+    assert.equal(mintHeadingId(used), 'kp-reader-h-1');
+    assert.equal(MIN_READER_TOC_HEADINGS, 3);
+
+    const heading = (tag, text, id) => ({
+      tagName: tag,
+      textContent: text,
+      id,
+      getAttribute(name) { return name === 'id' ? id : null; }
+    });
+    const root = (headings) => ({
+      querySelectorAll() { return headings; }
+    });
+
+    assert.deepEqual(collectReaderToc(root([
+      heading('H2', 'One', 'one'),
+      heading('H2', 'Two', 'two')
+    ])), []);
+    assert.deepEqual(collectReaderToc(root([
+      heading('H2', 'One', 'one'),
+      heading('H3', '  Nested  ', 'nested'),
+      heading('H2', '', 'empty'),
+      heading('H4', 'Ignored', 'h4'),
+      heading('H2', 'Three', 'three')
+    ])), [
+      { id: 'one', text: 'One', level: 2 },
+      { id: 'nested', text: 'Nested', level: 3 },
+      { id: 'three', text: 'Three', level: 2 }
+    ]);
   });
 
   it('skips Readability when the page does not look readerable', async () => {

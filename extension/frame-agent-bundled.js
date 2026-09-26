@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-26T08:00:43.586Z
+ * Generated on 2026-09-26T16:11:34.453Z
  */
 
 (() => {
@@ -3085,6 +3085,79 @@
     }
   }
 
+  // src/modules/frame-agent-user-keys.js
+  var FRAME_LAYOUT_STORE_KEY = "kp_keyboard_layout_store_v1";
+  var FRAME_AGENT_LOCAL_ACTION_IDS = Object.freeze([
+    "ACTIVATE",
+    "ACTIVATE_NEW_TAB",
+    "ACTIVATE_NEW_TAB_BACKGROUND",
+    "PAGE_UP_INSTANT",
+    "PAGE_DOWN_INSTANT",
+    "PAGE_TOP",
+    "PAGE_BOTTOM"
+  ]);
+  var LOCAL_ACTION_IDS = new Set(FRAME_AGENT_LOCAL_ACTION_IDS);
+  function functionIdForSlot(assigned, actions) {
+    if (!assigned || assigned.type !== "function") return "";
+    const id = String(assigned.id || "");
+    if (!id || id.startsWith("stock:")) return "";
+    if (id.startsWith("action:")) {
+      const instance = actions && actions[id];
+      return instance && typeof instance.functionId === "string" ? instance.functionId : "";
+    }
+    return id;
+  }
+  function buildFrameLocalKeybindingsFromUserLayout(slots, actions) {
+    const codes = {};
+    const chars = {};
+    for (const [slotKey, assigned] of Object.entries(slots || {})) {
+      const functionId = functionIdForSlot(assigned, actions);
+      if (!LOCAL_ACTION_IDS.has(functionId)) continue;
+      if (slotKey.startsWith("code:")) {
+        const code = slotKey.slice("code:".length);
+        if (!code) continue;
+        (codes[functionId] || (codes[functionId] = [])).push(code);
+      } else if (slotKey.startsWith("key:")) {
+        const character = slotKey.slice("key:".length);
+        if (!character) continue;
+        (chars[functionId] || (chars[functionId] = [])).push(character);
+      }
+    }
+    const out = {};
+    for (const id of FRAME_AGENT_LOCAL_ACTION_IDS) {
+      const physical = codes[id] || [];
+      const character = chars[id] || [];
+      if (!physical.length && !character.length) continue;
+      if (physical.length && !character.length) {
+        out[id] = { bindingType: "physical", keys: physical, matchOn: ["code"] };
+      } else if (character.length && !physical.length) {
+        out[id] = { bindingType: "character", keys: character, matchOn: ["key"] };
+      } else {
+        out[id] = {
+          bindingType: "physical",
+          keys: [...physical, ...character],
+          matchOn: ["code", "key"]
+        };
+      }
+    }
+    return out;
+  }
+  async function loadFrameLocalKeybindingsForUserLayout(layoutId) {
+    const id = String(layoutId || "");
+    if (!id) return {};
+    let stored = null;
+    try {
+      const result = await chrome.storage.sync.get(FRAME_LAYOUT_STORE_KEY);
+      stored = result && result[FRAME_LAYOUT_STORE_KEY];
+    } catch {
+      return {};
+    }
+    if (!stored || stored.version !== 1 || !stored.layouts) return {};
+    const layout = stored.layouts[id];
+    if (!layout || typeof layout !== "object") return {};
+    return buildFrameLocalKeybindingsFromUserLayout(layout.slots, stored.actions);
+  }
+
   // src/utils/element-from-point.js
   function deepElementFromPoint(x, y, doc = document) {
     let el = null;
@@ -5603,12 +5676,9 @@
         try {
           const keys = assignment?.keys;
           if (!Array.isArray(keys) || !event) return false;
-          if (assignment.bindingType === "physical") {
-            return keys.includes(String(event.code || ""));
-          }
-          if (assignment.bindingType === "character") {
-            return keys.includes(String(event.key || ""));
-          }
+          const matchOn = Array.isArray(assignment.matchOn) && assignment.matchOn.length ? assignment.matchOn : assignment.bindingType === "character" ? ["key"] : assignment.bindingType === "physical" ? ["code"] : [];
+          if (matchOn.includes("code") && keys.includes(String(event.code || ""))) return true;
+          if (matchOn.includes("key") && keys.includes(String(event.key || ""))) return true;
           return false;
         } catch {
           return false;
@@ -5619,7 +5689,13 @@
           const settings = await getSettings();
           const currentSel = String(settings?.currentKeyboardLayoutId || "builtin");
           if (currentSel.startsWith("user:")) {
-            keybindings = buildSystemKeybindings(settings?.keyboardHandedness);
+            const fromUser = await loadFrameLocalKeybindingsForUserLayout(
+              currentSel.slice("user:".length)
+            );
+            keybindings = {
+              ...fromUser,
+              ...buildSystemKeybindings(settings?.keyboardHandedness)
+            };
           } else {
             const layoutId = resolveKeyboardLayoutId({
               familyId: settings?.keyboardLayoutFamilyId,
@@ -6316,7 +6392,7 @@
           if (changes?.keypilot_enabled && typeof changes.keypilot_enabled.newValue === "boolean") {
             setEnabled(changes.keypilot_enabled.newValue);
           }
-          if (changes && Object.prototype.hasOwnProperty.call(changes, SETTINGS_STORAGE_KEY)) {
+          if (changes && (Object.prototype.hasOwnProperty.call(changes, SETTINGS_STORAGE_KEY) || Object.prototype.hasOwnProperty.call(changes, FRAME_LAYOUT_STORE_KEY))) {
             void refreshKeybindings();
           }
         } catch {
