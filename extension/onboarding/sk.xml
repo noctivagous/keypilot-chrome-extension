@@ -65,9 +65,6 @@
     <task id="open_link_background_tab" label="Kliknite na hypertextový odkaz do novej karty, ale neotvárajte ju (`G`).">
       <when type="action" action="activateNewTabBackground" target="link" />
     </task>
-    <task id="open_link_new_tab" label="Kliknite na hypertextový odkaz do novej karty (`B`).">
-      <when type="action" action="activateNewTab" target="link" />
-    </task>
     <task id="open_new_tab" label="Otvorte novú kartu (`T`).">
       <when type="action" action="newTab" />
     </task>

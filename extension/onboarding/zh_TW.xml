@@ -23,7 +23,6 @@
   </slide>
   <slide id="tabs" title="分頁">
     <task id="open_link_background_tab" label="在新分頁中點擊超連結，但不要開啟它（`G`）。"><when type="action" action="activateNewTabBackground" target="link" /></task>
-    <task id="open_link_new_tab" label="在新分頁中點擊超連結（`B`）。"><when type="action" action="activateNewTab" target="link" /></task>
     <task id="open_new_tab" label="開啟新分頁（`T`）。"><when type="action" action="newTab" /></task>
     <task id="move_tabs" label="向左切換分頁（`Q`）。"><when type="action" action="tabLeft" /></task>
     <task id="move_tabs_2" label="向右切換分頁（`W`）。"><when type="action" action="tabRight" /></task>

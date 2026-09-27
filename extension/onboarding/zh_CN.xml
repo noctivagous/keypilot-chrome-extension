@@ -65,9 +65,6 @@
    <task id="open_link_background_tab" label="在新标签页中点击超链接，但不打开它（`G`）。">
      <when type="action" action="activateNewTabBackground" target="link" />
    </task>
-   <task id="open_link_new_tab" label="在新标签页中点击超链接（`B`）。">
-     <when type="action" action="activateNewTab" target="link" />
-   </task>
    <task id="open_new_tab" label="打开新标签页（`T`）。">
      <when type="action" action="newTab" />
    </task>

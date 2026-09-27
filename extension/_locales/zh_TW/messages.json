@@ -6167,6 +6167,16 @@
       }
     }
   },
+  "omnibox_no_suggestions": {
+    "message": "沒有建議。按 Enter 使用 $ENGINE$ 搜尋。",
+    "description": "Omnibox empty-list hint when there are no history or bookmark matches. $1 is the selected search engine name (Brave, Google, DuckDuckGo).",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
+  },
   "keyboard_hardware_layout_us_ansi_qwerty": {
     "message": "美式 ANSI QWERTY",
     "description": "Keyboard hardware-layout picker option."

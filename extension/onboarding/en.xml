@@ -65,9 +65,6 @@
     <task id="open_link_background_tab" label="Click a hyperlink into a new tab but don't open it (`G`).">
       <when type="action" action="activateNewTabBackground" target="link" />
     </task>
-    <task id="open_link_new_tab" label="Click a hyperlink into a new tab (`B`).">
-      <when type="action" action="activateNewTab" target="link" />
-    </task>
     <task id="open_new_tab" label="Open a new tab (`T`).">
       <when type="action" action="newTab" />
     </task>

@@ -5,11 +5,12 @@
  * - Navigates current tab; non-URL becomes selected Search Engine query
  */
 import { CSS_CLASSES, Z_INDEX } from '../config/constants.js';
-import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from './settings-manager.js';
+import { buildSearchUrl, getEngineHomeUrl, getSearchEngineMeta, getSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from './settings-manager.js';
 import { createUrlListingContainer, renderUrlListing } from '../ui/url-listing.js';
 import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 import { MSG } from '../messaging/types.js';
 import { urlFromAddressInput } from '../utils/address-input.js';
+import { getMessage } from '../utils/i18n.js';
 
 export class OmniboxManager {
   /**
@@ -449,6 +450,12 @@ export class OmniboxManager {
     } catch {
       this._searchEngine = 'brave';
     }
+    if (this._open) this._renderSuggestions();
+  }
+
+  _emptySuggestionsText() {
+    const engine = getSearchEngineMeta(this._searchEngine).label;
+    return getMessage('omnibox_no_suggestions', engine);
   }
 
   _toUrlOrSearch(input) {
@@ -532,7 +539,7 @@ export class OmniboxManager {
       items: this._suggestions,
       view: 'list',
       useInlineStyles: true,
-      emptyText: 'No suggestions',
+      emptyText: this._emptySuggestionsText(),
       getTitle: (s) => s.title || s.url,
       getUrl: (s) => s.url,
       showFavicon: true,

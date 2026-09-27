@@ -43,9 +43,6 @@
     <task id="open_link_background_tab" label="Klicken Sie auf einen Hyperlink in einem neuen Tab, öffnen Sie ihn jedoch nicht (`G`).">
       <when type="action" action="activateNewTabBackground" target="link" />
     </task>
-    <task id="open_link_new_tab" label="Klicken Sie auf einen Hyperlink in einer neuen Registerkarte (`B`).">
-      <when type="action" action="activateNewTab" target="link" />
-    </task>
     <task id="open_new_tab" label="Öffnen Sie einen neuen Tab (`T`).">
       <when type="action" action="newTab" />
     </task>

@@ -6167,6 +6167,16 @@
       }
     }
   },
+  "omnibox_no_suggestions": {
+    "message": "Keine Vorschläge. Eingabetaste drücken, um mit $ENGINE$ zu suchen.",
+    "description": "Omnibox empty-list hint when there are no history or bookmark matches. $1 is the selected search engine name (Brave, Google, DuckDuckGo).",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
+  },
   "keyboard_hardware_layout_us_ansi_qwerty": {
     "message": "US-ANSI-QWERTY",
     "description": "Keyboard hardware-layout picker option."

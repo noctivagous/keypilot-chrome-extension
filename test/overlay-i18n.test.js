@@ -64,6 +64,9 @@ const OVERLAY_KEYS = [
     'tabs_overview_hint',
     'tabs_overview_this_window'
   ]],
+  ['extension/src/modules/omnibox-manager.js', [
+    'omnibox_no_suggestions'
+  ]],
   ['extension/src/modules/launcher-popover.js', [
     'launcher_title',
     'launcher_footer_hint',

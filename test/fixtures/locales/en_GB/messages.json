@@ -6221,6 +6221,16 @@
       }
     }
   },
+  "omnibox_no_suggestions": {
+    "message": "[GB] No suggestions. Press Enter to search with $ENGINE$.",
+    "description": "Omnibox empty-list hint when there are no history or bookmark matches. $1 is the selected search engine name (Brave, Google, DuckDuckGo).",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
+  },
   "fn_ZOOM_OUT_label": {
     "message": "[GB] Zoom Out",
     "description": "Function Library label for ZOOM_OUT."

@@ -10766,17 +10766,6 @@
           }
         },
         {
-          "id": "open_link_new_tab",
-          "label": "Click a hyperlink into a new tab (`B`).",
-          "when": {
-            "type": "action",
-            "action": "activateNewTab",
-            "target": "link",
-            "mode": "",
-            "change": ""
-          }
-        },
-        {
           "id": "open_new_tab",
           "label": "Open a new tab (`T`).",
           "when": {

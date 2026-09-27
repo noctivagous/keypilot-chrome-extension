@@ -62,9 +62,6 @@
     <task id="open_link_background_tab" label="Abre un hipervínculo en una pestaña nueva sin mostrarla (`G`).">
       <when type="action" action="activateNewTabBackground" target="link" />
     </task>
-    <task id="open_link_new_tab" label="Abre un hipervínculo en una pestaña nueva (`B`).">
-      <when type="action" action="activateNewTab" target="link" />
-    </task>
     <task id="open_new_tab" label="Abre una pestaña nueva (`T`).">
       <when type="action" action="newTab" />
     </task>

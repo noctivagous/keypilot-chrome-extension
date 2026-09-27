@@ -65,9 +65,6 @@
     <task id="open_link_background_tab" label="ハイパーリンクを新しいタブで開きますが、そのタブには切り替えません（`G`）。">
       <when type="action" action="activateNewTabBackground" target="link" />
     </task>
-    <task id="open_link_new_tab" label="ハイパーリンクを新しいタブで開きます（`B`）。">
-      <when type="action" action="activateNewTab" target="link" />
-    </task>
     <task id="open_new_tab" label="新しいタブを開きます（`T`）。">
       <when type="action" action="newTab" />
     </task>
