@@ -130,6 +130,21 @@
       if (typeof patch.keyboardReferenceCollapsed === 'boolean') {
         next.keyboardReferenceCollapsed = patch.keyboardReferenceCollapsed;
       }
+      if (typeof patch.keyboardReferenceVisible === 'boolean') {
+        next.keyboardReferenceVisible = patch.keyboardReferenceVisible;
+      }
+      if (typeof patch.keyboardHardwareLayoutId === 'string') {
+        next.keyboardHardwareLayoutId = patch.keyboardHardwareLayoutId;
+      }
+      if (typeof patch.keyboardLayoutId === 'string') {
+        next.keyboardLayoutId = patch.keyboardLayoutId;
+      }
+      if (typeof patch.keyboardLayoutFamilyId === 'string') {
+        next.keyboardLayoutFamilyId = patch.keyboardLayoutFamilyId;
+      }
+      if (typeof patch.keyboardReferenceShowNumberRow === 'boolean') {
+        next.keyboardReferenceShowNumberRow = patch.keyboardReferenceShowNumberRow;
+      }
       localStorage.setItem(KP_CHROME_LAYOUT_CACHE_KEY, JSON.stringify(next));
     } catch { /* ignore */ }
   }
@@ -1623,6 +1638,7418 @@
       }
     ]
   ]
+};
+  const KEYBOARD_LAYOUTS_BY_HARDWARE_ID = {
+  "us-ansi-qwerty": {
+    "browsing-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Y",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "COPY_HOVERED_URL",
+          "fallbackText": "COPY_HOVERED_URL"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "PAGE_MEDIA",
+          "fallbackText": "PAGE_MEDIA"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "[",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "]",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": ";",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "OPEN_MEDIA_LIBRARY",
+          "fallbackText": "OPEN_MEDIA_LIBRARY"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "action",
+          "code": "Period",
+          "legend": ".",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "browsing-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Y",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "[",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "]",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": ";",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ]
+  },
+  "de-de-qwertz-iso": {
+    "browsing-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Z",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "COPY_HOVERED_URL",
+          "fallbackText": "COPY_HOVERED_URL"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "PAGE_MEDIA",
+          "fallbackText": "PAGE_MEDIA"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "Ü",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "+",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": "Ö",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "Ä",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Y",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "OPEN_MEDIA_LIBRARY",
+          "fallbackText": "OPEN_MEDIA_LIBRARY"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "action",
+          "code": "Period",
+          "legend": ".",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "browsing-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Z",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "Ü",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "+",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": "Ö",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "Ä",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Y",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ü"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "+"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ö"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "Ä",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Y",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ü"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "+"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ö"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "Ä",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ü"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "+"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ö"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "Ä",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ü"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "+"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ö"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "Ä",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ]
+  },
+  "es-es-qwerty-iso": {
+    "browsing-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Y",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "COPY_HOVERED_URL",
+          "fallbackText": "COPY_HOVERED_URL"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "PAGE_MEDIA",
+          "fallbackText": "PAGE_MEDIA"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "[",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "]",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": "Ñ",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "´",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "OPEN_MEDIA_LIBRARY",
+          "fallbackText": "OPEN_MEDIA_LIBRARY"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "action",
+          "code": "Period",
+          "legend": ".",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "browsing-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Y",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "[",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "]",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": "Ñ",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "´",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ñ"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "´",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ñ"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "´",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ñ"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "´",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ñ"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "´",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ]
+  },
+  "sk-sk-qwertz-iso": {
+    "browsing-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Z",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "COPY_HOVERED_URL",
+          "fallbackText": "COPY_HOVERED_URL"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "PAGE_MEDIA",
+          "fallbackText": "PAGE_MEDIA"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "Ú",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "Ä",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": "Ô",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "§",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Y",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "OPEN_MEDIA_LIBRARY",
+          "fallbackText": "OPEN_MEDIA_LIBRARY"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "action",
+          "code": "Period",
+          "legend": ".",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "browsing-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Z",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "Ú",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "Ä",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": "Ô",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "§",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Y",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ú"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "Ä"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ô"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "§",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Y",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ú"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "Ä"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ô"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "§",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ú"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "Ä"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ô"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "§",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Z"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "Ú"
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "Ä"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": "Ô"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "§",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "IntlBackslash",
+          "text": "<"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ]
+  },
+  "ja-jis-106": {
+    "browsing-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Y",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "COPY_HOVERED_URL",
+          "fallbackText": "COPY_HOVERED_URL"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "PAGE_MEDIA",
+          "fallbackText": "PAGE_MEDIA"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "[",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "]",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": ";",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "OPEN_MEDIA_LIBRARY",
+          "fallbackText": "OPEN_MEDIA_LIBRARY"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "action",
+          "code": "Period",
+          "legend": ".",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "key",
+          "code": "IntlRo",
+          "text": "ろ"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "browsing-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "PREVIEW_LINK_POPOVER",
+          "fallbackText": "PREVIEW_LINK_POPOVER"
+        },
+        {
+          "type": "action",
+          "code": "KeyE",
+          "legend": "E",
+          "id": "COPY_HOVERED_IMAGE",
+          "fallbackText": "COPY_HOVERED_IMAGE"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyT",
+          "legend": "T",
+          "id": "SCROLL_LINE",
+          "fallbackText": "SCROLL_LINE"
+        },
+        {
+          "type": "action",
+          "code": "KeyY",
+          "legend": "Y",
+          "id": "NEW_TAB",
+          "fallbackText": "NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "action",
+          "code": "KeyI",
+          "legend": "I",
+          "id": "READER_MODE",
+          "fallbackText": "READER_MODE"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "BracketLeft",
+          "legend": "[",
+          "id": "ZOOM_OUT",
+          "fallbackText": "ZOOM_OUT"
+        },
+        {
+          "type": "action",
+          "code": "BracketRight",
+          "legend": "]",
+          "id": "ZOOM_IN",
+          "fallbackText": "ZOOM_IN"
+        },
+        {
+          "type": "action",
+          "code": "Backspace",
+          "legend": "Backspace",
+          "id": "DELETE",
+          "fallbackText": "DELETE",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "action",
+          "code": "KeyA",
+          "legend": "A",
+          "id": "TOP_SITES",
+          "fallbackText": "TOP_SITES"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "OMNIBOX",
+          "fallbackText": "OMNIBOX"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "TAB_HISTORY",
+          "fallbackText": "TAB_HISTORY"
+        },
+        {
+          "type": "action",
+          "code": "KeyG",
+          "legend": "G",
+          "id": "HIGHLIGHT",
+          "fallbackText": "HIGHLIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyH",
+          "legend": "H",
+          "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+          "fallbackText": "ACTIVATE_NEW_TAB_BACKGROUND"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "Semicolon",
+          "legend": ";",
+          "id": "CLOSE_TAB",
+          "fallbackText": "CLOSE_TAB"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "TABS_OVERVIEW",
+          "fallbackText": "TABS_OVERVIEW"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "stock:social-media",
+          "fallbackText": "stock:social-media"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "stock:random-bookmark",
+          "fallbackText": "stock:random-bookmark"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "action",
+          "code": "KeyB",
+          "legend": "B",
+          "id": "ACTIVATE_NEW_TAB",
+          "fallbackText": "ACTIVATE_NEW_TAB"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "key",
+          "code": "IntlRo",
+          "text": "ろ"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "action",
+          "code": "KeyQ",
+          "legend": "Q",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "action",
+          "code": "KeyW",
+          "legend": "W",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "action",
+          "code": "KeyZ",
+          "legend": "Z",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "action",
+          "code": "KeyX",
+          "legend": "X",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyC",
+          "legend": "C",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "KeyV",
+          "legend": "V",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "key",
+          "code": "IntlRo",
+          "text": "ろ"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "basic-navigation-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "action",
+          "code": "KeyO",
+          "legend": "O",
+          "id": "TAB_RIGHT",
+          "fallbackText": "TAB_RIGHT"
+        },
+        {
+          "type": "action",
+          "code": "KeyP",
+          "legend": "P",
+          "id": "TAB_LEFT",
+          "fallbackText": "TAB_LEFT"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "action",
+          "code": "KeyN",
+          "legend": "N",
+          "id": "PAGE_BOTTOM",
+          "fallbackText": "PAGE_BOTTOM"
+        },
+        {
+          "type": "action",
+          "code": "KeyM",
+          "legend": "M",
+          "id": "PAGE_DOWN_INSTANT",
+          "fallbackText": "PAGE_DOWN_INSTANT"
+        },
+        {
+          "type": "action",
+          "code": "Comma",
+          "legend": ",",
+          "id": "PAGE_UP_INSTANT",
+          "fallbackText": "PAGE_UP_INSTANT"
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "action",
+          "code": "Slash",
+          "legend": "/",
+          "id": "PAGE_TOP",
+          "fallbackText": "PAGE_TOP"
+        },
+        {
+          "type": "key",
+          "code": "IntlRo",
+          "text": "ろ"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-right": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "action",
+          "code": "KeyR",
+          "legend": "R",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "key",
+          "code": "KeyU",
+          "text": "U"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "action",
+          "code": "KeyS",
+          "legend": "S",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyF",
+          "legend": "F",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "key",
+          "code": "KeyJ",
+          "text": "J"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyL",
+          "text": "L"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "key",
+          "code": "IntlRo",
+          "text": "ろ"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ],
+    "click-history-left": [
+      [
+        {
+          "type": "special",
+          "code": "Tab",
+          "text": "Tab",
+          "className": "key key-tab"
+        },
+        {
+          "type": "key",
+          "code": "KeyQ",
+          "text": "Q"
+        },
+        {
+          "type": "key",
+          "code": "KeyW",
+          "text": "W"
+        },
+        {
+          "type": "key",
+          "code": "KeyE",
+          "text": "E"
+        },
+        {
+          "type": "key",
+          "code": "KeyR",
+          "text": "R"
+        },
+        {
+          "type": "key",
+          "code": "KeyT",
+          "text": "T"
+        },
+        {
+          "type": "key",
+          "code": "KeyY",
+          "text": "Y"
+        },
+        {
+          "type": "action",
+          "code": "KeyU",
+          "legend": "U",
+          "id": "FORWARD",
+          "fallbackText": "FORWARD"
+        },
+        {
+          "type": "key",
+          "code": "KeyI",
+          "text": "I"
+        },
+        {
+          "type": "key",
+          "code": "KeyO",
+          "text": "O"
+        },
+        {
+          "type": "key",
+          "code": "KeyP",
+          "text": "P"
+        },
+        {
+          "type": "key",
+          "code": "BracketLeft",
+          "text": "["
+        },
+        {
+          "type": "key",
+          "code": "BracketRight",
+          "text": "]"
+        },
+        {
+          "type": "special",
+          "code": "Backspace",
+          "text": "Backspace",
+          "className": "key key-backspace"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "CapsLock",
+          "text": "Caps",
+          "className": "key key-caps"
+        },
+        {
+          "type": "key",
+          "code": "KeyA",
+          "text": "A"
+        },
+        {
+          "type": "key",
+          "code": "KeyS",
+          "text": "S"
+        },
+        {
+          "type": "action",
+          "code": "KeyD",
+          "legend": "D",
+          "id": "TOGGLE_KEYBOARD_HELP",
+          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        },
+        {
+          "type": "key",
+          "code": "KeyF",
+          "text": "F"
+        },
+        {
+          "type": "key",
+          "code": "KeyG",
+          "text": "G"
+        },
+        {
+          "type": "key",
+          "code": "KeyH",
+          "text": "H"
+        },
+        {
+          "type": "action",
+          "code": "KeyJ",
+          "legend": "J",
+          "id": "ACTIVATE",
+          "fallbackText": "ACTIVATE"
+        },
+        {
+          "type": "action",
+          "code": "KeyK",
+          "legend": "K",
+          "id": "BACK",
+          "fallbackText": "BACK"
+        },
+        {
+          "type": "action",
+          "code": "KeyL",
+          "legend": "L",
+          "id": "ROOT",
+          "fallbackText": "ROOT"
+        },
+        {
+          "type": "key",
+          "code": "Semicolon",
+          "text": ";"
+        },
+        {
+          "type": "action",
+          "code": "Quote",
+          "legend": "'",
+          "id": "OPEN_SETTINGS_POPOVER",
+          "fallbackText": "OPEN_SETTINGS_POPOVER"
+        },
+        {
+          "type": "special",
+          "code": "Enter",
+          "text": "Enter",
+          "className": "key key-enter"
+        }
+      ],
+      [
+        {
+          "type": "special",
+          "code": "ShiftLeft",
+          "text": "Shift",
+          "className": "key key-shift"
+        },
+        {
+          "type": "key",
+          "code": "KeyZ",
+          "text": "Z"
+        },
+        {
+          "type": "key",
+          "code": "KeyX",
+          "text": "X"
+        },
+        {
+          "type": "key",
+          "code": "KeyC",
+          "text": "C"
+        },
+        {
+          "type": "key",
+          "code": "KeyV",
+          "text": "V"
+        },
+        {
+          "type": "key",
+          "code": "KeyB",
+          "text": "B"
+        },
+        {
+          "type": "key",
+          "code": "KeyN",
+          "text": "N"
+        },
+        {
+          "type": "key",
+          "code": "KeyM",
+          "text": "M"
+        },
+        {
+          "type": "key",
+          "code": "Comma",
+          "text": ","
+        },
+        {
+          "type": "key",
+          "code": "Period",
+          "text": "."
+        },
+        {
+          "type": "key",
+          "code": "Slash",
+          "text": "/"
+        },
+        {
+          "type": "key",
+          "code": "IntlRo",
+          "text": "ろ"
+        },
+        {
+          "type": "special",
+          "code": "ShiftRight",
+          "text": "Shift",
+          "className": "key key-shift"
+        }
+      ]
+    ]
+  }
 };
   const EARLY_KEYBINDINGS_BY_ID = {
   "browsing-right": {
@@ -8665,6 +16092,20 @@
     } catch { /* ignore */ }
   }
 
+  function normalizeEarlyKeyboardHardwareLayoutId(rawId) {
+    const id = String(rawId || '').trim();
+    try {
+      if (
+        typeof KEYBOARD_LAYOUTS_BY_HARDWARE_ID === 'object'
+        && KEYBOARD_LAYOUTS_BY_HARDWARE_ID
+        && KEYBOARD_LAYOUTS_BY_HARDWARE_ID[id]
+      ) {
+        return id;
+      }
+    } catch { /* ignore */ }
+    return 'us-ansi-qwerty';
+  }
+
   /**
    * Apply built-in layout id + family + custom-layout flag from a settings object.
    * Does not render; callers re-paint when layoutChanged / customLayoutChanged.
@@ -8682,7 +16123,9 @@
     keyboardLayoutFamilyId = nextFamily;
     keyboardUsesCustomLayout = nextUsesCustom;
     keyboardCustomLayoutSel = nextCustomSel;
-    keyboardHardwareLayoutId = String(obj?.keyboardHardwareLayoutId || '').trim();
+    keyboardHardwareLayoutId = normalizeEarlyKeyboardHardwareLayoutId(
+      obj?.keyboardHardwareLayoutId
+    );
     applyEarlyLayoutSelect();
     return { layoutChanged, familyChanged, customLayoutChanged };
   }
@@ -8771,15 +16214,30 @@
   function getEarlyKeyboardDataForLayout(layoutId) {
     const id = normalizeKeyboardLayoutId(layoutId);
     try {
-      const layout = (typeof KEYBOARD_LAYOUTS_BY_ID === 'object' && KEYBOARD_LAYOUTS_BY_ID && KEYBOARD_LAYOUTS_BY_ID[id])
-        ? KEYBOARD_LAYOUTS_BY_ID[id]
-        : KEYBINDINGS_KEYBOARD_LAYOUT;
+      const hardwareId = normalizeEarlyKeyboardHardwareLayoutId(keyboardHardwareLayoutId);
+      const layoutsForHardware = (
+        typeof KEYBOARD_LAYOUTS_BY_HARDWARE_ID === 'object'
+        && KEYBOARD_LAYOUTS_BY_HARDWARE_ID
+        && KEYBOARD_LAYOUTS_BY_HARDWARE_ID[hardwareId]
+      ) || null;
+      const layout = (layoutsForHardware && layoutsForHardware[id])
+        || (
+          typeof KEYBOARD_LAYOUTS_BY_ID === 'object'
+          && KEYBOARD_LAYOUTS_BY_ID
+          && KEYBOARD_LAYOUTS_BY_ID[id]
+        )
+        || KEYBINDINGS_KEYBOARD_LAYOUT;
       const bindings = (typeof EARLY_KEYBINDINGS_BY_ID === 'object' && EARLY_KEYBINDINGS_BY_ID && EARLY_KEYBINDINGS_BY_ID[id])
         ? EARLY_KEYBINDINGS_BY_ID[id]
         : EARLY_KEYBINDINGS;
-      return { id, layout, bindings };
+      return { id, hardwareId, layout, bindings };
     } catch {
-      return { id: DEFAULT_KEYBOARD_LAYOUT_ID || 'browsing-right', layout: KEYBINDINGS_KEYBOARD_LAYOUT, bindings: EARLY_KEYBINDINGS };
+      return {
+        id: DEFAULT_KEYBOARD_LAYOUT_ID || 'browsing-right',
+        hardwareId: 'us-ansi-qwerty',
+        layout: KEYBINDINGS_KEYBOARD_LAYOUT,
+        bindings: EARLY_KEYBINDINGS
+      };
     }
   }
 
@@ -8977,20 +16435,22 @@
     if (existing && existing.dataset && existing.dataset.kpKeyboardBuilt === 'true') {
       const existingLayoutId = String(existing.dataset.kpLayoutId || '');
       const existingNum = existing.dataset.kpNumRow === '1';
-      if ((!existingLayoutId || existingLayoutId === desired) && existingNum === wantNumRow) return;
+      const existingKey = `${desired}:${normalizeEarlyKeyboardHardwareLayoutId(keyboardHardwareLayoutId)}`;
+      if ((!existingLayoutId || existingLayoutId === existingKey) && existingNum === wantNumRow) return;
       // Layout or number-row mode changed: re-render so bounds stay correct on first paint.
     }
 
     container.textContent = '';
+    const data = getEarlyKeyboardDataForLayout(desired);
+    const paintKey = `${desired}:${data.hardwareId}`;
     const visual = el(doc, 'div', 'keyboard-visual kp-keybindings-ui');
     visual.dataset.kpKeyboardBuilt = 'true';
     try {
-      visual.dataset.kpLayoutId = desired;
+      visual.dataset.kpLayoutId = paintKey;
       visual.dataset.kpNumRow = wantNumRow ? '1' : '0';
     } catch { /* ignore */ }
     container.appendChild(visual);
 
-    const data = getEarlyKeyboardDataForLayout(desired);
     let layout = data.layout || KEYBINDINGS_KEYBOARD_LAYOUT;
     if (wantNumRow) {
       try { layout = addNumberRowToEarlyKeyboardLayout(layout); } catch { /* ignore */ }
@@ -9839,6 +17299,21 @@
       if (typeof cachedLayout.keyboardReferenceCollapsed === 'boolean') {
         keyboardReferenceCollapsed = cachedLayout.keyboardReferenceCollapsed;
       }
+      if (typeof cachedLayout.keyboardReferenceVisible === 'boolean') {
+        keyboardHelpVisible = cachedLayout.keyboardReferenceVisible;
+      }
+      if (typeof cachedLayout.keyboardHardwareLayoutId === 'string') {
+        keyboardHardwareLayoutId = cachedLayout.keyboardHardwareLayoutId;
+      }
+      if (typeof cachedLayout.keyboardLayoutId === 'string') {
+        keyboardLayoutId = cachedLayout.keyboardLayoutId;
+      }
+      if (typeof cachedLayout.keyboardLayoutFamilyId === 'string') {
+        keyboardLayoutFamilyId = cachedLayout.keyboardLayoutFamilyId;
+      }
+      if (typeof cachedLayout.keyboardReferenceShowNumberRow === 'boolean') {
+        keyboardShowNumberRow = cachedLayout.keyboardReferenceShowNumberRow;
+      }
       if (cachedLayout.controlStrip && typeof cachedLayout.controlStrip === 'object') {
         if (typeof cachedLayout.controlStrip.visible === 'boolean') {
           controlStripDesiredVisible = cachedLayout.controlStrip.visible;
@@ -9849,6 +17324,17 @@
       }
     }
   } catch { /* ignore */ }
+
+  function cacheKeyboardReferenceSnapshot() {
+    cacheEarlyChromeLayout({
+      keyboardReferenceVisible: keyboardHelpVisible,
+      keyboardReferenceCollapsed: keyboardReferenceCollapsed,
+      keyboardReferenceShowNumberRow: keyboardShowNumberRow,
+      keyboardHardwareLayoutId: normalizeEarlyKeyboardHardwareLayoutId(keyboardHardwareLayoutId),
+      keyboardLayoutId: keyboardLayoutId,
+      keyboardLayoutFamilyId: keyboardLayoutFamilyId
+    });
+  }
 
   function readEarlyPanelPositionsFromSettingsObj(settingsObj) {
     try {
@@ -10682,12 +18168,7 @@
       }
     } catch { /* ignore */ }
     const customReady = !keyboardUsesCustomLayout || !!getEarlyActiveUserLayout();
-    // Early paint is the US ANSI model. Another hardware layout (for example
-    // JIS) has to stay hidden until the bundled renderer paints it, or the
-    // extra keys visibly pop into an already-open window.
-    const hardwareId = String(keyboardHardwareLayoutId || '').trim();
-    const hardwareReady = !hardwareId || hardwareId === 'us-ansi-qwerty';
-    const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && customReady && hardwareReady);
+    const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && customReady);
     if (shouldShow) {
       try { ensureEarlyChromeHostMounted(keyboardHelpRoot); } catch { /* ignore */ }
       setupEarlyKeyboardHelpHostGuard();
@@ -10734,6 +18215,7 @@
       };
       write(chrome.storage.sync);
       write(chrome.storage.local);
+      cacheEarlyChromeLayout({ keyboardReferenceVisible: !!visible });
     } catch { /* ignore */ }
   }
 
@@ -10983,14 +18465,34 @@
     let settingsObj = null;
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.sync.get([
-          'keypilot_enabled',
-          KEYBOARD_HELP_STORAGE_KEY,
-          SETTINGS_STORAGE_KEY,
-          KEYBOARD_LAYOUT_STORE_KEY
-        ]);
+        const areas = [chrome.storage.local, chrome.storage.sync];
+        let result = null;
+        for (const area of areas) {
+          try {
+            const next = await area.get([
+              'keypilot_enabled',
+              KEYBOARD_HELP_STORAGE_KEY,
+              SETTINGS_STORAGE_KEY,
+              KEYBOARD_LAYOUT_STORE_KEY
+            ]);
+            if (
+              next
+              && (
+                typeof next[KEYBOARD_HELP_STORAGE_KEY] === 'boolean'
+                || next[SETTINGS_STORAGE_KEY]
+              )
+            ) {
+              result = next;
+              break;
+            }
+            result = result || next;
+          } catch { /* try the other area */ }
+        }
+        result = result || {};
         isExtensionEnabled = result.keypilot_enabled !== false; // Default to true
-        keyboardHelpVisible = await getKeyboardHelpVisibleFromStorage();
+        keyboardHelpVisible = typeof result[KEYBOARD_HELP_STORAGE_KEY] === 'boolean'
+          ? result[KEYBOARD_HELP_STORAGE_KEY]
+          : keyboardHelpVisible;
         try {
           settingsObj = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object'
             ? result[SETTINGS_STORAGE_KEY]
@@ -11032,6 +18534,7 @@
       try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
     }
     applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+    try { cacheKeyboardReferenceSnapshot(); } catch { /* ignore */ }
     setupKeyboardHelpStorageListener();
     setupCursorSettingsListener();
     setupKeyboardLayoutStoreListener();
@@ -11758,13 +19261,23 @@
       }
     } catch { /* ignore */ }
 
-    // Resolve before any storage-driven Keyboard Reference paint so separate-window
-    // Link Preview / Open Popover never reveals the panel.
+    // Paint a cached Keyboard Reference before any service-worker round trip.
+    // A new site otherwise stays blank until storage returns, which reads as
+    // the whole window flashing in. A popover-window result hides it afterward.
     try {
-      isPopoverOsWindow = await queryAmIPopoverWindow();
-    } catch {
+      if (keyboardHelpVisible && keyboardHardwareLayoutId) {
+        ensureEarlyFloatingKeyboardHelpShell();
+        applyEarlyKeyboardHelpVisibility(true);
+      }
+    } catch { /* ignore */ }
+
+    const popoverCheck = queryAmIPopoverWindow().then((isPopover) => {
+      isPopoverOsWindow = !!isPopover;
+      if (!isPopoverOsWindow) return;
+      try { applyEarlyKeyboardHelpVisibility(false); } catch { /* ignore */ }
+    }).catch(() => {
       isPopoverOsWindow = false;
-    }
+    });
 
     // Onboarding + control strip shells should appear as early as possible to avoid UI pop-in.
     // The bundled content script will adopt this DOM and hydrate it later.
@@ -11775,12 +19288,12 @@
       if (themeReady) applyEarlyControlStripVisibility();
       // Storage determines whether the already-created Keyboard Reference shell
       // is shown. Keep it absent from separate popover OS windows.
-      if (!isPopoverOsWindow) {
+      if (!isPopoverOsWindow && keyboardHardwareLayoutId) {
         ensureEarlyFloatingKeyboardHelpShell();
         if (themeReady) applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
       }
     } catch { /* ignore */ }
-    await checkExtensionState();
+    await Promise.all([popoverCheck, checkExtensionState()]);
 
     // Always start keyboard capture for Alt+K toggle, regardless of extension state
     startEarlyKeyboardCapture();

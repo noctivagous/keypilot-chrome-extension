@@ -62,6 +62,7 @@ export async function waitForExtension(port, timeoutMs = 20_000) {
 
 export async function findKeyPilotContext(client, timeoutMs = 25_000) {
   const started = Date.now();
+  try { await client.Runtime.enable(); } catch { /* already enabled */ }
   while (Date.now() - started < timeoutMs) {
     for (const context of client._kpContexts.values()) {
       try {
@@ -196,17 +197,13 @@ export async function overlayOpen(session) {
   );
 }
 
-export async function clickSelector(session, selector) {
-  const rect = await waitUntil(
-    async () => {
-      const next = await box(session, selector);
-      return next?.visible ? next : null;
-    },
-    12_000,
-    `Click target not visible: ${selector}`
+export async function pageHref(session) {
+  return String(
+    await evaluate(session.client, 'window.__KP_UI_FLOW.href()', false, session.contextId) || ''
   );
-  const x = rect.x + rect.width / 2;
-  const y = rect.y + rect.height / 2;
+}
+
+export async function clickPoint(session, x, y) {
   await session.client.Input.dispatchMouseEvent({
     type: 'mouseMoved', x, y, button: 'none', buttons: 0, pointerType: 'mouse'
   });
@@ -216,6 +213,18 @@ export async function clickSelector(session, selector) {
   await session.client.Input.dispatchMouseEvent({
     type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1, pointerType: 'mouse'
   });
+}
+
+export async function clickSelector(session, selector) {
+  const rect = await waitUntil(
+    async () => {
+      const next = await box(session, selector);
+      return next?.visible ? next : null;
+    },
+    12_000,
+    `Click target not visible: ${selector}`
+  );
+  await clickPoint(session, rect.x + rect.width / 2, rect.y + rect.height / 2);
 }
 
 export async function hoverSelector(session, selector) {
@@ -232,6 +241,27 @@ export async function hoverSelector(session, selector) {
   await session.client.Input.dispatchMouseEvent({
     type: 'mouseMoved', x, y, button: 'none', buttons: 0, pointerType: 'mouse'
   });
+  await evaluate(
+    session.client,
+    `(() => {
+      const x = ${JSON.stringify(x)};
+      const y = ${JSON.stringify(y)};
+      const ev = new PointerEvent('pointermove', {
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        pointerType: 'mouse',
+        pointerId: 1
+      });
+      const hit = document.elementFromPoint(x, y) || document.documentElement;
+      hit.dispatchEvent(ev);
+      document.dispatchEvent(ev);
+    })()`,
+    false,
+    session.contextId
+  );
 }
 
 function virtualKeyFromCode(code, key) {
@@ -251,12 +281,14 @@ export async function pressKey(session, { key, code }) {
     key,
     code,
     windowsVirtualKeyCode,
-    nativeVirtualKeyCode: windowsVirtualKeyCode,
-    unmodifiedText: key.length === 1 ? key : '',
-    text: key.length === 1 ? key : ''
+    nativeVirtualKeyCode: windowsVirtualKeyCode
   };
-  await session.client.Input.dispatchKeyEvent({ type: 'keyDown', ...payload });
-  await session.client.Input.dispatchKeyEvent({ type: 'keyUp', ...payload });
+  const text = key.length === 1 ? key : '';
+  await session.client.Input.dispatchKeyEvent({ type: 'rawKeyDown', ...payload });
+  if (text) {
+    await session.client.Input.dispatchKeyEvent({ type: 'char', ...payload, text, unmodifiedText: text });
+  }
+  await session.client.Input.dispatchKeyEvent({ type: 'keyUp', ...payload, text, unmodifiedText: text });
 }
 
 export async function listPageTargets(port) {

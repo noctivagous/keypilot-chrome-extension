@@ -2,21 +2,21 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
+import { KEYBOARD_HARDWARE_LAYOUTS } from '../extension/src/config/keyboard-hardware-layouts.js';
+
 const early = readFileSync('extension/early-inject.js', 'utf8');
 const keyboardHelp = readFileSync('extension/src/ui/floating-keyboard-help.js', 'utf8');
 
 describe('early Keyboard Reference bootstrap', () => {
-  it('does not reveal a non-ANSI hardware layout from the early shell', () => {
-    const gate = early.indexOf("hardwareId === 'us-ansi-qwerty'");
-    const reveal = early.indexOf('const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && customReady && hardwareReady)');
-    assert.ok(gate > 0, 'early visibility knows the ANSI hardware model');
-    assert.ok(reveal > gate, 'reveal waits until the painted hardware model matches');
+  it('stamps every shipped hardware model into the early renderer', () => {
+    assert.match(early, /const KEYBOARD_LAYOUTS_BY_HARDWARE_ID =/);
+    for (const hardwareLayoutId of Object.keys(KEYBOARD_HARDWARE_LAYOUTS)) {
+      assert.match(early, new RegExp(`"${hardwareLayoutId}"`));
+    }
   });
 
-  it('renders a different hardware layout before the bundled window is revealed', () => {
-    const wait = keyboardHelp.indexOf('!this._earlyBuiltinPaintMatches(builtinLayoutId, hardwareLayoutId)');
-    const render = keyboardHelp.indexOf('void this._renderAsync().finally(() => reveal({ render: false }))', wait);
-    assert.ok(wait > 0, 'bundled show checks the early hardware paint');
-    assert.ok(render > wait, 'mismatched hardware renders before reveal');
+  it('uses matching layout keys so the bundled renderer adopts early hardware paint', () => {
+    assert.match(early, /const paintKey = `\$\{desired\}:\$\{data\.hardwareId\}`/);
+    assert.match(keyboardHelp, /_earlyBuiltinPaintMatches\(builtinLayoutId, hardwareLayoutId\)/);
   });
 });

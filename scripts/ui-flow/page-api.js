@@ -82,9 +82,15 @@
     probe,
     paintedTasks,
     overlayOpen() {
-      const overlay = queryDeep('[data-kp-onboarding-overlay="true"]');
-      const box = boxOf(overlay);
+      const primary = queryDeep('button[data-kp-onboarding-overlay-primary="true"]');
+      const box = boxOf(primary);
       return Boolean(box?.visible);
+    },
+    clickOverlayPrimary() {
+      const primary = queryDeep('button[data-kp-onboarding-overlay-primary="true"]');
+      if (!primary) return false;
+      primary.click();
+      return true;
     },
     onboarding() {
       const ob = window.__KeyPilotOnboarding;

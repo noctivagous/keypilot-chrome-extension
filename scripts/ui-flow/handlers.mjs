@@ -8,11 +8,14 @@ import {
 import {
   box,
   CHROME_SELECTORS,
+  clickPoint,
   clickSelector,
+  evaluate,
   hoverSelector,
   listPageTargets,
   onboardingState,
   overlayOpen,
+  pageHref,
   paintedTasks,
   pressKey,
   reconnectIfNeeded,
@@ -55,12 +58,25 @@ async function pressLayoutAction(session, action) {
   await pressKey(session, layoutAssignment(functionId));
 }
 
-async function waitTaskDone(session, taskId, timeoutMs = 15_000) {
+async function recover(session, ctx) {
+  if (!ctx?.port) return session;
+  return reconnectIfNeeded(session, ctx.port, ctx.origin);
+}
+
+async function waitTaskDone(session, taskId, ctx, timeoutMs = 15_000) {
   await waitUntil(async () => {
-    const state = await onboardingState(session);
-    if (state.completedTaskIds?.includes(String(taskId))) return true;
-    const rows = await paintedTasks(session);
-    return rows.some((row) => row.id === taskId && row.done);
+    try {
+      const state = await onboardingState(session);
+      if (state.completedTaskIds?.includes(String(taskId))) return true;
+      const rows = await paintedTasks(session);
+      return rows.some((row) => row.id === taskId && row.done);
+    } catch (error) {
+      if (/context/i.test(String(error.message || error))) {
+        await recover(session, ctx);
+        return false;
+      }
+      throw error;
+    }
   }, timeoutMs, `Task "${taskId}" did not complete`);
 }
 
@@ -76,24 +92,30 @@ const HANDLERS = {
   'action|activate|link||': async (session, task, ctx) => {
     await hoverPracticeLink(session);
     await pressLayoutAction(session, 'activate');
-    try {
-      await waitTaskDone(session, task.id, 8_000);
-    } catch {
-      await reconnectIfNeeded(session, ctx.port, ctx.origin);
-      await waitTaskDone(session, task.id);
-    }
+    await waitUntil(async () => {
+      try {
+        await recover(session, ctx);
+        return /next\.html/.test(await pageHref(session));
+      } catch {
+        return false;
+      }
+    }, 8_000, 'F-click did not navigate to next.html');
+    await settlePage(session, ctx);
+    await waitTaskDone(session, task.id, ctx);
   },
   'action|back|||': async (session, task, ctx) => {
+    await settlePage(session, ctx);
+    await clickPoint(session, 640, 420);
     await pressLayoutAction(session, 'back');
-    await reconnectIfNeeded(session, ctx.port, ctx.origin);
-    await waitTaskDone(session, task.id);
+    await settlePage(session, ctx);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|hover|keyboardHelpKey||': async (session, task) => {
+  'action|hover|keyboardHelpKey||': async (session, task, ctx) => {
     await hoverSelector(session, CHROME_SELECTORS.keyboardKeyAny);
     await sleep(200);
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|toggleExtension|||off': async (session, task) => {
+  'action|toggleExtension|||off': async (session, task, ctx) => {
     await clickSelector(session, CHROME_SELECTORS.controlStripStatus);
     await waitUntil(
       async () => {
@@ -114,32 +136,33 @@ const HANDLERS = {
       'Re-enable tip did not appear'
     );
     await clickSelector(session, CHROME_SELECTORS.controlStripStatus);
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'mode|||text_focus|enter': async (session, task) => {
+  'mode|||text_focus|enter': async (session, task, ctx) => {
     await hoverSelector(session, CHROME_SELECTORS.practiceField);
+    await sleep(250);
     await pressLayoutAction(session, 'activate');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'mode|||text_focus|exit': async (session, task) => {
+  'mode|||text_focus|exit': async (session, task, ctx) => {
     await pressKey(session, { key: 'Escape', code: 'Escape' });
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|scrollDown|||': async (session, task) => {
+  'action|scrollDown|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'scrollDown');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|scrollUp|||': async (session, task) => {
+  'action|scrollUp|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'scrollUp');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|scrollBottom|||': async (session, task) => {
+  'action|scrollBottom|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'scrollBottom');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|scrollTop|||': async (session, task) => {
+  'action|scrollTop|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'scrollTop');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
   'action|activateNewTabBackground|link||': async (session, task, ctx) => {
     const before = (await listPageTargets(ctx.port)).length;
@@ -150,32 +173,51 @@ const HANDLERS = {
       10_000,
       'Background tab did not open'
     );
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
   'action|activateNewTab|link||': async (session, task, ctx) => {
     await hoverPracticeLink(session);
     await pressLayoutAction(session, 'activateNewTab');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|newTab|||': async (session, task) => {
+  'action|newTab|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'newTab');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|tabLeft|||': async (session, task) => {
+  'action|tabLeft|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'tabLeft');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   },
-  'action|tabRight|||': async (session, task) => {
+  'action|tabRight|||': async (session, task, ctx) => {
     await pressLayoutAction(session, 'tabRight');
-    await waitTaskDone(session, task.id);
+    await waitTaskDone(session, task.id, ctx);
   }
 };
 
 export async function dismissOverlayIfOpen(session) {
-  const open = await overlayOpen(session);
-  if (!open) return;
-  await clickSelector(session, CHROME_SELECTORS.overlayPrimary);
+  const clicked = await evaluate(
+    session.client,
+    'window.__KP_UI_FLOW.clickOverlayPrimary()',
+    false,
+    session.contextId
+  ).catch(() => false);
+  if (!clicked) {
+    const open = await overlayOpen(session).catch(() => false);
+    if (!open) return;
+    await clickSelector(session, CHROME_SELECTORS.overlayPrimary);
+  }
   await waitUntil(async () => !(await overlayOpen(session)), 10_000, 'Onboarding overlay did not dismiss');
+}
+
+async function settlePage(session, ctx) {
+  await recover(session, ctx);
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    if (await overlayOpen(session).catch(() => false)) {
+      await dismissOverlayIfOpen(session);
+      return;
+    }
+    await sleep(80);
+  }
 }
 
 export async function runWhenHandler(session, task, ctx) {
@@ -184,5 +226,6 @@ export async function runWhenHandler(session, task, ctx) {
   if (!handler) {
     throw new Error(`No UI-flow handler for when "${key}" (task ${task.id})`);
   }
+  await settlePage(session, ctx);
   await handler(session, task, ctx);
 }

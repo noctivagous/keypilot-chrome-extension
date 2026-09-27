@@ -13,7 +13,12 @@ export const CHROME_LAYOUT_CACHE_KEY = 'kp_chrome_layout_v1';
  *     keyboardReference?: { left?: number, top?: number, anchor?: string|null }
  *   },
  *   controlStrip?: { visible?: boolean, collapsed?: boolean },
- *   keyboardReferenceCollapsed?: boolean
+ *   keyboardReferenceCollapsed?: boolean,
+ *   keyboardReferenceVisible?: boolean,
+ *   keyboardHardwareLayoutId?: string,
+ *   keyboardLayoutId?: string,
+ *   keyboardLayoutFamilyId?: string,
+ *   keyboardReferenceShowNumberRow?: boolean
  * }|null}
  */
 export function peekChromeLayoutCache() {
@@ -49,6 +54,21 @@ export function cacheChromeLayout(patch) {
     }
     if (typeof patch.keyboardReferenceCollapsed === 'boolean') {
       next.keyboardReferenceCollapsed = patch.keyboardReferenceCollapsed;
+    }
+    if (typeof patch.keyboardReferenceVisible === 'boolean') {
+      next.keyboardReferenceVisible = patch.keyboardReferenceVisible;
+    }
+    if (typeof patch.keyboardHardwareLayoutId === 'string') {
+      next.keyboardHardwareLayoutId = patch.keyboardHardwareLayoutId;
+    }
+    if (typeof patch.keyboardLayoutId === 'string') {
+      next.keyboardLayoutId = patch.keyboardLayoutId;
+    }
+    if (typeof patch.keyboardLayoutFamilyId === 'string') {
+      next.keyboardLayoutFamilyId = patch.keyboardLayoutFamilyId;
+    }
+    if (typeof patch.keyboardReferenceShowNumberRow === 'boolean') {
+      next.keyboardReferenceShowNumberRow = patch.keyboardReferenceShowNumberRow;
     }
     localStorage.setItem(CHROME_LAYOUT_CACHE_KEY, JSON.stringify(next));
   } catch { /* ignore */ }

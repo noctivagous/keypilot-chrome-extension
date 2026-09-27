@@ -1,6 +1,7 @@
 import {
   ensureSession,
   onboardingState,
+  overlayOpen,
   paintedTasks,
   reconnectIfNeeded,
   waitUntil
@@ -39,11 +40,14 @@ export async function walkOnboardingModel(session, model, ctx) {
     }
 
     const hasOverlay = (slide.onEnter || []).some((entry) => entry.type === 'overlay');
-    if (hasOverlay) {
+    if (hasOverlay && !state.completed) {
+      await waitUntil(async () => overlayOpen(session), 12_000, `Overlay did not open on slide "${slide.id}"`);
       await dismissOverlayIfOpen(session);
     }
 
-    await assertPaintedTasksMatch(session, slide);
+    if (!state.completed) {
+      await assertPaintedTasksMatch(session, slide);
+    }
 
     for (const task of slide.tasks || []) {
       const progress = await onboardingState(session);
@@ -57,8 +61,8 @@ export async function walkOnboardingModel(session, model, ctx) {
   }
 
   await waitUntil(async () => {
-    const state = await onboardingState(session);
-    return Boolean(state.completed);
+    const next = await onboardingState(session);
+    return Boolean(next.completed);
   }, 15_000, 'Walkthrough did not mark progress.completed');
   console.log('  Flow 2: walkthrough model completed');
 }

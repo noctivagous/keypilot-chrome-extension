@@ -18,6 +18,7 @@ import {
   getKeyboardUiLayoutForLayout,
   inferFamilyAndHandednessFromLayoutId
 } from './src/config/keyboard-layouts.js';
+import { KEYBOARD_HARDWARE_LAYOUTS } from './src/config/keyboard-hardware-layouts.js';
 import { FUNCTION_LIBRARY } from './src/config/function-library.js';
 import {
   KEYBINDINGS_KEYBOARD_LAYOUT,
@@ -352,6 +353,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       .map((m) => [`builtin:${m.id}`, m.labelKey]);
 
     const keyboardLayoutsById = {};
+    const keyboardLayoutsByHardwareId = {};
     const earlyKeybindingsById = {};
 
     // Union of all action IDs across all stamped layouts.
@@ -360,6 +362,13 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       const layout = getKeyboardUiLayoutForLayout(layoutId);
       keyboardLayoutsById[layoutId] = layout;
       for (const id of collectActionIdsFromLayout(layout)) actionIds.add(id);
+    }
+    for (const hardwareLayoutId of Object.keys(KEYBOARD_HARDWARE_LAYOUTS || {})) {
+      keyboardLayoutsByHardwareId[hardwareLayoutId] = {};
+      for (const layoutId of builtinLayoutIds) {
+        keyboardLayoutsByHardwareId[hardwareLayoutId][layoutId] =
+          getKeyboardUiLayoutForLayout(layoutId, { hardwareLayoutId });
+      }
     }
     // System-layer actions (KB Reference, Settings, Cancel) live outside layout
     // assignments. Stamp them too so early-inject paints class + letter on first frame.
@@ -477,6 +486,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  const KNOWN_BUILTIN_LAYOUT_IDS = ${JSON.stringify(builtinLayoutIds)};\n` +
       `  const EARLY_LAYOUT_FAMILY_OPTIONS = ${JSON.stringify(earlyLayoutFamilyOptions)};\n` +
       `  const KEYBOARD_LAYOUTS_BY_ID = ${JSON.stringify(keyboardLayoutsById, null, 2)};\n` +
+      `  const KEYBOARD_LAYOUTS_BY_HARDWARE_ID = ${JSON.stringify(keyboardLayoutsByHardwareId, null, 2)};\n` +
       `  const EARLY_KEYBINDINGS_BY_ID = ${JSON.stringify(earlyKeybindingsById, null, 2)};\n` +
       `  const KEYBINDINGS_KEYBOARD_LAYOUT = ${JSON.stringify(layout, null, 2)};\n` +
       `  const EARLY_KEYBINDINGS = ${JSON.stringify(earlyKeybindings, null, 2)};\n` +

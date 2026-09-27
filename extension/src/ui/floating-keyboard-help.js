@@ -908,13 +908,12 @@ export class FloatingKeyboardHelp {
       );
       if (
         hardwareLayoutId
-        && hardwareLayoutId !== 'us-ansi-qwerty'
         && !this._earlyBuiltinPaintMatches(builtinLayoutId, hardwareLayoutId)
       ) {
         void this._renderAsync().finally(() => reveal({ render: false }));
         return;
       }
-      reveal();
+      reveal({ render: false });
     };
 
     if (this._positionHydrated) {

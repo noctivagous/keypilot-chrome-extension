@@ -12,25 +12,34 @@
       color: #1b1f24;
     }
     .stage {
-      position: relative;
       margin-left: 400px;
-      padding: 80px 32px 32px;
+      padding: 160px 32px 32px;
       min-height: 4200px;
+    }
+    .practice {
+      position: fixed;
+      top: 72px;
+      right: 28px;
+      z-index: 1;
+      width: 280px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #c5c0b6;
     }
     a { color: #0b57d0; }
     input[type="text"] {
       display: block;
-      margin: 16px 0 24px;
+      margin: 8px 0 0;
       padding: 10px 12px;
-      min-width: 280px;
+      width: 100%;
+      box-sizing: border-box;
       font: inherit;
     }
     .filler { color: #6b7280; max-width: 40em; }
   </style>
 </head>
 <body>
-  <main class="stage">
-    <h1>UI flow fixture</h1>
+  <div class="practice">
     <p>
       <a id="practice-link" href="/next.html">Practice link to the next page</a>
     </p>
@@ -39,6 +48,9 @@
     </p>
     <label for="practice-field">Practice text field</label>
     <input id="practice-field" type="text" name="q" autocomplete="off" />
+  </div>
+  <main class="stage">
+    <h1>UI flow fixture</h1>
     <div class="filler">
       <p>Tall page so scroll tasks can move the viewport.</p>
       <p>Alpha Bravo Charlie Delta Echo Foxtrot Golf Hotel India Juliet.</p>
