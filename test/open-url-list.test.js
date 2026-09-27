@@ -115,4 +115,18 @@ describe('open URL list', () => {
     assert.equal(buildKeybindingsForLayout('basic-navigation-right')['stock:random-bookmark'], undefined);
     assert.equal(buildKeybindingsForLayout('click-history-left')['stock:random-bookmark'], undefined);
   });
+
+  it('resolves stock instance key-info when the Function id is not in the layout map', async () => {
+    const { resolveKeybinding, buildKeybindingsForLayout } = await import('../extension/src/config/keyboard-layouts.js');
+    const layoutKb = buildKeybindingsForLayout('click-history-right');
+    assert.equal(layoutKb['stock:social-media'], undefined);
+    assert.equal(resolveKeybinding('OPEN_URLS', layoutKb), null);
+    const social = resolveKeybinding('stock:social-media', layoutKb);
+    assert.equal(social.handler, 'handleOpenUrlsKey');
+    assert.equal(social.functionId, 'OPEN_URLS');
+    assert.ok(social.label);
+    const random = resolveKeybinding('stock:random-bookmark', {});
+    assert.equal(random.handler, 'handleRandomBookmarkKey');
+    assert.equal(random.functionId, 'RANDOM_BOOKMARK');
+  });
 });

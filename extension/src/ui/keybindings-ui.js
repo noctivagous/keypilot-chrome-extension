@@ -84,6 +84,26 @@ function actionHasSettings(actionId) {
     || actionHasParameters(id);
 }
 
+/**
+ * Custom-layout keycaps paint `data-kp-action-id` as the Function id so icon CSS
+ * matches, and stamp the Action Instance on `data-kp-instance-id`. Hover lookup
+ * must prefer that instance (stock:social-media, action:…) — Function ids such
+ * as OPEN_URLS are not in layout keybindings, so the tooltip never opened.
+ * @param {HTMLElement|null|undefined} keyEl
+ * @param {Record<string, any>|null|undefined} keybindings
+ * @returns {{ actionId: string, binding: any|null }}
+ */
+function resolveBindingForKeyEl(keyEl, keybindings) {
+  const actionId = String(keyEl?.dataset?.kpActionId || '');
+  const instanceId = String(keyEl?.dataset?.kpInstanceId || '');
+  const ids = [...new Set([instanceId, actionId].filter(Boolean))];
+  for (const id of ids) {
+    const binding = resolveKeybinding(id, keybindings);
+    if (binding) return { actionId: id, binding };
+  }
+  return { actionId, binding: null };
+}
+
 function getRuntimeFontUrls() {
   try {
     const getURL = (typeof chrome !== 'undefined' && chrome && chrome.runtime && chrome.runtime.getURL)
@@ -1130,39 +1150,43 @@ export function pinKeyPopover(actionId, opts = {}) {
   let keyEl = opts.keyEl || null;
   if (!keyEl) {
     try {
-      keyEl = root.querySelector(`[data-kp-action-id="${CSS.escape(actionId)}"]`);
+      const esc = CSS.escape(actionId);
+      keyEl = root.querySelector(`[data-kp-action-id="${esc}"], [data-kp-instance-id="${esc}"]`);
     } catch {
-      keyEl = root.querySelector(`[data-kp-action-id="${actionId}"]`);
+      keyEl = root.querySelector(`[data-kp-action-id="${actionId}"], [data-kp-instance-id="${actionId}"]`);
     }
   }
   if (!keyEl) return false;
 
-  const binding = resolveKeybinding(actionId, keybindings);
+  const resolved = resolveBindingForKeyEl(keyEl, keybindings);
+  const binding = resolved.binding;
+  const popoverActionId = resolved.actionId || actionId;
   if (!binding) return false;
+  const pinId = keyEl.dataset?.kpActionId || actionId;
 
   // Same key already in settings mode: a second Click Element (or pin call)
   // returns the popover to hover styling. Mouse clicks toggle in handleKeyClick
   // instead; untrusted clicks are ignored there so this path is not doubled.
-  if (_pinnedActionId === actionId && _pinnedKeyEl === keyEl) {
+  if (_pinnedActionId === pinId && _pinnedKeyEl === keyEl) {
     if (root._kpKeyHandlers) {
       try { clearTimeout(root._kpKeyHandlers.hideTimer); } catch { /* ignore */ }
       root._kpKeyHandlers.hideTimer = null;
     }
     _pinnedActionId = null;
     _pinnedKeyEl = null;
-    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, pinned: false });
+    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId: popoverActionId, pinned: false });
     return true;
   }
 
-  _pinnedActionId = actionId;
+  _pinnedActionId = pinId;
   _pinnedKeyEl = keyEl;
   if (root._kpKeyHandlers) {
     try { clearTimeout(root._kpKeyHandlers.hideTimer); } catch { /* ignore */ }
     root._kpKeyHandlers.hideTimer = null;
   }
 
-  showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, pinned: true });
-  emitKeyboardHelpKeyHover({ actionId, keyEl });
+  showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId: popoverActionId, pinned: true });
+  emitKeyboardHelpKeyHover({ actionId: popoverActionId, keyEl });
   return true;
 }
 
@@ -1251,12 +1275,14 @@ export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot, pinOn
     try {
       if (keyEl.classList?.contains('kp-key-text-mode-disabled')) return;
     } catch { /* ignore */ }
-    const actionId = keyEl.dataset.kpActionId;
-    const binding = resolveKeybinding(actionId, keybindings);
+    const pinId = keyEl.dataset.kpActionId;
+    const resolved = resolveBindingForKeyEl(keyEl, keybindings);
+    const binding = resolved.binding;
+    const actionId = resolved.actionId || pinId;
     if (!binding) return;
     clearHideTimer();
     if (pinned) {
-      _pinnedActionId = actionId;
+      _pinnedActionId = pinId;
       _pinnedKeyEl = keyEl;
     }
     showPopoverForTarget({
@@ -1265,7 +1291,7 @@ export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot, pinOn
       targetEl: keyEl,
       binding,
       actionId,
-      pinned: pinned || (_pinnedActionId === actionId),
+      pinned: pinned || (_pinnedActionId === pinId),
       settingsHint: !!pinOnClick
     });
     emitKeyboardHelpKeyHover({ actionId, keyEl });

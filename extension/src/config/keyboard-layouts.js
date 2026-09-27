@@ -1069,8 +1069,24 @@ export function resolveKeybinding(actionId, keybindings) {
   if (!id) return null;
   if (keybindings && keybindings[id]) return keybindings[id];
   const catalog = CATALOG_KEYBINDINGS[id];
-  if (!catalog) return null;
-  return { ...catalog, ...localizedActionCopy(id, KEYBINDING_ACTION_DEFS[id]) };
+  if (catalog) {
+    return { ...catalog, ...localizedActionCopy(id, KEYBINDING_ACTION_DEFS[id]) };
+  }
+  const stock = getStockActionById(id);
+  if (!stock) return null;
+  return {
+    keys: [],
+    handler: stock.handler,
+    functionId: stock.functionId,
+    instanceId: stock.id,
+    parameters: stock.parameters,
+    label: stock.label,
+    description: stock.description,
+    keyboardClass: stock.keyboardClass ?? null,
+    row: null,
+    displayKey: '',
+    keyLabel: ''
+  };
 }
 
 /**
