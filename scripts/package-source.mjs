@@ -5,6 +5,11 @@
  * reproduce `npm run package:firefox`. Bundled outputs and node_modules are
  * omitted; reviewers regenerate them from this archive.
  *
+ * Source membership comes from `git ls-files` so gitignored local junk
+ * (tmp-captures Chrome profiles, store fonts, dist, etc.) cannot inflate
+ * the archive. Additional EXCLUDE_MATCHERS drop tracked files that reviewers
+ * should rebuild or that are irrelevant to the Firefox package.
+ *
  * Usage:
  *   npm run package:firefox-source
  *   node scripts/package-source.mjs
@@ -27,6 +32,9 @@ const EXCLUDE_MATCHERS = [
   /^node_modules(\/|$)/,
   /^dist(\/|$)/,
   /^extension-firefox(\/|$)/,
+  /^tmp(\/|$)/,
+  /^tmp-captures(\/|$)/,
+  /^temp(\/|$)/,
   /^test-results(\/|$)/,
   /^playwright-report(\/|$)/,
   /^blob-report(\/|$)/,
@@ -35,6 +43,9 @@ const EXCLUDE_MATCHERS = [
   /^\.grok(\/|$)/,
   /^\.vscode(\/|$)/,
   /^\.idea(\/|$)/,
+  /^scripts\/store-screenshots\/fonts(\/|$)/,
+  /^promo\/intro-reel\/renders(\/|$)/,
+  /^promo\/intro-reel\/\.hyperframes(\/|$)/,
   /(^|\/)\.DS_Store$/,
   /\.crx$/,
   /\.pem$/,
@@ -81,6 +92,33 @@ function walkFiles(rootDir) {
   }
   visit(rootDir);
   return out;
+}
+
+/**
+ * Prefer git-tracked files so .gitignore entries (tmp-captures, fonts, etc.)
+ * never enter the AMO source ZIP. Falls back to a filtered tree walk only
+ * when git is unavailable.
+ */
+async function listSourceFiles() {
+  try {
+    const out = await run('git', ['-C', repoRoot, 'ls-files', '-z'], repoRoot);
+    const files = [];
+    for (const rel of out.split('\0')) {
+      if (!rel || isExcluded(rel)) continue;
+      const abs = path.join(repoRoot, rel);
+      if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
+      files.push({ abs, rel: rel.replaceAll('\\', '/') });
+    }
+    if (files.length === 0) {
+      throw new Error('git ls-files returned no packable files');
+    }
+    return files;
+  } catch (err) {
+    console.warn(
+      `git ls-files unavailable (${err instanceof Error ? err.message : err}); falling back to filtered tree walk`
+    );
+    return walkFiles(repoRoot);
+  }
 }
 
 function run(command, args, cwd) {
@@ -213,7 +251,7 @@ async function packageSource() {
 
   emptyDir(stagingDir);
 
-  const files = walkFiles(repoRoot);
+  const files = await listSourceFiles();
   for (const file of files) {
     const dest = path.join(stagingDir, file.rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
