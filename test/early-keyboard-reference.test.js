@@ -31,5 +31,6 @@ describe('early Keyboard Reference bootstrap', () => {
     );
     assert.match(early, /keyboardLayoutSelectLabel/);
     assert.doesNotMatch(early, /let earlyLayoutLabel = 'Browsing'/);
+    assert.match(early, /const slotKey = code \? `code:\$\{code\}` : ''/);
   });
 });

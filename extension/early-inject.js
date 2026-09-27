@@ -16306,7 +16306,14 @@
     if (existing && existing.dataset && existing.dataset.kpKeyboardBuilt === 'true') {
       const existingLayoutId = String(existing.dataset.kpLayoutId || '');
       const existingNum = existing.dataset.kpNumRow === '1';
-      if (existingLayoutId === layoutSel && existingNum === wantNumRow) return true;
+      let existingVisible = false;
+      try {
+        existingVisible = Array.prototype.some.call(
+          existing.querySelectorAll('.key-main, .key-label, .key-text'),
+          (node) => String(node.textContent || '').trim()
+        );
+      } catch { /* ignore */ }
+      if (existingLayoutId === layoutSel && existingNum === wantNumRow && existingVisible) return true;
     }
 
     const data = getEarlyKeyboardDataForLayout(baseId);
@@ -16314,7 +16321,6 @@
     if (wantNumRow) {
       try { layout = addNumberRowToEarlyKeyboardLayout(layout); } catch { /* ignore */ }
     }
-    const bindings = data.bindings || EARLY_KEYBINDINGS;
     const macros = keyboardLayoutStore && keyboardLayoutStore.macros && typeof keyboardLayoutStore.macros === 'object'
       ? keyboardLayoutStore.macros
       : {};
@@ -16345,10 +16351,10 @@
       keyEl.appendChild(overlay);
     };
 
-    const renderSlot = (slotLabel, assigned) => {
+    const renderSlot = (slotKey, slotLabel, assigned) => {
       const keyEl = el(doc, 'div', 'key');
       keyEl.dataset.kpBaseClass = 'key';
-      keyEl.dataset.kpSlot = slotLabel;
+      keyEl.dataset.kpSlot = slotKey;
       keyEl.setAttribute('role', 'button');
       try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
 
@@ -16412,18 +16418,30 @@
           continue;
         }
 
-        let slotLabel = '';
-        if (item.type === 'key') slotLabel = String(item.text || '').trim().toUpperCase();
-        else if (item.type === 'action') slotLabel = earlyPhysicalSlotLabelFromBinding(bindings[item.id]);
-        if (!slotLabel) {
+        // Same identity as the bundled slot keyboard: `code:BracketRight`, not the legend.
+        const code = String(item.code || '');
+        const slotKey = code ? `code:${code}` : '';
+        const slotLabel = String(item.legend || item.text || item.fallbackText || '').trim();
+        if (!slotKey || !slotLabel) {
           const empty = el(doc, 'div', 'key');
           empty.style.visibility = 'hidden';
           rowEl.appendChild(empty);
           continue;
         }
-        const assigned = slots[slotLabel] || null;
-        rowEl.appendChild(renderSlot(slotLabel, assigned));
+        const assigned = slots[slotKey] || null;
+        rowEl.appendChild(renderSlot(slotKey, slotLabel, assigned));
       }
+    }
+    let visibleText = false;
+    try {
+      visibleText = Array.prototype.some.call(
+        visual.querySelectorAll('.key-main, .key-label, .key-text'),
+        (node) => String(node.textContent || '').trim()
+      );
+    } catch { /* ignore */ }
+    if (!visibleText) {
+      container.textContent = earlyMessage('keyboard_help_custom_render_error') || 'Keyboard layout could not be drawn.';
+      return false;
     }
     return true;
   }
@@ -16433,13 +16451,15 @@
     if (keyboardUsesCustomLayout) {
       const userLayout = getEarlyActiveUserLayout();
       if (!userLayout) {
-        container.textContent = '';
+        if (keyboardLayoutStore) {
+          container.textContent = earlyMessage('keyboard_help_custom_render_error') || 'Keyboard layout could not be drawn.';
+        }
         return;
       }
       try {
         renderEarlySlotKeyboard(container, { userLayout, includeNumberRow });
       } catch {
-        container.textContent = '';
+        container.textContent = earlyMessage('keyboard_help_custom_render_error') || 'Keyboard layout could not be drawn.';
       }
       return;
     }
@@ -18722,7 +18742,12 @@
 
     if (keyboardUsesCustomLayout) {
       const user = getEarlyActiveUserLayout();
-      const assigned = user && user.slots && typeof user.slots === 'object' ? user.slots[slot] : null;
+      const slots = user && user.slots && typeof user.slots === 'object' ? user.slots : null;
+      const codeSlot = event.code ? `code:${event.code}` : '';
+      const charSlot = key.length === 1 ? `key:${key}` : '';
+      const assigned = slots
+        ? (slots[codeSlot] || slots[charSlot] || slots[slot] || null)
+        : null;
       if (!assigned || assigned.type !== 'function' || !assigned.id) return null;
       let fid = String(assigned.id);
       if (fid.startsWith('action:')) {

@@ -2350,7 +2350,16 @@ export class FloatingKeyboardHelp {
       try { visual = this.keyboardContainer.querySelector('.keyboard-visual'); } catch { /* ignore */ }
     }
     if (!visual || !visual.dataset) return false;
-    return visual.dataset.kpKeyboardBuilt === 'true' && String(visual.dataset.kpLayoutId || '') === wanted;
+    if (visual.dataset.kpKeyboardBuilt !== 'true') return false;
+    if (String(visual.dataset.kpLayoutId || '') !== wanted) return false;
+    try {
+      return Array.prototype.some.call(
+        visual.querySelectorAll('.key-main, .key-label, .key-text'),
+        (node) => String(node.textContent || '').trim()
+      );
+    } catch {
+      return false;
+    }
   }
 
   async _renderAsync() {
