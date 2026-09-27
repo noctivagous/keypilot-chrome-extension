@@ -41,6 +41,34 @@ import {
 } from '../config/keyboard-layouts.js';
 import { getFunctionDef } from '../config/function-library.js';
 import { getStockActionById } from '../config/stock-actions.js';
+
+/**
+ * Startup paint stamps stock instances as if they were unknown function ids.
+ * Point the key at the real Function and restore its color class.
+ * @param {HTMLElement|null|undefined} container
+ */
+function repairEarlyStockKeys(container) {
+  if (!container) return;
+  const keys = container.querySelectorAll('[data-kp-action-id], [data-kp-instance-id]');
+  for (const keyEl of keys) {
+    const instanceId = String(keyEl.dataset.kpInstanceId || '');
+    const actionId = String(keyEl.dataset.kpActionId || '');
+    const stock = getStockActionById(instanceId) || getStockActionById(actionId);
+    if (!stock) continue;
+    const def = getFunctionDef(stock.functionId);
+    const keyboardClass = String(def?.keyboardClass || stock.keyboardClass || '');
+    if (keyboardClass && !keyEl.classList.contains(keyboardClass)) {
+      keyEl.classList.add(keyboardClass);
+    }
+    if (stock.functionId) keyEl.dataset.kpActionId = stock.functionId;
+    if (!keyEl.dataset.kpInstanceId) keyEl.dataset.kpInstanceId = stock.id;
+    const main = keyEl.querySelector('.key-main');
+    const label = String(stock.label || def?.label || '').trim();
+    if (main && label && (!main.textContent.trim() || main.textContent.trim() === stock.id)) {
+      main.textContent = label;
+    }
+  }
+}
 import {
   listUserKeyboardLayouts,
   getUserKeyboardLayoutById,
@@ -2466,6 +2494,10 @@ export class FloatingKeyboardHelp {
           });
           const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
           this.keybindings = buildEffectiveKeybindings(baseId, baseHand);
+          // Early slot paint used to treat stock: ids as unknown functions, so
+          // Social Media kept no color class and the wrong action id. Repair
+          // before popovers bind, without redrawing the keyboard.
+          repairEarlyStockKeys(this.keyboardContainer);
           try {
             attachKeyPopoverBehavior({
               root: this.keyboardContainer,

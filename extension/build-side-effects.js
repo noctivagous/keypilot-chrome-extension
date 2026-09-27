@@ -20,6 +20,7 @@ import {
 } from './src/config/keyboard-layouts.js';
 import { KEYBOARD_HARDWARE_LAYOUTS } from './src/config/keyboard-hardware-layouts.js';
 import { FUNCTION_LIBRARY } from './src/config/function-library.js';
+import { STOCK_ACTIONS } from './src/config/stock-actions.js';
 import {
   KEYBINDINGS_KEYBOARD_LAYOUT,
   KEYBINDINGS_UI_STYLE_ATTR,
@@ -400,6 +401,18 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       };
     }
 
+    // Stock instances are not Function ids. Startup slot paint has to map
+    // stock:social-media → Open URLs + key-open-urls, or the key stays gray.
+    const earlyStockPaint = {};
+    for (const stock of STOCK_ACTIONS || []) {
+      if (!stock?.id) continue;
+      earlyStockPaint[stock.id] = {
+        functionId: String(stock.functionId || ''),
+        labelKey: String(stock.labelKey || ''),
+        keyboardClass: stock.keyboardClass ? String(stock.keyboardClass) : null
+      };
+    }
+
     const css = getKeybindingsUiCss({ zKeybindingsPopover: Z_INDEX.KEYBINDINGS_POPOVER });
     const escapedCss = String(css).replaceAll('`', '\\`');
     const themeCss = getAllThemesCss();
@@ -491,6 +504,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  const KEYBINDINGS_KEYBOARD_LAYOUT = ${JSON.stringify(layout, null, 2)};\n` +
       `  const EARLY_KEYBINDINGS = ${JSON.stringify(earlyKeybindings, null, 2)};\n` +
       `  const EARLY_FUNCTION_PAINT = ${JSON.stringify(earlyFunctionPaint, null, 2)};\n` +
+      `  const EARLY_STOCK_PAINT = ${JSON.stringify(earlyStockPaint, null, 2)};\n` +
       `  const EARLY_CONTROL_STRIP_ICON_URIS = ${JSON.stringify({
         TOGGLE_KEYBOARD_HELP: getActionIconDataUri('TOGGLE_KEYBOARD_HELP', { fill: '#ddd' }),
         OPEN_SETTINGS_POPOVER: getActionIconDataUri('OPEN_SETTINGS_POPOVER', { fill: '#ddd' })

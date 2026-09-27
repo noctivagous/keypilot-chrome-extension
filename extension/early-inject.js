@@ -10585,6 +10585,18 @@
     "keyboardClass": "key-media-library"
   }
 };
+  const EARLY_STOCK_PAINT = {
+  "stock:social-media": {
+    "functionId": "OPEN_URLS",
+    "labelKey": "fn_stock_social_media_label",
+    "keyboardClass": "key-open-urls"
+  },
+  "stock:random-bookmark": {
+    "functionId": "RANDOM_BOOKMARK",
+    "labelKey": "fn_stock_random_bookmark_label",
+    "keyboardClass": "key-open-urls"
+  }
+};
   const EARLY_CONTROL_STRIP_ICON_URIS = {"TOGGLE_KEYBOARD_HELP":"url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22%23ddd%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E\")","OPEN_SETTINGS_POPOVER":"url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23ddd%22%3E%3Cpath%20d%3D%22M9.405%201.05c-.413-1.4-2.397-1.4-2.81%200l-.1.34a1.464%201.464%200%200%201-2.275.819l-.31-.17c-1.283-.698-2.686.705-1.987%201.987l.169.311c.446.82.023%201.841-.82%202.275l-.34.1c-1.4.413-1.4%202.397%200%202.81l.34.1a1.464%201.464%200%200%201%20.82%202.275l-.17.31c-.698%201.283.705%202.686%201.987%201.987l.311-.169a1.464%201.464%200%200%201%202.275.82l.1.34c.413%201.4%202.397%201.4%202.81%200l.1-.34a1.464%201.464%200%200%201%202.275-.82l.31.17c1.283.698%202.686-.705%201.987-1.987l-.169-.311a1.464%201.464%200%200%201%20.82-2.275l.34-.1c1.4-.413%201.4-2.397%200-2.81l-.34-.1a1.464%201.464%200%200%201-.82-2.275l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464%201.464%200%200%201-2.275-.82zM8%2010.93a2.93%202.93%200%201%201%200-5.86%202.93%202.93%200%200%201%200%205.86z%22%2F%3E%3C%2Fsvg%3E\")"};
   const EARLY_ONBOARDING_MODEL = {
   "slides": [
@@ -16216,10 +16228,31 @@
     return '';
   }
 
+  function getEarlyStockPaintMap() {
+    try {
+      if (typeof EARLY_STOCK_PAINT === 'object' && EARLY_STOCK_PAINT) return EARLY_STOCK_PAINT;
+    } catch { /* ignore */ }
+    return {};
+  }
+
   function resolveEarlyFunctionSlotPaint(id) {
     const key = String(id || '');
     const paint = getEarlyFunctionPaintMap();
     const store = keyboardLayoutStore;
+    if (key.startsWith('stock:')) {
+      const stock = getEarlyStockPaintMap()[key] || null;
+      const functionId = String((stock && stock.functionId) || '');
+      const def = functionId && paint[functionId] ? paint[functionId] : null;
+      return {
+        label: String(
+          (stock?.labelKey && earlyMessage(stock.labelKey))
+          || (def?.labelKey && earlyMessage(def.labelKey))
+          || key
+        ),
+        keyboardClass: String((def && def.keyboardClass) || (stock && stock.keyboardClass) || ''),
+        functionId: functionId || key
+      };
+    }
     if (key.startsWith('action:')) {
       const instance = store && store.actions && store.actions[key] ? store.actions[key] : null;
       const functionId = String((instance && instance.functionId) || '');

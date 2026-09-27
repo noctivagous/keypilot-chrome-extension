@@ -120,6 +120,7 @@ describe('open URL list', () => {
     const { resolveKeybinding, buildKeybindingsForLayout } = await import('../extension/src/config/keyboard-layouts.js');
     const layoutKb = buildKeybindingsForLayout('click-history-right');
     assert.equal(layoutKb['stock:social-media'], undefined);
+    assert.equal(layoutKb.OPEN_URLS, undefined);
     assert.equal(resolveKeybinding('OPEN_URLS', layoutKb), null);
     const social = resolveKeybinding('stock:social-media', layoutKb);
     assert.equal(social.handler, 'handleOpenUrlsKey');

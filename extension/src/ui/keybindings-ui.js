@@ -93,12 +93,38 @@ function actionHasSettings(actionId) {
  * @param {Record<string, any>|null|undefined} keybindings
  * @returns {{ actionId: string, binding: any|null }}
  */
+/**
+ * Tooltip binding for a Function id that is not in the layout map.
+ * Copied layouts stamp the Function id (RANDOM_BOOKMARK) while the layout map
+ * only has the stock instance id (stock:random-bookmark).
+ * @param {string} id
+ * @param {HTMLElement|null|undefined} keyEl
+ * @returns {any|null}
+ */
+function bindingFromFunctionId(id, keyEl) {
+  if (!id || id.startsWith('action:') || id.startsWith('stock:')) return null;
+  const fn = getFunctionDef(id);
+  if (!fn) return null;
+  const letter = (keyEl?.querySelector?.('.key-label')?.textContent || '').trim();
+  return {
+    keys: [],
+    handler: fn.handler,
+    functionId: fn.id,
+    label: fn.label,
+    description: fn.description || '',
+    keyboardClass: fn.keyboardClass ?? null,
+    row: null,
+    displayKey: letter,
+    keyLabel: letter
+  };
+}
+
 function resolveBindingForKeyEl(keyEl, keybindings) {
   const actionId = String(keyEl?.dataset?.kpActionId || '');
   const instanceId = String(keyEl?.dataset?.kpInstanceId || '');
   const ids = [...new Set([instanceId, actionId].filter(Boolean))];
   for (const id of ids) {
-    const binding = resolveKeybinding(id, keybindings);
+    const binding = resolveKeybinding(id, keybindings) || bindingFromFunctionId(id, keyEl);
     if (binding) return { actionId: id, binding };
   }
   return { actionId, binding: null };
@@ -185,10 +211,21 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
 
   for (const keyEl of actionEls) {
     const actionId = keyEl.dataset.kpActionId;
+    const instanceId = keyEl.dataset.kpInstanceId || '';
     const binding = keybindings && keybindings[actionId];
+    const stock = getStockActionById(instanceId) || getStockActionById(actionId);
+    const fn = getFunctionDef(stock?.functionId || actionId);
     const baseClass = keyEl.dataset.kpBaseClass || 'key';
-    const keyboardClass = binding && binding.keyboardClass ? String(binding.keyboardClass) : '';
-    keyEl.className = `${baseClass}${keyboardClass ? ' ' + keyboardClass : ''}`;
+    const keyboardClass = String(
+      (binding && binding.keyboardClass)
+      || stock?.keyboardClass
+      || fn?.keyboardClass
+      || ''
+    );
+    // A missed lookup must not strip a color class the early paint already set.
+    if (keyboardClass) {
+      keyEl.className = `${baseClass}${keyboardClass ? ' ' + keyboardClass : ''}`;
+    }
     // Only function-bearing keys get FA background icons.
     ensureKeyBackgroundIcon(doc, keyEl);
     ensureKeyPressOverlay(doc, keyEl);
@@ -199,7 +236,8 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     keyEl.setAttribute('aria-label', title);
 
     const main = keyEl.querySelector('.key-main');
-    if (main) main.textContent = (binding && binding.label) || actionId;
+    const label = (binding && binding.label) || stock?.label || fn?.label || '';
+    if (main && label) main.textContent = label;
 
     const labelText = localizeKeycapLabel((binding && (binding.displayKey || binding.keyLabel)) || '');
     const existingLabel = keyEl.querySelector('.key-label');
