@@ -10,7 +10,7 @@ Page Media scans the current page for images, videos, text, documents, fonts, an
 4. Copy, download, open full view, or send items to the **Media Library**.
 5. Close with <kbd>Esc</kbd> or the overlay close control.
 
-Use Page Media when you want everything on the page; use <kbd>I</kbd> / <kbd>U</kbd> when you already know which hovered asset to grab.
+Use Page Media when you want everything on the page; use <kbd>I</kbd> when you already know which hovered image to grab.
 
 ## Reference
 

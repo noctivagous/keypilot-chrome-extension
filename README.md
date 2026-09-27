@@ -43,7 +43,7 @@ on the keyboard in specific places to make web navigation quick.
 | `M` | Open saved Media Library |
 | `P` | Read this page without clutter |
 | `R` | Browser history forward |
-| `U` | Copy hovered link URL |
+| `U` | Look up the word under the cursor |
 | `;` | Toolbar, visits, and bookmarks |
 | `D` | Browser history back |
 | `E` | Preview link in a popup |

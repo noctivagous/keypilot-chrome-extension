@@ -41,7 +41,7 @@ Die Standardgranularität ist eine Artikelmerkmalseinheit: ein Absatz oder eine 
 
 ### Verwandte Tools
 
-- <kbd>I</kbd> / <kbd>U</kbd> schwebendes Bild/URL kopieren (siehe *Unter Cursor kopieren*).
+- <kbd>I</kbd> kopiert das schwebende Bild (siehe *Unter Cursor kopieren*). <kbd>U</kbd> ist Lookup Word.
 - <kbd>O</kbd> öffnet Seitenmedien für alles, was auf der Seite gefunden wird.
 - Ziele in der Zwischenablage und in der Medienbibliothek werden in vielen Funktionen zum Abrufen/Kopieren im Layout-Editor angezeigt.
 

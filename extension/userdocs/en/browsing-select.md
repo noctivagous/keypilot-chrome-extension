@@ -41,7 +41,7 @@ Default granularity is an article feature unit: a paragraph or heading, a whole 
 
 ### Related tools
 
-- <kbd>I</kbd> / <kbd>U</kbd> copy hovered image / URL (see *Copy under cursor*).
+- <kbd>I</kbd> copies the hovered image (see *Copy under cursor*). <kbd>U</kbd> is Lookup Word.
 - <kbd>O</kbd> opens Page Media for everything found on the page.
 - Clipboard and Media Library destinations appear on many Get / Copy Functions in Layout Editor.
 

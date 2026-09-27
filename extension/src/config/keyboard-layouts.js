@@ -616,7 +616,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-highlight',
     row: 2
   }),
-  // Rectangle region select (Y on right-handed; R free on left-handed).
+  // Rectangle region select (Y on right-handed; Q on left-handed — R is Lookup Word).
   RECTANGLE_HIGHLIGHT: Object.freeze({
     handler: 'handleRectangleHighlightKey',
     label: 'Element Select',
@@ -634,12 +634,21 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-page-media',
     row: 1
   }),
-  // Copy hyperlink under cursor (U on right-handed; no default on left — U is FORWARD there).
+  // Copy hyperlink under cursor — Actions Library only (no built-in layout key).
   COPY_HOVERED_URL: Object.freeze({
     handler: 'handleCopyHoveredUrlKey',
     label: 'Copy URL',
     description: 'Copy hovered link URL',
-    details: 'Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.',
+    details: 'Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource. No default layout key — bind it in Layout Editor if you need it.',
+    keyboardClass: 'key-page-media',
+    row: null
+  }),
+  // Dictionary for the word under the cursor (U on right-handed; R on left-handed, the KeyU mirror).
+  LOOKUP_WORD: Object.freeze({
+    handler: 'handleLookupWordKey',
+    label: 'Lookup Word',
+    description: 'Look up the word under the cursor',
+    details: 'Opens a Wiktionary popover for the word directly under the cursor. Shows a brief notice if there is no word there.',
     keyboardClass: 'key-page-media',
     row: 1
   }),
@@ -797,6 +806,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   COPY_HOVERED_URL: 'Get Page Data',
   COPY_HOVERED_VIDEO: 'Get Page Data',
   FONT_INFO: 'Get Page Data',
+  LOOKUP_WORD: 'Lookup',
   PAGE_MEDIA: 'Get Page Data',
   READER_MODE: 'Get Page Data',
   DELETE: 'Select',
@@ -830,6 +840,7 @@ export const KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
   'Select',
   'Media Library',
   'Clipboard',
+  'Lookup',
   'AI',
   'KeyPilot',
   'Tools',
@@ -1154,7 +1165,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   ACTIVATE_NEW_TAB: physicalAssignment('KeyN', 'N'),
   RECTANGLE_HIGHLIGHT: physicalAssignment('KeyY', 'Y'),
   COPY_HOVERED_IMAGE: physicalAssignment('KeyI', 'I'),
-  COPY_HOVERED_URL: physicalAssignment('KeyU', 'U'),
+  LOOKUP_WORD: physicalAssignment('KeyU', 'U'),
   PAGE_MEDIA: physicalAssignment('KeyO', 'O'),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: physicalAssignment('KeyM', 'M'),
@@ -1191,9 +1202,11 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   BACK: physicalAssignment('KeyK', 'K'),
   ACTIVATE: physicalAssignment('KeyJ', 'J'),
   ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyH', 'H'),
-  // H is background-tab open on left; G/R free for selection.
+  // H is background-tab open on left; G is text select.
   HIGHLIGHT: physicalAssignment('KeyG', 'G'),
-  RECTANGLE_HIGHLIGHT: physicalAssignment('KeyR', 'R'),
+  // Mirror of right-handed KeyU (Lookup Word). Rectangle moves to KeyQ (free on left).
+  LOOKUP_WORD: physicalAssignment('KeyR', 'R'),
+  RECTANGLE_HIGHLIGHT: physicalAssignment('KeyQ', 'Q'),
 
   // Utility actions on the left avoid colliding with J/K/L cluster.
   // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
@@ -1463,7 +1476,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' },
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' },
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' },
-    { type: 'action', id: 'COPY_HOVERED_URL', fallbackText: 'Copy URL' },
+    { type: 'action', id: 'LOOKUP_WORD', fallbackText: 'Lookup Word' },
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' },
     { type: 'action', id: 'PAGE_MEDIA', fallbackText: 'Page Media' },
     { type: 'action', id: 'READER_MODE', fallbackText: 'Reader Mode' },
@@ -1506,10 +1519,10 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
 const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
   [
     { type: 'special', text: 'Tab', className: 'key key-tab' },
-    { type: 'key', text: 'Q' },
+    { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' }, // Q (Y's true mirror is T)
     { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' }, // W
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' }, // E
-    { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' }, // R
+    { type: 'action', id: 'LOOKUP_WORD', fallbackText: 'Lookup Word' }, // R, mirror of U
     { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' }, // T
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' }, // Y
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' }, // U

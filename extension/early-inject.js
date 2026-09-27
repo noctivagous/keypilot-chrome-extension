@@ -242,8 +242,8 @@
         "type": "action",
         "code": "KeyU",
         "legend": "U",
-        "id": "COPY_HOVERED_URL",
-        "fallbackText": "COPY_HOVERED_URL"
+        "id": "LOOKUP_WORD",
+        "fallbackText": "LOOKUP_WORD"
       },
       {
         "type": "action",
@@ -474,9 +474,11 @@
         "className": "key key-tab"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "KeyQ",
-        "text": "Q"
+        "legend": "Q",
+        "id": "RECTANGLE_HIGHLIGHT",
+        "fallbackText": "RECTANGLE_HIGHLIGHT"
       },
       {
         "type": "action",
@@ -496,8 +498,8 @@
         "type": "action",
         "code": "KeyR",
         "legend": "R",
-        "id": "RECTANGLE_HIGHLIGHT",
-        "fallbackText": "RECTANGLE_HIGHLIGHT"
+        "id": "LOOKUP_WORD",
+        "fallbackText": "LOOKUP_WORD"
       },
       {
         "type": "action",
@@ -1701,8 +1703,8 @@
           "type": "action",
           "code": "KeyU",
           "legend": "U",
-          "id": "COPY_HOVERED_URL",
-          "fallbackText": "COPY_HOVERED_URL"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -1933,9 +1935,11 @@
           "className": "key key-tab"
         },
         {
-          "type": "key",
+          "type": "action",
           "code": "KeyQ",
-          "text": "Q"
+          "legend": "Q",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
         },
         {
           "type": "action",
@@ -1955,8 +1959,8 @@
           "type": "action",
           "code": "KeyR",
           "legend": "R",
-          "id": "RECTANGLE_HIGHLIGHT",
-          "fallbackText": "RECTANGLE_HIGHLIGHT"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -3159,8 +3163,8 @@
           "type": "action",
           "code": "KeyU",
           "legend": "U",
-          "id": "COPY_HOVERED_URL",
-          "fallbackText": "COPY_HOVERED_URL"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -3396,9 +3400,11 @@
           "className": "key key-tab"
         },
         {
-          "type": "key",
+          "type": "action",
           "code": "KeyQ",
-          "text": "Q"
+          "legend": "Q",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
         },
         {
           "type": "action",
@@ -3418,8 +3424,8 @@
           "type": "action",
           "code": "KeyR",
           "legend": "R",
-          "id": "RECTANGLE_HIGHLIGHT",
-          "fallbackText": "RECTANGLE_HIGHLIGHT"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -4647,8 +4653,8 @@
           "type": "action",
           "code": "KeyU",
           "legend": "U",
-          "id": "COPY_HOVERED_URL",
-          "fallbackText": "COPY_HOVERED_URL"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -4884,9 +4890,11 @@
           "className": "key key-tab"
         },
         {
-          "type": "key",
+          "type": "action",
           "code": "KeyQ",
-          "text": "Q"
+          "legend": "Q",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
         },
         {
           "type": "action",
@@ -4906,8 +4914,8 @@
           "type": "action",
           "code": "KeyR",
           "legend": "R",
-          "id": "RECTANGLE_HIGHLIGHT",
-          "fallbackText": "RECTANGLE_HIGHLIGHT"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -6135,8 +6143,8 @@
           "type": "action",
           "code": "KeyU",
           "legend": "U",
-          "id": "COPY_HOVERED_URL",
-          "fallbackText": "COPY_HOVERED_URL"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -6372,9 +6380,11 @@
           "className": "key key-tab"
         },
         {
-          "type": "key",
+          "type": "action",
           "code": "KeyQ",
-          "text": "Q"
+          "legend": "Q",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
         },
         {
           "type": "action",
@@ -6394,8 +6404,8 @@
           "type": "action",
           "code": "KeyR",
           "legend": "R",
-          "id": "RECTANGLE_HIGHLIGHT",
-          "fallbackText": "RECTANGLE_HIGHLIGHT"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -7623,8 +7633,8 @@
           "type": "action",
           "code": "KeyU",
           "legend": "U",
-          "id": "COPY_HOVERED_URL",
-          "fallbackText": "COPY_HOVERED_URL"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -7860,9 +7870,11 @@
           "className": "key key-tab"
         },
         {
-          "type": "key",
+          "type": "action",
           "code": "KeyQ",
-          "text": "Q"
+          "legend": "Q",
+          "id": "RECTANGLE_HIGHLIGHT",
+          "fallbackText": "RECTANGLE_HIGHLIGHT"
         },
         {
           "type": "action",
@@ -7882,8 +7894,8 @@
           "type": "action",
           "code": "KeyR",
           "legend": "R",
-          "id": "RECTANGLE_HIGHLIGHT",
-          "fallbackText": "RECTANGLE_HIGHLIGHT"
+          "id": "LOOKUP_WORD",
+          "fallbackText": "LOOKUP_WORD"
         },
         {
           "type": "action",
@@ -9101,9 +9113,9 @@
       "displayKey": "Y",
       "keyboardClass": "key-rect-highlight"
     },
-    "COPY_HOVERED_URL": {
-      "label": "Copy URL",
-      "description": "Copy hovered link URL",
+    "LOOKUP_WORD": {
+      "label": "Lookup Word",
+      "description": "Look up the word under the cursor",
       "keyLabel": "U",
       "displayKey": "U",
       "keyboardClass": "key-page-media"
@@ -9344,9 +9356,16 @@
     "RECTANGLE_HIGHLIGHT": {
       "label": "Element Select",
       "description": "Rectangle or cumulative element pick",
+      "keyLabel": "Q",
+      "displayKey": "Q",
+      "keyboardClass": "key-rect-highlight"
+    },
+    "LOOKUP_WORD": {
+      "label": "Lookup Word",
+      "description": "Look up the word under the cursor",
       "keyLabel": "R",
       "displayKey": "R",
-      "keyboardClass": "key-rect-highlight"
+      "keyboardClass": "key-page-media"
     },
     "COPY_HOVERED_IMAGE": {
       "label": "Copy Image",
@@ -9874,8 +9893,8 @@
       "type": "action",
       "code": "KeyU",
       "legend": "U",
-      "id": "COPY_HOVERED_URL",
-      "fallbackText": "COPY_HOVERED_URL"
+      "id": "LOOKUP_WORD",
+      "fallbackText": "LOOKUP_WORD"
     },
     {
       "type": "action",
@@ -10140,9 +10159,9 @@
     "displayKey": "Y",
     "keyboardClass": "key-rect-highlight"
   },
-  "COPY_HOVERED_URL": {
-    "label": "Copy URL",
-    "description": "Copy hovered link URL",
+  "LOOKUP_WORD": {
+    "label": "Lookup Word",
+    "description": "Look up the word under the cursor",
     "keyLabel": "U",
     "displayKey": "U",
     "keyboardClass": "key-page-media"
@@ -10485,6 +10504,10 @@
     "labelKey": "fn_COPY_HOVERED_URL_label",
     "keyboardClass": "key-page-media"
   },
+  "LOOKUP_WORD": {
+    "labelKey": "fn_LOOKUP_WORD_label",
+    "keyboardClass": "key-page-media"
+  },
   "COPY_HOVERED_VIDEO": {
     "labelKey": "fn_COPY_HOVERED_VIDEO_label",
     "keyboardClass": "key-page-media"
@@ -10548,10 +10571,6 @@
   "RANDOM_BOOKMARK": {
     "labelKey": "fn_RANDOM_BOOKMARK_label",
     "keyboardClass": "key-open-urls"
-  },
-  "LOOKUP_WORD": {
-    "labelKey": "fn_LOOKUP_WORD_label",
-    "keyboardClass": "key-page-media"
   },
   "SHOW_POPOVER": {
     "labelKey": "fn_SHOW_POPOVER_label",

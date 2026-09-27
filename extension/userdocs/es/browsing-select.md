@@ -41,7 +41,7 @@ La granularidad predeterminada es una unidad característica del artículo: un p
 
 ### Herramientas relacionadas
 
-- <kbd>I</kbd> / <kbd>U</kbd> copiar la imagen/URL colocada sobre el cursor (consulte *Copiar bajo el cursor*).
+- <kbd>I</kbd> copia la imagen bajo el cursor (consulte *Copiar bajo el cursor*). <kbd>U</kbd> es Lookup Word.
 - <kbd>O</kbd> abre Page Media para todo lo que se encuentra en la página.
 - Los destinos del Portapapeles y la Biblioteca multimedia aparecen en muchas funciones Obtener/Copiar en el Editor de diseño.
 

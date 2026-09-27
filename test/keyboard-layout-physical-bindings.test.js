@@ -165,6 +165,16 @@ describe('built-in keyboard layout physical bindings', () => {
     assert.match(highlightManagerSource, /localizeKeycapLabel\(finishKeyRaw\)/);
   });
 
+  it('binds Lookup Word on U and the left-handed KeyU mirror', () => {
+    const right = buildKeybindingsForLayout('browsing-right');
+    const left = buildKeybindingsForLayout('browsing-left');
+    assert.deepEqual(right.LOOKUP_WORD.keys, ['KeyU']);
+    assert.deepEqual(left.LOOKUP_WORD.keys, ['KeyR']);
+    assert.equal(right.COPY_HOVERED_URL, undefined);
+    assert.equal(left.COPY_HOVERED_URL, undefined);
+    assert.deepEqual(left.RECTANGLE_HIGHLIGHT.keys, ['KeyQ']);
+  });
+
   it('binds Reader Mode on former Open Popover keys', () => {
     const right = buildKeybindingsForLayout('browsing-right');
     const left = buildKeybindingsForLayout('browsing-left');

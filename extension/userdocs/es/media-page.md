@@ -10,7 +10,7 @@ Page Media escanea la página actual en busca de imágenes, videos, texto, docum
 4. Copie, descargue, abra la vista completa o envíe elementos a la **Biblioteca multimedia**.
 5. Cierre con <kbd>Esc</kbd> o el control de cierre superpuesto.
 
-Utilice Page Media cuando desee tener todo en la página; use <kbd>I</kbd> / <kbd>U</kbd> cuando ya sepa qué activo flotante tomar.
+Utilice Page Media cuando desee tener todo en la página; use <kbd>I</kbd> cuando ya sepa qué imagen flotante tomar.
 
 ## Referencia
 

@@ -2,6 +2,7 @@
  * Lookup Word — Wiktionary in the shared anchored inspect popover.
  */
 import { getMessage } from '../utils/i18n.js';
+import { promoteWiktionaryDefinition } from '../utils/dictionary-lookup.js';
 import { sanitizeArticleHtml } from '../utils/reader-mode-extract.js';
 import {
   createInspectActionButton,
@@ -55,6 +56,7 @@ export function showLookupWordPopover(opts = {}) {
         body.textContent = getMessage('lookup_word_empty');
         return;
       }
+      promoteWiktionaryDefinition(fragment);
       body.appendChild(fragment);
     },
     renderActions(actions, doc, btnClass) {

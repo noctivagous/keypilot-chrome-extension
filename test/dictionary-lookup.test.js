@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  isWiktionaryNounHeading,
+  isWiktionaryPosHeading,
   normalizeWordForLookup,
   wiktionaryOriginForLocale,
   wiktionaryUrlForLocalizedWord,
@@ -37,5 +39,15 @@ describe('dictionary lookup helpers', () => {
     assert.equal(wiktionaryUrlForWord('   '), '');
     assert.equal(wiktionaryUrlForWord('…'), '');
     assert.equal(normalizeWordForLookup(null), '');
+  });
+
+  it('recognizes localized part-of-speech headings', () => {
+    assert.equal(isWiktionaryNounHeading('Noun'), true);
+    assert.equal(isWiktionaryNounHeading('Substantiv'), true);
+    assert.equal(isWiktionaryNounHeading('名詞'), true);
+    assert.equal(isWiktionaryPosHeading('Verb'), true);
+    assert.equal(isWiktionaryPosHeading('Etymology'), false);
+    assert.equal(isWiktionaryPosHeading('Pronunciation'), false);
+    assert.equal(isWiktionaryPosHeading('Noun 2'), true);
   });
 });

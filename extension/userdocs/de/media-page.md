@@ -10,7 +10,7 @@ Page Media durchsucht die aktuelle Seite nach Bildern, Videos, Text, Dokumenten,
 4. Kopieren, herunterladen, Vollansicht öffnen oder Elemente an die **Medienbibliothek** senden.
 5. Schließen Sie mit <kbd>Esc</kbd> oder der Overlay-Schließsteuerung.
 
-Verwenden Sie Seitenmedien, wenn Sie alles auf der Seite haben möchten. Verwenden Sie <kbd>I</kbd> / <kbd>U</kbd>, wenn Sie bereits wissen, welches schwebende Asset Sie ergreifen müssen.
+Verwenden Sie Seitenmedien, wenn Sie alles auf der Seite haben möchten. Verwenden Sie <kbd>I</kbd>, wenn Sie bereits wissen, welches schwebende Bild Sie ergreifen müssen.
 
 ## Referenz
 
