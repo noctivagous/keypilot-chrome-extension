@@ -20,6 +20,9 @@ describe('Function and Macro catalog localization', () => {
     const { MACRO_KEY_KIND_DEFS, MACRO_BUILDER_STEP_TYPES } = await import('../extension/src/config/macro-keys.js');
 
     const pageTop = FUNCTION_LIBRARY.PAGE_TOP;
+    assert.equal(FUNCTION_LIBRARY.COPY_HOVERED_IMAGE.category, 'Clipboard');
+    assert.equal(FUNCTION_LIBRARY.COPY_HOVERED_URL.category, 'Clipboard');
+    assert.equal(FUNCTION_LIBRARY.COPY_HOVERED_VIDEO.category, 'Clipboard');
     assert.equal(pageTop.label, undefined);
     assert.equal(pageTop.description, undefined);
     assert.equal(pageTop.labelKey, 'fn_PAGE_TOP_label');

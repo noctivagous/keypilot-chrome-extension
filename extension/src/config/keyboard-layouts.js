@@ -625,7 +625,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-rect-highlight',
     row: 1
   }),
-  // Copy image under cursor (I on right-handed; E on left-handed — I is READER_MODE there).
+  // Copy image under cursor — Clipboard category (I on right-handed; E on left-handed — I is READER_MODE there).
   COPY_HOVERED_IMAGE: Object.freeze({
     handler: 'handleCopyHoveredImageKey',
     label: 'Copy Image',
@@ -634,7 +634,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-page-media',
     row: 1
   }),
-  // Copy hyperlink under cursor — Actions Library only (no built-in layout key).
+  // Copy hyperlink under cursor — Clipboard category; Actions Library only (no built-in layout key).
   COPY_HOVERED_URL: Object.freeze({
     handler: 'handleCopyHoveredUrlKey',
     label: 'Copy URL',
@@ -652,7 +652,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-page-media',
     row: 1
   }),
-  // Copy video under cursor — Actions Library only (no built-in layout key).
+  // Copy video under cursor — Clipboard category; Actions Library only (no built-in layout key).
   COPY_HOVERED_VIDEO: Object.freeze({
     handler: 'handleCopyHoveredVideoKey',
     label: 'Copy Video',
@@ -802,9 +802,6 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   ZOOM_IN: 'Scroll',
   HIGHLIGHT: 'Get Page Data',
   RECTANGLE_HIGHLIGHT: 'Get Page Data',
-  COPY_HOVERED_IMAGE: 'Get Page Data',
-  COPY_HOVERED_URL: 'Get Page Data',
-  COPY_HOVERED_VIDEO: 'Get Page Data',
   FONT_INFO: 'Get Page Data',
   LOOKUP_WORD: 'Lookup',
   PAGE_MEDIA: 'Get Page Data',
@@ -816,6 +813,9 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   CLIPBOARD_CUT: 'Clipboard',
   CLIPBOARD_PASTE: 'Clipboard',
   CLIPBOARD_SELECT_ALL: 'Clipboard',
+  COPY_HOVERED_IMAGE: 'Clipboard',
+  COPY_HOVERED_URL: 'Clipboard',
+  COPY_HOVERED_VIDEO: 'Clipboard',
   SELECT_WORD: 'Clipboard',
   SELECT_SENTENCE: 'Clipboard',
   SELECT_PARAGRAPH: 'Clipboard',

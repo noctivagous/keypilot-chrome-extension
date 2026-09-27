@@ -4908,7 +4908,7 @@
     "description": "Function catalog category label."
   },
   "fn_cat_get_page_data_description": {
-    "message": "[GB] Capture text, images, video, URLs, fonts, and other page media.",
+    "message": "[GB] Select text or elements, inspect fonts, browse page media, and open Reader Mode.",
     "description": "Function catalog category description."
   },
   "fn_cat_maps_label": {
@@ -4940,7 +4940,7 @@
     "description": "Function catalog category label."
   },
   "fn_cat_clipboard_description": {
-    "message": "[GB] Copy, cut, paste, select-all, and select word, sentence, paragraph, or image under the cursor.",
+    "message": "[GB] Copy, cut, paste, select-all; copy a hovered image, URL, or video; and select word, sentence, paragraph, or image under the cursor.",
     "description": "Function catalog category description."
   },
   "fn_cat_type_label": {
