@@ -11751,8 +11751,15 @@
       }
     } catch { /* ignore */ }
 
+    // Build the Keyboard Reference shell before the service-worker round trip.
+    // It is hidden by default, so this cannot flash in a popover window; creating
+    // it here lets its styles, fonts, and DOM be ready during a cold worker start.
+    try {
+      ensureEarlyFloatingKeyboardHelpShell();
+    } catch { /* ignore */ }
+
     // Resolve before any storage-driven Keyboard Reference paint so separate-window
-    // Link Preview / Open Popover never flashes the panel.
+    // Link Preview / Open Popover never reveals the panel.
     try {
       isPopoverOsWindow = await queryAmIPopoverWindow();
     } catch {
@@ -11766,9 +11773,8 @@
     try {
       ensureEarlyControlStripShell();
       if (themeReady) applyEarlyControlStripVisibility();
-      // Build the matching Keyboard Reference shell in the same document_start
-      // pass. Storage determines whether it is shown, but shell construction no
-      // longer waits until after the control strip has painted.
+      // Storage determines whether the already-created Keyboard Reference shell
+      // is shown. Keep it absent from separate popover OS windows.
       if (!isPopoverOsWindow) {
         ensureEarlyFloatingKeyboardHelpShell();
         if (themeReady) applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
