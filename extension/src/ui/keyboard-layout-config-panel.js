@@ -1157,7 +1157,7 @@ export class KeyboardLayoutConfigPanel {
   line-height: 1.2;
   white-space: nowrap;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgba(28, 28, 28, 0.18);
   background: rgba(255, 255, 255, 0.42);
   color: ${ONBOARDING_METAL.fgDim};
@@ -1748,6 +1748,16 @@ export class KeyboardLayoutConfigPanel {
   border-color: #4a4a4a;
   color: ${ONBOARDING_METAL.fg};
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.kp-layout-config-panel input.kp-cfg-search::-webkit-search-decoration,
+.kp-layout-config-panel input.kp-cfg-search::-webkit-search-cancel-button,
+.kp-layout-config-panel input.kp-cfg-search::-webkit-search-results-button,
+.kp-layout-config-panel input.kp-cfg-search::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 /* Controls that sit on the light metal pane header / library instructions. */
 .kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg,
@@ -3552,6 +3562,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-autosaves-chip {
   font-size: 10.5px;
   padding: 3px 9px;
+  border-radius: 0;
 }
 .kp-layout-config-panel .kp-cfg-close {
   height: 28px;
@@ -3629,6 +3640,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   height: 28px;
   padding: 5px 10px;
   font-size: 13.75px;
+}
+.kp-layout-config-panel input.kp-cfg-search {
+  height: 23px;
+  padding: 2px 8px 2px 22px;
+  font-size: 12.5px;
 }
 .kp-layout-config-panel .kp-select.kp-cfg-field {
   height: auto;

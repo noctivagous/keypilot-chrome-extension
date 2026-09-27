@@ -769,6 +769,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     const x = currentState.lastMouse.x;
     const y = currentState.lastMouse.y;
+    // A real pointer click would blur the typing field first. Programmatic
+    // click does not, so Layout Editor keycaps would stay in text mode and
+    // not run their click handlers the same way.
+    this._leaveTextFocusForActivate(currentState);
     this._flashThenActivate(target, () => {
       if (!this.activator.handleSmartActivate(target, x, y)) {
         this.activator.smartClick(target, x, y);
@@ -777,6 +781,25 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       this._disarmTextModeClick();
       this.state.setFocusElement(null);
     });
+  }
+
+  /**
+   * Exit text mode without dropping the hover target about to be activated.
+   * @param {any} [currentState]
+   */
+  _leaveTextFocusForActivate(currentState) {
+    this._disarmTextModeClick();
+    const focused = currentState?.focusedTextElement || this.focusDetector?.currentFocusedElement;
+    try {
+      const inChildDocument = !!(focused && focused.ownerDocument && focused.ownerDocument !== document);
+      if (inChildDocument) {
+        try { focused.blur(); } catch { /* ignore */ }
+      } else {
+        try { document.activeElement?.blur?.(); } catch { /* ignore */ }
+        try { document.body.focus(); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+    try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
   }
 
   shouldImmediateRefreshAfterClick(target) {
