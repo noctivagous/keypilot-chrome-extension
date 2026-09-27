@@ -19,4 +19,17 @@ describe('early Keyboard Reference bootstrap', () => {
     assert.match(early, /const paintKey = `\$\{desired\}:\$\{data\.hardwareId\}`/);
     assert.match(keyboardHelp, /_earlyBuiltinPaintMatches\(builtinLayoutId, hardwareLayoutId\)/);
   });
+
+  it('fills the layout menu when early paint is adopted without a keyboard rebuild', () => {
+    assert.match(
+      keyboardHelp,
+      /void this\._refreshLayoutSelectOptions\(\);\s*reveal\(\{ render: false \}\)/
+    );
+    assert.match(
+      early,
+      /const translated = earlyMessage\(String\(pair\[1\]\)\)/
+    );
+    assert.match(early, /keyboardLayoutSelectLabel/);
+    assert.doesNotMatch(early, /let earlyLayoutLabel = 'Browsing'/);
+  });
 });

@@ -227,7 +227,13 @@ export function createSelectMenu(config = {}) {
 
   const syncTrigger = () => {
     const choice = findChoice(currentValue);
-    const label = choice?.label != null ? String(choice.label) : (currentValue ? String(currentValue) : '');
+    const held = config.displayLabel != null ? String(config.displayLabel) : '';
+    const raw = currentValue ? String(currentValue) : '';
+    // A value with no option yet is an id (`builtin:browsing`, `user:…`). Keep the
+    // selected layout's label instead of flashing that id while options load.
+    const label = choice?.label != null
+      ? String(choice.label)
+      : (held || (raw.includes(':') ? '' : raw));
     triggerLabel.textContent = label;
     const iconId = choice?.icon;
     let showIcon = false;

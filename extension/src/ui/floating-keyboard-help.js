@@ -913,6 +913,9 @@ export class FloatingKeyboardHelp {
         void this._renderAsync().finally(() => reveal({ render: false }));
         return;
       }
+      // Matching early paint skips a keyboard rebuild, but the titlebar select
+      // is created empty. Fill its options or the trigger shows the raw id.
+      void this._refreshLayoutSelectOptions();
       reveal({ render: false });
     };
 
@@ -2065,7 +2068,7 @@ export class FloatingKeyboardHelp {
    * While editing, follows the Config panel's selection rather than the live current layout.
    * @returns {string}
    */
-  _layoutSelectValueForCurrent() {
+  _layoutSelectValueForCurrent(existing = null) {
     if (this._editMode && this._editLayoutState) {
       const st = this._editLayoutState;
       if (st.mode === 'user' && st.userLayoutId) return `user:${st.userLayoutId}`;
@@ -2078,10 +2081,50 @@ export class FloatingKeyboardHelp {
     }
     const sel = String(this._currentKeyboardLayoutId || 'builtin');
     if (sel.startsWith('user:')) return sel;
-    const familyId = normalizeKeyboardLayoutFamilyId(
-      this._getKeyPilot?.()?._settings?.keyboardLayoutFamilyId
-    );
-    return builtinFamilySelectValue(familyId);
+    const settingsFamily = this._getKeyPilot?.()?._settings?.keyboardLayoutFamilyId;
+    if (settingsFamily) return builtinFamilySelectValue(normalizeKeyboardLayoutFamilyId(settingsFamily));
+    let earlyValue = '';
+    try { earlyValue = existing?.getAttribute?.('data-kp-select-value') || ''; } catch { /* ignore */ }
+    if (earlyValue.startsWith('builtin:') || earlyValue.startsWith('user:')) return earlyValue;
+    return builtinFamilySelectValue(normalizeKeyboardLayoutFamilyId(null));
+  }
+
+  /**
+   * Visible name for the current picker value, before the async option list arrives.
+   * Prefers the early trigger text when it already names this selection.
+   * @param {string} value
+   * @param {Element|null} existing
+   * @returns {string}
+   */
+  _layoutSelectLabelForValue(value, existing) {
+    const v = String(value || '');
+    let existingLabel = '';
+    let existingValue = '';
+    try {
+      existingValue = existing?.getAttribute?.('data-kp-select-value') || '';
+      existingLabel = existing?.querySelector?.('.kp-select-trigger-label')?.textContent?.trim() || '';
+    } catch { /* ignore */ }
+    const placeholder = !existingLabel
+      || existingLabel === existingValue
+      || existingLabel.startsWith('builtin:')
+      || existingLabel.startsWith('user:')
+      || existingLabel.startsWith('layout_');
+    if (existingValue === v && existingLabel && !placeholder) return existingLabel;
+
+    const familyId = parseBuiltinFamilySelectValue(v);
+    if (familyId) {
+      try {
+        const item = listLayoutPickerGroups([]).builtin.find((entry) => entry.value === v);
+        const label = item?.labelKey ? getMessage(item.labelKey) : '';
+        if (label) return label;
+      } catch { /* ignore */ }
+    }
+    if (v.startsWith('user:')) {
+      const id = v.slice('user:'.length);
+      const layout = this._currentUserLayout;
+      if (layout && String(layout.id || '') === id && layout.label) return String(layout.label);
+    }
+    return existingLabel && !placeholder ? existingLabel : '';
   }
 
   /**
@@ -2099,13 +2142,17 @@ export class FloatingKeyboardHelp {
     try { this._layoutSelectApi?.destroy?.(); } catch { /* ignore */ }
     this._layoutSelectApi = null;
 
+    const value = this._layoutSelectValueForCurrent(existing);
+    const label = this._layoutSelectLabelForValue(value, existing);
     const menu = createSelectMenu({
       doc: document,
       ariaLabel: getMessage('keyboard_help_layout_aria'),
       variant: 'titlebar',
-      value: this._layoutSelectValueForCurrent(),
-      onChange: (value) => {
-        void this._onLayoutSelectChange(value);
+      value,
+      displayLabel: label,
+      options: label ? [{ value, label }] : [],
+      onChange: (next) => {
+        void this._onLayoutSelectChange(next);
       }
     });
     menu.root.setAttribute('data-kp-floating-keyboard-layout-select', 'true');

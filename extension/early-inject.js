@@ -142,6 +142,12 @@
       if (typeof patch.keyboardLayoutFamilyId === 'string') {
         next.keyboardLayoutFamilyId = patch.keyboardLayoutFamilyId;
       }
+      if (typeof patch.keyboardLayoutSelectValue === 'string') {
+        next.keyboardLayoutSelectValue = patch.keyboardLayoutSelectValue;
+      }
+      if (typeof patch.keyboardLayoutSelectLabel === 'string') {
+        next.keyboardLayoutSelectLabel = patch.keyboardLayoutSelectLabel;
+      }
       if (typeof patch.keyboardReferenceShowNumberRow === 'boolean') {
         next.keyboardReferenceShowNumberRow = patch.keyboardReferenceShowNumberRow;
       }
@@ -15078,6 +15084,8 @@
   // can paint at document_start the same way built-ins do.
   let keyboardUsesCustomLayout = false;
   let keyboardCustomLayoutSel = '';
+  let keyboardLayoutSelectValue = '';
+  let keyboardLayoutSelectLabel = '';
   let keyboardLayoutStore = null;
   let keyboardShowNumberRow = false;
   let keyboardHardwareLayoutId = '';
@@ -16062,6 +16070,16 @@
     return String(raw || '').trim().startsWith('user:');
   }
 
+  function rememberEarlyLayoutSelect(value, label) {
+    const nextValue = String(value || '');
+    const nextLabel = String(label || '');
+    if (!nextValue || !nextLabel) return;
+    if (nextValue === keyboardLayoutSelectValue && nextLabel === keyboardLayoutSelectLabel) return;
+    keyboardLayoutSelectValue = nextValue;
+    keyboardLayoutSelectLabel = nextLabel;
+    cacheKeyboardReferenceSnapshot();
+  }
+
   function applyEarlyLayoutSelect() {
     if (keyboardHelpHandedOff || !keyboardHelpRoot) return;
     try {
@@ -16071,9 +16089,12 @@
         const value = keyboardCustomLayoutSel || '';
         try { sel.setAttribute('data-kp-select-value', value); } catch { /* ignore */ }
         const userLayout = getEarlyActiveUserLayout();
-        const label = userLayout && userLayout.label ? String(userLayout.label) : 'Custom';
+        const label = (userLayout && userLayout.label)
+          ? String(userLayout.label)
+          : (keyboardLayoutSelectValue === value ? keyboardLayoutSelectLabel : '');
         const labelEl = sel.querySelector && sel.querySelector('.kp-select-trigger-label');
         if (labelEl && label) labelEl.textContent = label;
+        if (label) rememberEarlyLayoutSelect(value, label);
         return;
       }
       const value = `builtin:${keyboardLayoutFamilyId}`;
@@ -16083,8 +16104,10 @@
         const pair = earlyLayoutFamilyOptions().find((p) => p && p[0] === value);
         if (pair && pair[1]) label = earlyMessage(String(pair[1]));
       } catch { /* ignore */ }
+      if (!label && keyboardLayoutSelectValue === value) label = keyboardLayoutSelectLabel;
       const labelEl = sel.querySelector && sel.querySelector('.kp-select-trigger-label');
       if (labelEl && label) labelEl.textContent = label;
+      if (label) rememberEarlyLayoutSelect(value, label);
       if (sel.tagName === 'SELECT') {
         const has = Array.prototype.some.call(sel.options || [], (o) => o && o.value === value);
         if (has && sel.value !== value) sel.value = value;
@@ -17311,6 +17334,16 @@
       if (typeof cachedLayout.keyboardLayoutFamilyId === 'string') {
         keyboardLayoutFamilyId = cachedLayout.keyboardLayoutFamilyId;
       }
+      if (typeof cachedLayout.keyboardLayoutSelectValue === 'string') {
+        keyboardLayoutSelectValue = cachedLayout.keyboardLayoutSelectValue;
+      }
+      if (typeof cachedLayout.keyboardLayoutSelectLabel === 'string') {
+        keyboardLayoutSelectLabel = cachedLayout.keyboardLayoutSelectLabel;
+      }
+      if (keyboardLayoutSelectValue.startsWith('user:')) {
+        keyboardUsesCustomLayout = true;
+        keyboardCustomLayoutSel = keyboardLayoutSelectValue;
+      }
       if (typeof cachedLayout.keyboardReferenceShowNumberRow === 'boolean') {
         keyboardShowNumberRow = cachedLayout.keyboardReferenceShowNumberRow;
       }
@@ -17332,7 +17365,9 @@
       keyboardReferenceShowNumberRow: keyboardShowNumberRow,
       keyboardHardwareLayoutId: normalizeEarlyKeyboardHardwareLayoutId(keyboardHardwareLayoutId),
       keyboardLayoutId: keyboardLayoutId,
-      keyboardLayoutFamilyId: keyboardLayoutFamilyId
+      keyboardLayoutFamilyId: keyboardLayoutFamilyId,
+      keyboardLayoutSelectValue: keyboardLayoutSelectValue,
+      keyboardLayoutSelectLabel: keyboardLayoutSelectLabel
     });
   }
 
@@ -17882,12 +17917,21 @@
     });
     const layoutTriggerLabel = doc.createElement('span');
     layoutTriggerLabel.className = 'kp-select-trigger-label';
-    let earlyLayoutLabel = 'Browsing';
+    let earlyLayoutLabel = '';
     try {
-      const value = `builtin:${keyboardLayoutFamilyId}`;
+      const value = keyboardUsesCustomLayout
+        ? keyboardCustomLayoutSel
+        : `builtin:${keyboardLayoutFamilyId}`;
       layoutSelect.setAttribute('data-kp-select-value', value);
-      const pair = earlyLayoutFamilyOptions().find((p) => p && p[0] === value);
-      if (pair && pair[1]) earlyLayoutLabel = String(pair[1]);
+      if (keyboardLayoutSelectValue === value && keyboardLayoutSelectLabel) {
+        earlyLayoutLabel = keyboardLayoutSelectLabel;
+      } else if (!keyboardUsesCustomLayout) {
+        const pair = earlyLayoutFamilyOptions().find((p) => p && p[0] === value);
+        if (pair && pair[1]) {
+          const translated = earlyMessage(String(pair[1]));
+          if (translated) earlyLayoutLabel = translated;
+        }
+      }
     } catch { /* ignore */ }
     layoutTriggerLabel.textContent = earlyLayoutLabel;
     Object.assign(layoutTriggerLabel.style, {

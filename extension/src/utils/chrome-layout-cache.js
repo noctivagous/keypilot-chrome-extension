@@ -17,8 +17,10 @@ export const CHROME_LAYOUT_CACHE_KEY = 'kp_chrome_layout_v1';
  *   keyboardReferenceVisible?: boolean,
  *   keyboardHardwareLayoutId?: string,
  *   keyboardLayoutId?: string,
- *   keyboardLayoutFamilyId?: string,
- *   keyboardReferenceShowNumberRow?: boolean
+   *   keyboardLayoutFamilyId?: string,
+   *   keyboardLayoutSelectValue?: string,
+   *   keyboardLayoutSelectLabel?: string,
+   *   keyboardReferenceShowNumberRow?: boolean
  * }|null}
  */
 export function peekChromeLayoutCache() {
@@ -66,6 +68,12 @@ export function cacheChromeLayout(patch) {
     }
     if (typeof patch.keyboardLayoutFamilyId === 'string') {
       next.keyboardLayoutFamilyId = patch.keyboardLayoutFamilyId;
+    }
+    if (typeof patch.keyboardLayoutSelectValue === 'string') {
+      next.keyboardLayoutSelectValue = patch.keyboardLayoutSelectValue;
+    }
+    if (typeof patch.keyboardLayoutSelectLabel === 'string') {
+      next.keyboardLayoutSelectLabel = patch.keyboardLayoutSelectLabel;
     }
     if (typeof patch.keyboardReferenceShowNumberRow === 'boolean') {
       next.keyboardReferenceShowNumberRow = patch.keyboardReferenceShowNumberRow;
