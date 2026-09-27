@@ -1,6 +1,7 @@
 import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS, ELEMENT_SELECT_AGGREGATES, ELEMENT_SELECT_LANDMARKS, ELEMENT_SELECT_ATOMS } from '../config/constants.js';
 import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
+import { deepElementFromPoint } from '../utils/element-from-point.js';
 
 /**
  * Shared highlight / select-element mode (Text Select + Element Select rectangle).
@@ -441,6 +442,7 @@ export class HighlightManager extends EventManager {
     const shouldShowRectangle = this.shouldShowRectangle(width, height, deltaX, deltaY);
     
     if (shouldShowRectangle) {
+      this.highlightRectangleOverlay.style.zIndex = String(this._selectionChromeZ(Z_INDEX.OVERLAYS_BELOW_2));
       this.highlightRectangleOverlay.style.left = `${viewportLeft}px`;
       this.highlightRectangleOverlay.style.top = `${viewportTop}px`;
       this.highlightRectangleOverlay.style.width = `${width}px`;
@@ -641,8 +643,9 @@ export class HighlightManager extends EventManager {
       range.setStart(textNode, offset);
       range.setEnd(textNode, offset);
 
-      // Set browser selection (native paint — no custom overlays on the hot path)
-      const selection = this.getSelectionForDocument(ownerDocument);
+      // Set browser selection (native paint — no custom overlays on the hot path).
+      // Reader article text lives in an open shadow root, which has its own Selection.
+      const selection = this.selectionForNode(textNode);
       if (selection) {
         selection.removeAllRanges();
         selection.addRange(range);
@@ -676,6 +679,25 @@ export class HighlightManager extends EventManager {
   resolveCaretAtPoint(x, y, ownerDocument = document) {
     try {
       const doc = ownerDocument || document;
+      const readerRoot = this._readerShadowRoot();
+      if (readerRoot) {
+        let deep = null;
+        try { deep = deepElementFromPoint(x, y, doc); } catch { deep = null; }
+        const overReader = !!(deep && (deep === readerRoot.host || deep.getRootNode?.() === readerRoot));
+        if (overReader) {
+          const mapped = deep ? this._caretInReaderShadow(readerRoot, deep, x, y) : null;
+          return mapped || null;
+        }
+        // The reader covers the viewport. A miss must not select the page underneath.
+        try {
+          const hostRect = readerRoot.host.getBoundingClientRect();
+          if (x >= hostRect.left && x <= hostRect.right && y >= hostRect.top && y <= hostRect.bottom) {
+            return null;
+          }
+        } catch {
+          return null;
+        }
+      }
 
       // Chromium / Safari
       if (typeof doc.caretRangeFromPoint === 'function') {
@@ -712,6 +734,268 @@ export class HighlightManager extends EventManager {
       // ignore
     }
     return null;
+  }
+
+  /**
+   * Reader Mode article lives in #kpv2-reader-overlay's open shadow.
+   * @returns {ShadowRoot|null}
+   */
+  _readerShadowRoot() {
+    try {
+      const host = document.getElementById('kpv2-reader-overlay');
+      const root = host?.shadowRoot;
+      return root && root.mode === 'open' ? root : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Selection that paints inside the tree that owns `node`.
+   * Shadow roots do not share window.getSelection().
+   * @param {Node|null} node
+   * @returns {Selection|null}
+   */
+  selectionForNode(node) {
+    try {
+      const root = node?.getRootNode?.();
+      if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot
+        && typeof root.getSelection === 'function') {
+        return root.getSelection();
+      }
+    } catch {
+      // ignore
+    }
+    return this.getSelectionForDocument(node?.ownerDocument || document);
+  }
+
+  /**
+   * @param {Selection|null} selection
+   */
+  _clearOneSelection(selection) {
+    try { selection?.removeAllRanges?.(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Window selection plus the reader shadow selection, de-duplicated.
+   * @param {(selection: Selection) => void} fn
+   */
+  _forEachLiveSelection(fn) {
+    const seen = new Set();
+    const visit = (selection) => {
+      if (!selection || seen.has(selection)) return;
+      seen.add(selection);
+      fn(selection);
+    };
+    try { visit(window.getSelection?.()); } catch { /* ignore */ }
+    try {
+      const root = this._readerShadowRoot();
+      if (root && typeof root.getSelection === 'function') visit(root.getSelection());
+    } catch { /* ignore */ }
+    if (this.characterStartTextNode) visit(this.selectionForNode(this.characterStartTextNode));
+  }
+
+  /**
+   * Caret inside the reader shadow. caretRangeFromPoint does not pierce shadow.
+   * @param {ShadowRoot} root
+   * @param {Element} deep
+   * @param {number} x
+   * @param {number} y
+   * @returns {{ textNode: Text, offset: number }|null}
+   */
+  _caretInReaderShadow(root, deep, x, y) {
+    try {
+      if (typeof document.caretPositionFromPoint === 'function') {
+        const pos = document.caretPositionFromPoint(x, y, { shadowRoots: [root] });
+        const node = pos?.offsetNode;
+        if (node && node.getRootNode?.() === root) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            return { textNode: node, offset: pos.offset || 0 };
+          }
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const mapped = this.caretFromElementChildIndex(node, pos.offset || 0);
+            if (mapped) return mapped;
+          }
+        }
+      }
+    } catch {
+      // Older Chromium ignores the shadowRoots option; fall through to layout.
+    }
+    const block = deep && deep.nodeType === Node.ELEMENT_NODE ? deep : deep?.parentElement;
+    return this._caretFromLayout(block, x, y);
+  }
+
+  /**
+   * Descend to the painted child under the point so a large scroller is not walked.
+   * @param {Element} el
+   * @param {number} x
+   * @param {number} y
+   * @returns {Element}
+   */
+  _tightenElementAtPoint(el, x, y) {
+    let current = el;
+    for (let depth = 0; depth < 16 && current; depth++) {
+      const kids = current.children;
+      if (!kids || !kids.length) break;
+      let hit = null;
+      for (let i = kids.length - 1; i >= 0; i--) {
+        const child = kids[i];
+        let rect;
+        try { rect = child.getBoundingClientRect(); } catch { continue; }
+        if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          hit = child;
+          break;
+        }
+      }
+      if (!hit) break;
+      current = hit;
+    }
+    return current;
+  }
+
+  /**
+   * Text-node hit test scoped to the element under the pointer.
+   * @param {Element|null} rootEl
+   * @param {number} x
+   * @param {number} y
+   * @returns {{ textNode: Text, offset: number }|null}
+   */
+  _caretFromLayout(rootEl, x, y) {
+    if (!rootEl || rootEl.nodeType !== Node.ELEMENT_NODE) return null;
+    const tightened = this._tightenElementAtPoint(rootEl, x, y);
+    const doc = (tightened || rootEl).ownerDocument || document;
+    rootEl = tightened || rootEl;
+    let walker;
+    try {
+      walker = doc.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          return node.nodeValue && /\S/.test(node.nodeValue)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        }
+      });
+    } catch {
+      return null;
+    }
+    let closest = null;
+    let closestDist = 28;
+    let node;
+    while ((node = walker.nextNode())) {
+      const hit = this._offsetInTextNode(node, x, y);
+      if (!hit) continue;
+      if (hit.inside) return { textNode: node, offset: hit.offset };
+      if (hit.dist < closestDist) {
+        closestDist = hit.dist;
+        closest = { textNode: node, offset: hit.offset };
+      }
+    }
+    return closest;
+  }
+
+  /**
+   * @param {Text} textNode
+   * @param {number} x
+   * @param {number} y
+   * @returns {{ offset: number, inside: boolean, dist: number }|null}
+   */
+  _offsetInTextNode(textNode, x, y) {
+    const len = textNode?.nodeValue ? textNode.nodeValue.length : 0;
+    if (!len) return null;
+    const doc = textNode.ownerDocument || document;
+    let range;
+    try {
+      range = doc.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, len);
+    } catch {
+      return null;
+    }
+    const lines = [];
+    try {
+      for (const rect of range.getClientRects()) {
+        if (rect.width > 0 && rect.height > 0) lines.push(rect);
+      }
+    } catch {
+      return null;
+    }
+    if (!lines.length) return null;
+
+    let line = null;
+    let bestDist = Infinity;
+    for (const rect of lines) {
+      const inside = x >= rect.left - 1 && x <= rect.right + 1
+        && y >= rect.top - 1 && y <= rect.bottom + 1;
+      if (inside) {
+        line = rect;
+        bestDist = 0;
+        break;
+      }
+      const dx = Math.max(rect.left - x, 0, x - rect.right);
+      const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+      const dist = Math.hypot(dx, dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        line = rect;
+      }
+    }
+    if (!line || bestDist > 28) return null;
+
+    let rtl = false;
+    try {
+      rtl = getComputedStyle(textNode.parentElement || textNode).direction === 'rtl';
+    } catch {
+      rtl = false;
+    }
+
+    let low = 0;
+    let high = len;
+    let guard = 0;
+    while (low < high && guard < 40) {
+      guard += 1;
+      const mid = (low + high) >> 1;
+      let caret = null;
+      try {
+        range.setStart(textNode, mid);
+        range.collapse(true);
+        caret = range.getClientRects()[0] || range.getBoundingClientRect();
+      } catch {
+        break;
+      }
+      if (!caret || (caret.width === 0 && caret.height === 0)) {
+        low = mid + 1;
+        continue;
+      }
+      const onLine = caret.top < line.bottom && caret.bottom > line.top;
+      if (!onLine) {
+        if (caret.top >= line.bottom) high = mid;
+        else low = mid + 1;
+        continue;
+      }
+      const before = rtl ? x > caret.left : x < caret.left;
+      if (before) high = mid;
+      else low = mid + 1;
+    }
+    const offset = Math.max(0, Math.min(low, len));
+    return { offset, inside: bestDist === 0, dist: bestDist };
+  }
+
+  /**
+   * Paint selection chrome above the reader popover while it is open.
+   * @param {number} fallback
+   * @returns {number}
+   */
+  _selectionChromeZ(fallback) {
+    try {
+      const host = document.getElementById('kpv2-reader-overlay');
+      if (!host?.isConnected) return fallback;
+      const z = Number.parseInt(host.style.zIndex || '', 10);
+      if (!Number.isFinite(z)) return fallback;
+      const cap = (Z_INDEX.CURSOR || (z + 2)) - 1;
+      return Math.min(z + 2, cap);
+    } catch {
+      return fallback;
+    }
   }
 
   /**
@@ -804,8 +1088,13 @@ export class HighlightManager extends EventManager {
   applyCaretSelection(start, end) {
     if (!start?.textNode || !end?.textNode) return null;
     try {
+      const startRoot = start.textNode.getRootNode?.();
+      const endRoot = end.textNode.getRootNode?.();
+      if (startRoot && endRoot && startRoot !== endRoot) {
+        return this.selectionForNode(start.textNode);
+      }
       const ownerDocument = start.textNode.ownerDocument || document;
-      const selection = this.getSelectionForDocument(ownerDocument);
+      const selection = this.selectionForNode(start.textNode);
       if (!selection) return null;
 
       // Determine document order so setStart/setEnd never throws for reverse drag.
@@ -1125,6 +1414,10 @@ export class HighlightManager extends EventManager {
     let candidates = [];
     try {
       candidates = Array.from(document.querySelectorAll(this._elementSelectSelector));
+      const readerRoot = this._readerShadowRoot();
+      if (readerRoot) {
+        candidates.push(...readerRoot.querySelectorAll(this._elementSelectSelector));
+      }
     } catch {
       return [];
     }
@@ -1133,6 +1426,7 @@ export class HighlightManager extends EventManager {
     for (const el of candidates) {
       if (!el || el.nodeType !== 1) continue;
       if (this._isKeyPilotChromeElement(el)) continue;
+      if (el.closest?.('.kpv2-reader-titlebar, .kpv2-popover-titlebar, .kpv2-reader-toc, .kpv2-reader-toolbar')) continue;
       const boxes = this._elementClientRects(el);
       if (!boxes.length) continue;
       if (!this._clientRectsIntersectRect(rect, boxes)) continue;
@@ -1319,7 +1613,7 @@ export class HighlightManager extends EventManager {
           background: ${COLORS.HIGHLIGHT_SELECTION_BG};
           border: 1px solid ${COLORS.HIGHLIGHT_SELECTION_BORDER};
           pointer-events: none;
-          z-index: ${Z_INDEX.HIGHLIGHT_SELECTION};
+          z-index: ${this._selectionChromeZ(Z_INDEX.HIGHLIGHT_SELECTION)};
           box-sizing: border-box;
         `
       });
@@ -1401,7 +1695,7 @@ export class HighlightManager extends EventManager {
   createRectangleConstrainedCharacterSelection(rectBounds) {
     try {
       const ownerDocument = this.characterStartTextNode.ownerDocument || document;
-      const selection = this.getSelectionForDocument(ownerDocument);
+      const selection = this.selectionForNode(this.characterStartTextNode);
       
       if (!selection) {
         return null;
@@ -1685,8 +1979,12 @@ export class HighlightManager extends EventManager {
    */
   peekCharacterSelectedText() {
     try {
-      const selection = window.getSelection();
-      return selection ? (selection.toString() || '') : '';
+      let text = '';
+      this._forEachLiveSelection((selection) => {
+        const next = selection?.toString?.() || '';
+        if (next.length > text.length) text = next;
+      });
+      return text;
     } catch {
       return '';
     }
@@ -1723,10 +2021,7 @@ export class HighlightManager extends EventManager {
    */
   clearCharacterSelection() {
     try {
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-      }
+      this._forEachLiveSelection((selection) => this._clearOneSelection(selection));
       this.clearHighlightSelectionOverlays();
       // Hide dashed guide without going through hide→reset→resetCharacter loops twice
       if (this.highlightRectangleOverlay) {

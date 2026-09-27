@@ -66,6 +66,20 @@ table's row is filled in or explicitly deferred (see
   labels (`fn_*`, `keycap_*`, `keyboard_help_*`, `key_info_*`) do live here;
   the site generator copies a slim subset into `promo/web/messages/`.
 
+### 1a. Region defaults — `i18n/region-defaults/<locale>.json`
+
+- Bundled Social Media Open URLs list, Google (and optional other) search
+  home/query URLs for Settings, and the Launcher → Searches site list.
+- Not Chrome `messages.json`: lists may differ in length and membership.
+  Public site **titles** stay untranslated brand names.
+- Fallback: UI language → hyphen/underscore variant → language base, then
+  `es_419` → `es` and `zh_HK` → `zh_TW`, then English. Runtime loader:
+  `extension/src/config/region-defaults.js`.
+- Needs: `en.json` complete (`stockSocialMedia.urls`, `searchEngineUrls`,
+  `launcherSearchSites`). Every shipped `_locales/<id>` must have a matching
+  file; a regional file may omit keys its parent supplies.
+- Verify: `npm run check:locales` (file presence and English shape).
+
 ### 2. In-product help — `extension/userdocs/<locale>/`
 
 - `index.json` (navigation labels) plus per-topic Markdown files.
@@ -269,6 +283,10 @@ HTML `lang` uses hyphens.
    `extension/_locales/<locale>/messages.json` and translate it. Keep every
    key, placeholder name, and English `description`. Run
    `npm run check:locales`.
+1a. **Region defaults (§1a).** Copy `i18n/region-defaults/en.json` to
+   `i18n/region-defaults/<locale>.json` and edit which social sites and
+   search engines ship (URLs and membership). A regional catalog may omit
+   keys that `es` / `zh_TW` already define (`es_419`, `zh_HK`).
 2. **In-product help and onboarding (§2, §3),** when that locale should not
    fall back. Mirror English topic ids / slide ids. These are not produced by
    `web:locales`.

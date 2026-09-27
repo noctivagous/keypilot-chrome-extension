@@ -332,6 +332,17 @@ const TOC_HEADING_TAGS = new Set(['H2', 'H3']);
 export const MIN_READER_TOC_HEADINGS = 3;
 
 /**
+ * Titlebar outline control. Unknown values fall back to the contents column.
+ * @param {string|null|undefined} value
+ * @returns {'column'|'accordion'|'none'}
+ */
+export function normalizeReaderOutlineMode(value) {
+  const mode = String(value || '');
+  if (mode === 'accordion' || mode === 'none') return mode;
+  return 'column';
+}
+
+/**
  * Same-document fragment link (`#section`), not a new URL.
  * @param {string|null|undefined} href
  * @returns {boolean}

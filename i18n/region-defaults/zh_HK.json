@@ -1,0 +1,17 @@
+{
+  "searchEngineUrls": {
+    "google": {
+      "homeUrl": "https://www.google.com.hk/",
+      "searchUrlPrefix": "https://www.google.com.hk/search?q="
+    }
+  },
+  "launcherSearchSites": [
+    { "title": "Google", "url": "https://www.google.com.hk" },
+    { "title": "Bing", "url": "https://bing.com" },
+    { "title": "Yahoo", "url": "https://yahoo.com" },
+    { "title": "DuckDuckGo", "url": "https://duckduckgo.com" },
+    { "title": "Brave Search", "url": "https://search.brave.com" },
+    { "title": "Ecosia", "url": "https://ecosia.org" },
+    { "title": "Startpage", "url": "https://startpage.com" }
+  ]
+}

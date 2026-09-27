@@ -1,0 +1,26 @@
+{
+  "stockSocialMedia": {
+    "urls": [
+      "facebook.com",
+      "instagram.com",
+      "youtube.com",
+      "tiktok.com"
+    ]
+  },
+  "searchEngineUrls": {
+    "google": {
+      "homeUrl": "https://www.google.sk/",
+      "searchUrlPrefix": "https://www.google.sk/search?q="
+    }
+  },
+  "launcherSearchSites": [
+    { "title": "Google", "url": "https://www.google.sk" },
+    { "title": "Seznam", "url": "https://www.seznam.cz" },
+    { "title": "Bing", "url": "https://bing.com" },
+    { "title": "DuckDuckGo", "url": "https://duckduckgo.com" },
+    { "title": "Yahoo", "url": "https://yahoo.com" },
+    { "title": "Brave Search", "url": "https://search.brave.com" },
+    { "title": "Ecosia", "url": "https://ecosia.org" },
+    { "title": "Startpage", "url": "https://startpage.com" }
+  ]
+}

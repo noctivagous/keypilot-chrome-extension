@@ -16,6 +16,7 @@ import {
   claimElementId,
   mintHeadingId,
   collectReaderToc,
+  normalizeReaderOutlineMode,
   MIN_ARTICLE_CHARS,
   MIN_READER_TOC_HEADINGS,
   READABILITY_MIN_CHARS
@@ -208,6 +209,10 @@ describe('reader mode extract', () => {
     assert.equal(claimElementId('intro', used), '');
     assert.equal(mintHeadingId(used), 'kp-reader-h-1');
     assert.equal(MIN_READER_TOC_HEADINGS, 3);
+    assert.equal(normalizeReaderOutlineMode('accordion'), 'accordion');
+    assert.equal(normalizeReaderOutlineMode('none'), 'none');
+    assert.equal(normalizeReaderOutlineMode('column'), 'column');
+    assert.equal(normalizeReaderOutlineMode('other'), 'column');
 
     const heading = (tag, text, id) => ({
       tagName: tag,

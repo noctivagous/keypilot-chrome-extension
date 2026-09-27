@@ -1,0 +1,25 @@
+{
+  "stockSocialMedia": {
+    "urls": [
+      "weibo.com",
+      "douyin.com",
+      "bilibili.com",
+      "xiaohongshu.com",
+      "weixin.qq.com"
+    ]
+  },
+  "searchEngineUrls": {
+    "google": {
+      "homeUrl": "https://www.google.com/",
+      "searchUrlPrefix": "https://www.google.com/search?q="
+    }
+  },
+  "launcherSearchSites": [
+    { "title": "Baidu", "url": "https://www.baidu.com" },
+    { "title": "Bing", "url": "https://bing.com" },
+    { "title": "Sogou", "url": "https://www.sogou.com" },
+    { "title": "Google", "url": "https://www.google.com" },
+    { "title": "DuckDuckGo", "url": "https://duckduckgo.com" },
+    { "title": "Brave Search", "url": "https://search.brave.com" }
+  ]
+}

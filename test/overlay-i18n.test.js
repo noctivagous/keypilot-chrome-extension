@@ -29,7 +29,11 @@ const OVERLAY_KEYS = [
   ['extension/src/ui/reader-mode-overlay.js', [
     'reader_mode_contents',
     'reader_mode_contents_show',
-    'reader_mode_contents_hide'
+    'reader_mode_contents_hide',
+    'reader_mode_outline_aria',
+    'reader_mode_outline_column',
+    'reader_mode_outline_accordion',
+    'reader_mode_outline_none'
   ]],
   ['extension/src/ui/page-media-overlay.js', [
     'page_media_tab_image',

@@ -8,7 +8,7 @@
  * `searches` comes from search-engines.js (shared with settings).
  */
 
-import { LAUNCHER_SEARCH_SITES } from './search-engines.js';
+import { getLauncherSearchSites } from './search-engines.js';
 import { getMessage } from '../utils/i18n.js';
 
 /**
@@ -317,11 +317,34 @@ const SEARCH_ENGINE_DESCRIPTION_KEYS = Object.freeze({
   Yahoo: 'launcher_search_yahoo_description',
   'Brave Search': 'launcher_search_brave_description',
   Ecosia: 'launcher_search_ecosia_description',
-  Startpage: 'launcher_search_startpage_description'
+  Startpage: 'launcher_search_startpage_description',
+  Seznam: 'launcher_search_seznam_description',
+  Baidu: 'launcher_search_baidu_description',
+  Sogou: 'launcher_search_sogou_description',
+  'Yahoo Japan': 'launcher_search_yahoo_japan_description'
 });
 
 /**
+ * @param {Array<{ title: string, url: string, isDefault?: boolean }>} rows
+ * @returns {ReadonlyArray<LauncherSiteEntry>}
+ */
+function searchCatalogEntries(rows) {
+  return Object.freeze(
+    (rows || []).map((s) =>
+      Object.freeze({
+        title: s.title,
+        url: s.url,
+        descriptionKey: SEARCH_ENGINE_DESCRIPTION_KEYS[s.title] || 'launcher_search_generic_description',
+        seed: true,
+        isDefault: true
+      })
+    )
+  );
+}
+
+/**
  * Full catalog keyed by launcher category.
+ * `searches` is the English list; use {@link getLauncherSiteCatalog} at runtime.
  * @type {Readonly<Record<string, ReadonlyArray<LauncherSiteEntry>>>}
  */
 export const LAUNCHER_SITE_CATALOG = Object.freeze({
@@ -333,18 +356,27 @@ export const LAUNCHER_SITE_CATALOG = Object.freeze({
   shopping: SHOPPING,
   ai: AI,
   archive: ARCHIVE,
-  searches: Object.freeze(
-    LAUNCHER_SEARCH_SITES.map((s) =>
-      Object.freeze({
-        title: s.title,
-        url: s.url,
-        descriptionKey: SEARCH_ENGINE_DESCRIPTION_KEYS[s.title] || 'launcher_search_generic_description',
-        seed: true,
-        isDefault: true
-      })
-    )
-  )
+  searches: searchCatalogEntries(getLauncherSearchSites('en'))
 });
+
+/**
+ * Catalog for the current UI locale (Searches list may differ).
+ * @param {string} [uiLanguage]
+ * @returns {Readonly<Record<string, ReadonlyArray<LauncherSiteEntry>>>}
+ */
+export function getLauncherSiteCatalog(uiLanguage) {
+  return Object.freeze({
+    social: SOCIAL,
+    news: NEWS,
+    productivity: PRODUCTIVITY,
+    videos: VIDEOS,
+    entertainment: ENTERTAINMENT,
+    shopping: SHOPPING,
+    ai: AI,
+    archive: ARCHIVE,
+    searches: searchCatalogEntries(getLauncherSearchSites(uiLanguage))
+  });
+}
 
 /** Categories that use the catalog composer (not Bookmarks special deck). */
 export const LAUNCHER_CATALOG_CATEGORY_KEYS = Object.freeze(
@@ -365,6 +397,7 @@ export function localizeLauncherCatalogEntry(entry) {
   return { ...entry, description };
 }
 
-export function getLauncherCatalog(categoryKey) {
-  return (LAUNCHER_SITE_CATALOG[categoryKey] || []).map(localizeLauncherCatalogEntry);
+export function getLauncherCatalog(categoryKey, uiLanguage) {
+  const catalog = getLauncherSiteCatalog(uiLanguage);
+  return (catalog[categoryKey] || []).map(localizeLauncherCatalogEntry);
 }

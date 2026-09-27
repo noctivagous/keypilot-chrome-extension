@@ -2641,6 +2641,111 @@ ${lines.join("\n")}
   // extension/src/ui/keybindings-ui-shared.js
   init_keyboard_layouts();
   init_stock_actions();
+
+  // extension/src/ui/nct-dark-ui.js
+  var NCT_DARK_UI_COLORS = {
+    bg: "#0f0f10",
+    panel: "#232323",
+    panelEdge: "#3a3a3a",
+    panelEdgeDark: "#111",
+    titleTop: "#4c4c4c",
+    titleMid: "#353535",
+    titleBot: "#252525",
+    btnTop: "#4a4a4a",
+    btnMid: "#343434",
+    btnBot: "#2a2a2a",
+    litTop: "#5a7a9a",
+    litBot: "#3a5570",
+    litEdge: "#2a4a66",
+    accent: "#4a90c8",
+    fg: "#ddd",
+    fgDim: "#aaa",
+    fgMute: "#777",
+    fieldBg: "#141414",
+    fieldEdge: "#0a0a0a",
+    fieldInsetTop: "#333"
+  };
+  var NCT_DARK_UI_PANEL_BACKGROUND = "var(--kp-panel-bg, var(--kp-color-panel, #232323))";
+  var NCT_DARK_UI_PANEL_BORDER = "var(--kp-panel-border, 1px solid #111)";
+  var NCT_DARK_UI_PANEL_BOX_SHADOW = "var(--kp-panel-shadow)";
+  var NCT_DARK_UI_PANEL_RADIUS = "var(--kp-radius-panel, 3px)";
+  var NCT_DARK_UI_SCROLLBAR_CLASS = "kp-nct-scroll";
+  function getNctDarkUiScrollbarCss(opts = {}) {
+    const cls = typeof opts.className === "string" && opts.className.trim() ? opts.className.trim().replace(/^\./, "") : NCT_DARK_UI_SCROLLBAR_CLASS;
+    const scope = typeof opts.scopeSelector === "string" && opts.scopeSelector.trim() ? `${opts.scopeSelector.trim()} ` : "";
+    const root = `${scope}.${cls}`;
+    const thumb = "var(--kp-scrollbar-thumb, #4a4a4a)";
+    const thumbHover = "var(--kp-scrollbar-thumb-hover, #5c5c5c)";
+    const thumbActive = "var(--kp-color-accent, #4a90c8)";
+    const track = "var(--kp-scrollbar-track, #141414)";
+    const edge = "var(--kp-color-panel-edge-dark, #111)";
+    return `
+${root} {
+  scrollbar-width: thin;
+  scrollbar-color: ${thumb} ${track};
+}
+/* Blink: scrollbar-width uses overlay bars that only appear on scroll and
+   suppress ::-webkit-scrollbar. Unset so the themed classic bar paints as
+   soon as the region overflows (Dark Pro tokens by default). */
+@supports selector(::-webkit-scrollbar) {
+  ${root} {
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+}
+${root}::-webkit-scrollbar,
+${root} ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  background: ${track};
+}
+${root}::-webkit-scrollbar-corner,
+${root} ::-webkit-scrollbar-corner {
+  background: ${track};
+}
+${root}::-webkit-scrollbar-track,
+${root} ::-webkit-scrollbar-track {
+  background: ${track};
+  border-left: 1px solid ${edge};
+  border-top: 1px solid ${edge};
+}
+${root}::-webkit-scrollbar-thumb,
+${root} ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #555 0%, ${thumb} 45%, #3a3a3a 100%);
+  border: 1px solid ${edge};
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  min-height: 28px;
+  min-width: 28px;
+}
+${root}::-webkit-scrollbar-thumb:hover,
+${root} ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #666 0%, ${thumbHover} 45%, #444 100%);
+}
+${root}::-webkit-scrollbar-thumb:active,
+${root} ::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, ${thumbActive} 0%, #3a6a94 100%);
+  border-color: var(--kp-color-lit-edge, #2a4a66);
+}
+`.trim();
+  }
+  var NCT_DARK_UI_TITLEBAR_GRADIENT = "var(--kp-titlebar-bg)";
+  var NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM = "var(--kp-titlebar-border, 1px solid #111)";
+  var NCT_DARK_UI_TITLEBAR_BOX_SHADOW = "var(--kp-titlebar-shadow)";
+  var NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND = `linear-gradient(180deg, rgba(255, 140, 0, 0.28) 0%, rgba(255, 140, 0, 0.14) 45%, rgba(255, 120, 0, 0.18) 100%), linear-gradient(180deg, ${NCT_DARK_UI_COLORS.titleTop} 0%, ${NCT_DARK_UI_COLORS.titleMid} 45%, ${NCT_DARK_UI_COLORS.titleBot} 100%)`;
+  var NCT_DARK_UI_BTN_GRADIENT = "var(--kp-btn-bg)";
+  var NCT_DARK_UI_BTN_BORDER = "var(--kp-btn-border, 1px solid #111)";
+  var NCT_DARK_UI_BTN_RADIUS = "var(--kp-radius-btn, 2px)";
+  var NCT_DARK_UI_ICON_BUTTON_OUTLINE = "inset 0 0 0 1px var(--kp-color-panel-edge, #3a3a3a)";
+  var NCT_DARK_UI_FIELD_BACKGROUND = "var(--kp-field-bg, #141414)";
+  var NCT_DARK_UI_FIELD_BORDER = "var(--kp-field-border, 1px solid #0a0a0a)";
+  var NCT_DARK_UI_FIELD_BOX_SHADOW = "var(--kp-field-shadow)";
+  var NCT_DARK_UI_FIELD_FOCUS_BORDER = "var(--kp-color-accent, #4a90c8)";
+  var NCT_DARK_UI_FIELD_FOCUS_BOX_SHADOW = "inset 0 0 0 1px color-mix(in srgb, var(--kp-color-accent, #4a90c8) 35%, transparent)";
+
+  // extension/src/ui/keybindings-ui-shared.js
   var KEYBINDINGS_UI_STYLE_ATTR = "data-kp-keybindings-ui-style";
   var KEYBINDINGS_UI_ROOT_CLASS = "kp-keybindings-ui";
   var KEYBINDINGS_UI_FONT_STYLE_ATTR = "data-kp-keybindings-fonts";
@@ -3055,6 +3160,10 @@ ${lines.join("\n")}
     const urlEzarion = fontUrls && fontUrls.ezarion || KEYBINDINGS_UI_FONT_PLACEHOLDERS.EZARION;
     const urlDosis = fontUrls && fontUrls.dosis || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
     const keyIconCss = getKeyboardKeyIconCss();
+    const scrollCss = [
+      getNctDarkUiScrollbarCss({ className: "kp-bookmark-folder-scroll" }),
+      getNctDarkUiScrollbarCss({ scopeSelector: ".kp-keybindings-popover", className: "kp-popover-settings" })
+    ].join("\n");
     const fontFaceCss = getKeybindingsUiFontFaceCss({
       robotech: urlRobotech,
       titillium: urlTitillium,
@@ -3857,6 +3966,7 @@ ${fontFaceCss}
   --kp-key-mid: #343a48;
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
+  color-scheme: dark;
 
   position: fixed !important;
   /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
@@ -4041,6 +4151,8 @@ ${fontFaceCss}
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
+  min-height: 0;
 }
 
 .kp-keybindings-popover .kp-popover-settings[hidden] {
@@ -4089,14 +4201,33 @@ ${fontFaceCss}
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  height: 24px;
+  height: 22px;
   padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.28);
-  color: rgba(248, 250, 252, 0.95);
-  font: inherit;
+  border-radius: var(--kp-radius-field, 2px) !important;
+  border: var(--kp-field-border, 1px solid #0a0a0a) !important;
+  background: var(--kp-field-bg, #141414) !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  box-shadow: var(--kp-field-shadow, inset 0 1px 0 #333) !important;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif) !important;
   font-size: 11px;
+  color-scheme: dark !important;
+  outline: none;
+}
+
+.kp-keybindings-popover textarea.kp-popover-field {
+  height: auto !important;
+  min-height: 48px;
+}
+
+.kp-string-table input::placeholder,
+.kp-keybindings-popover .kp-popover-field::placeholder {
+  color: var(--kp-color-fg-mute, #777) !important;
+}
+
+.kp-string-table input:focus,
+.kp-keybindings-popover .kp-popover-field:focus {
+  border-color: var(--kp-color-accent, #4a90c8) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kp-color-accent, #4a90c8) 35%, transparent) !important;
 }
 
 .kp-string-table-remove,
@@ -4137,38 +4268,54 @@ ${fontFaceCss}
 
 .kp-bookmark-folder-scroll {
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
+  border: var(--kp-panel-border, 1px solid #111) !important;
+  border-radius: var(--kp-radius-panel, 3px) !important;
+  background: var(--kp-panel-bg, #232323) !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  color-scheme: dark;
+  box-shadow: var(--kp-field-shadow, inset 0 1px 0 #333);
 }
 
 .kp-bookmark-folder-btn {
-  appearance: none;
+  appearance: none !important;
+  -webkit-appearance: none !important;
   display: block;
   width: 100%;
   box-sizing: border-box;
   min-height: var(--kp-string-table-row, 30px);
-  padding: 4px 8px;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: transparent;
-  color: rgba(248, 250, 252, 0.92);
-  font: inherit;
-  font-size: 11px;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--kp-color-fg, #ddd) !important;
+  box-shadow: none !important;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
   line-height: 1.3;
-  text-align: left;
+  letter-spacing: normal !important;
+  text-align: left !important;
+  text-transform: none !important;
   cursor: pointer;
 }
 
+.kp-bookmark-folder-btn:hover {
+  background: var(--kp-color-hover, rgba(255, 255, 255, 0.08)) !important;
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: -1px;
+}
+
 .kp-bookmark-folder-btn[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--kp-color-selected, rgba(74, 144, 200, 0.28)) !important;
+  color: var(--kp-color-selected-text, #e8f0f8) !important;
 }
 
 .kp-bookmark-folder-status,
 .kp-bookmark-folder-hint {
   font-size: 10px;
   line-height: 1.35;
-  color: rgba(248, 250, 252, 0.62);
+  color: var(--kp-color-fg-mute, #777) !important;
 }
 
 .kp-bookmark-folder-status {
@@ -4285,6 +4432,8 @@ ${fontFaceCss}
 
 /* Font Awesome-style faded key background icons (behind white labels) */
 ${keyIconCss}
+
+${scrollCss}
 
 /*
  * TEMP suspended: Floating Keyboard Reference flex-scale keys with panel resize.
@@ -5965,47 +6114,6 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   // extension/src/ui/procedure-result-popover.js
   init_i18n();
   init_constants();
-
-  // extension/src/ui/nct-dark-ui.js
-  var NCT_DARK_UI_COLORS = {
-    bg: "#0f0f10",
-    panel: "#232323",
-    panelEdge: "#3a3a3a",
-    panelEdgeDark: "#111",
-    titleTop: "#4c4c4c",
-    titleMid: "#353535",
-    titleBot: "#252525",
-    btnTop: "#4a4a4a",
-    btnMid: "#343434",
-    btnBot: "#2a2a2a",
-    litTop: "#5a7a9a",
-    litBot: "#3a5570",
-    litEdge: "#2a4a66",
-    accent: "#4a90c8",
-    fg: "#ddd",
-    fgDim: "#aaa",
-    fgMute: "#777",
-    fieldBg: "#141414",
-    fieldEdge: "#0a0a0a",
-    fieldInsetTop: "#333"
-  };
-  var NCT_DARK_UI_PANEL_BACKGROUND = "var(--kp-panel-bg, var(--kp-color-panel, #232323))";
-  var NCT_DARK_UI_PANEL_BORDER = "var(--kp-panel-border, 1px solid #111)";
-  var NCT_DARK_UI_PANEL_BOX_SHADOW = "var(--kp-panel-shadow)";
-  var NCT_DARK_UI_PANEL_RADIUS = "var(--kp-radius-panel, 3px)";
-  var NCT_DARK_UI_TITLEBAR_GRADIENT = "var(--kp-titlebar-bg)";
-  var NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM = "var(--kp-titlebar-border, 1px solid #111)";
-  var NCT_DARK_UI_TITLEBAR_BOX_SHADOW = "var(--kp-titlebar-shadow)";
-  var NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND = `linear-gradient(180deg, rgba(255, 140, 0, 0.28) 0%, rgba(255, 140, 0, 0.14) 45%, rgba(255, 120, 0, 0.18) 100%), linear-gradient(180deg, ${NCT_DARK_UI_COLORS.titleTop} 0%, ${NCT_DARK_UI_COLORS.titleMid} 45%, ${NCT_DARK_UI_COLORS.titleBot} 100%)`;
-  var NCT_DARK_UI_BTN_GRADIENT = "var(--kp-btn-bg)";
-  var NCT_DARK_UI_BTN_BORDER = "var(--kp-btn-border, 1px solid #111)";
-  var NCT_DARK_UI_BTN_RADIUS = "var(--kp-radius-btn, 2px)";
-  var NCT_DARK_UI_ICON_BUTTON_OUTLINE = "inset 0 0 0 1px var(--kp-color-panel-edge, #3a3a3a)";
-  var NCT_DARK_UI_FIELD_BACKGROUND = "var(--kp-field-bg, #141414)";
-  var NCT_DARK_UI_FIELD_BORDER = "var(--kp-field-border, 1px solid #0a0a0a)";
-  var NCT_DARK_UI_FIELD_BOX_SHADOW = "var(--kp-field-shadow)";
-  var NCT_DARK_UI_FIELD_FOCUS_BORDER = "var(--kp-color-accent, #4a90c8)";
-  var NCT_DARK_UI_FIELD_FOCUS_BOX_SHADOW = "inset 0 0 0 1px color-mix(in srgb, var(--kp-color-accent, #4a90c8) 35%, transparent)";
 
   // extension/src/messaging/types.js
   var MSG = Object.freeze({
@@ -9512,6 +9620,47 @@ ${getSelectMenuCss()}`
 
   // extension/src/ui/keybindings-ui.js
   init_i18n();
+
+  // extension/src/ui/key-info-popover-layout.js
+  function planKeyInfoPopoverLayout(metrics) {
+    const margin = metrics.margin ?? 10;
+    const gap = metrics.gap ?? 10;
+    const minSettings = metrics.minSettings ?? 48;
+    const targetTop = metrics.targetTop;
+    const targetBottom = metrics.targetBottom;
+    const targetCenterX = metrics.targetCenterX;
+    const popW = Math.max(0, metrics.popW || 0);
+    const popH = Math.max(0, metrics.popH || 0);
+    const settingsH = Math.max(0, metrics.settingsH || 0);
+    const vw = Math.max(0, metrics.vw || 0);
+    const vh = Math.max(0, metrics.vh || 0);
+    const availableAbove = Math.max(0, targetTop - gap - margin);
+    const availableBelow = Math.max(0, vh - targetBottom - gap - margin);
+    const fits = (side, height) => height <= (side === "top" ? availableAbove : availableBelow) + 0.5;
+    let placement;
+    if (fits("top", popH)) placement = "top";
+    else if (fits("bottom", popH)) placement = "bottom";
+    else placement = availableAbove >= availableBelow ? "top" : "bottom";
+    const available = placement === "top" ? availableAbove : availableBelow;
+    let settingsMaxHeight = null;
+    let usedH = popH;
+    if (popH > available + 0.5 && settingsH > 0) {
+      const chrome2 = Math.max(0, popH - settingsH);
+      const budget = available - chrome2;
+      settingsMaxHeight = Math.max(minSettings, budget);
+      usedH = chrome2 + Math.min(settingsH, settingsMaxHeight);
+    }
+    const maxLeft = Math.max(margin, vw - margin - popW);
+    const left = clamp(targetCenterX - popW / 2, margin, maxLeft);
+    const top = placement === "top" ? targetTop - gap - usedH : targetBottom + gap;
+    const arrowLeft = clamp(targetCenterX - left - 9, 12, Math.max(12, popW - 24));
+    return { placement, left, top, usedH, settingsMaxHeight, arrowLeft };
+  }
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  // extension/src/ui/keybindings-ui.js
   var _activePopoverContext = null;
   var _pinnedActionId = null;
   var _pinnedKeyEl = null;
@@ -9889,6 +10038,7 @@ ${getSelectMenuCss()}`
       pop.classList.remove("kp-popover-has-instance-settings");
     } catch {
     }
+    releaseKeyInfoPopoverAnchor(pop);
     if (opts.clearPinned !== false) {
       _pinnedActionId = null;
       _pinnedKeyEl = null;
@@ -9966,9 +10116,6 @@ ${getSelectMenuCss()}`
         }
       }
     }
-  }
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
   }
   function applyKeyMaterialToPopover(pop, targetEl) {
     if (!pop || !targetEl) return;
@@ -10068,10 +10215,88 @@ ${getSelectMenuCss()}`
     }
     positionKeyInfoPopover(doc, pop, targetEl);
   }
+  var _keyInfoPopoverObserver = null;
+  var _positioningKeyInfoPopover = false;
+  function measureKeyInfoPopover(pop) {
+    const settings = pop.querySelector(".kp-popover-settings");
+    const popW = pop.offsetWidth || pop.getBoundingClientRect().width || 160;
+    const popH = pop.offsetHeight || pop.getBoundingClientRect().height || 80;
+    if (!settings || settings.hidden) return { popW, popH, settingsH: 0 };
+    const extra = Math.max(0, settings.scrollHeight - settings.clientHeight);
+    return {
+      popW,
+      popH: popH + extra,
+      settingsH: settings.offsetHeight + extra
+    };
+  }
+  function applyKeyInfoSettingsMax(pop, maxHeight) {
+    const settings = pop.querySelector(".kp-popover-settings");
+    if (!settings) return;
+    const next = maxHeight == null ? "" : `${Math.round(maxHeight)}px`;
+    if ((settings.style.maxHeight || "") === next) return;
+    if (!next) {
+      settings.style.maxHeight = "";
+      settings.style.overflowY = "";
+      settings.classList.remove("kp-nct-scroll");
+      return;
+    }
+    settings.style.boxSizing = "border-box";
+    settings.style.maxHeight = next;
+    settings.style.overflowY = "auto";
+    settings.classList.add("kp-nct-scroll");
+  }
+  function watchKeyInfoPopoverSize(pop) {
+    if (!pop || typeof ResizeObserver === "undefined") return;
+    if (!_keyInfoPopoverObserver) {
+      _keyInfoPopoverObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const el2 = (
+            /** @type {HTMLElement} */
+            entry.target
+          );
+          const anchor = el2._kpAnchorEl;
+          if (!anchor || !anchor.isConnected) continue;
+          positionKeyInfoPopover(el2.ownerDocument || document, el2, anchor);
+        }
+      });
+    }
+    try {
+      _keyInfoPopoverObserver.observe(pop);
+    } catch {
+    }
+  }
+  function releaseKeyInfoPopoverAnchor(pop) {
+    if (!pop) return;
+    try {
+      pop._kpAnchorEl = null;
+    } catch {
+    }
+    try {
+      pop._kpLayoutSig = "";
+    } catch {
+    }
+    try {
+      _keyInfoPopoverObserver?.unobserve?.(pop);
+    } catch {
+    }
+    applyKeyInfoSettingsMax(pop, null);
+  }
   function positionKeyInfoPopover(doc, pop, targetEl) {
-    if (!doc || !pop || !targetEl) return;
+    if (!doc || !pop || !targetEl || _positioningKeyInfoPopover) return;
+    _positioningKeyInfoPopover = true;
+    try {
+      layoutKeyInfoPopover(doc, pop, targetEl);
+    } finally {
+      _positioningKeyInfoPopover = false;
+    }
+  }
+  function layoutKeyInfoPopover(doc, pop, targetEl) {
     const targetRect = targetEl.getBoundingClientRect();
     openPopoverElement(pop);
+    try {
+      pop._kpAnchorEl = targetEl;
+    } catch {
+    }
     const placeAt = (leftPx, topPx) => {
       try {
         try {
@@ -10099,10 +10324,9 @@ ${getSelectMenuCss()}`
     };
     const margin = 10;
     const gap = 10;
-    placeAt(-9999, -9999);
-    const popRect = pop.getBoundingClientRect();
-    const popW = popRect.width || pop.offsetWidth || 160;
-    const popH = popRect.height || pop.offsetHeight || 80;
+    const leftNow = parseFloat(String(pop.style.left || ""));
+    if (!Number.isFinite(leftNow) || leftNow < 0) placeAt(-9999, -9999);
+    const measured = measureKeyInfoPopover(pop);
     const vw = Math.max(
       doc.documentElement?.clientWidth || 0,
       (typeof window !== "undefined" ? window.innerWidth : 0) || 0
@@ -10111,28 +10335,30 @@ ${getSelectMenuCss()}`
       doc.documentElement?.clientHeight || 0,
       (typeof window !== "undefined" ? window.innerHeight : 0) || 0
     );
-    const spaceAbove = targetRect.top;
-    const spaceBelow = vh - targetRect.bottom;
-    const needs = popH + gap + margin;
-    const placeAbove = spaceAbove >= needs || spaceAbove >= spaceBelow && spaceAbove >= gap + 24;
-    const placement = placeAbove ? "top" : "bottom";
-    pop.setAttribute("data-placement", placement);
-    const targetCenterX = targetRect.left + targetRect.width / 2;
-    let left = targetCenterX - popW / 2;
-    const maxLeft = Math.max(margin, vw - margin - popW);
-    left = clamp(left, margin, maxLeft);
-    let top;
-    if (placement === "top") {
-      top = targetRect.top - gap - popH;
-      if (top < margin) top = margin;
-    } else {
-      top = targetRect.bottom + gap;
-      const maxTop = Math.max(margin, vh - margin - popH);
-      if (top > maxTop) top = maxTop;
+    const plan = planKeyInfoPopoverLayout({
+      targetTop: targetRect.top,
+      targetBottom: targetRect.bottom,
+      targetCenterX: targetRect.left + targetRect.width / 2,
+      popW: measured.popW,
+      popH: measured.popH,
+      settingsH: measured.settingsH,
+      vw,
+      vh,
+      margin,
+      gap
+    });
+    pop.setAttribute("data-placement", plan.placement);
+    applyKeyInfoSettingsMax(pop, plan.settingsMaxHeight);
+    const actualH = pop.offsetHeight || plan.usedH;
+    const top = plan.placement === "top" ? targetRect.top - gap - actualH : targetRect.bottom + gap;
+    const maxSig = plan.settingsMaxHeight == null ? "" : String(Math.round(plan.settingsMaxHeight));
+    const sig = `${plan.placement}|${Math.round(plan.left)}|${Math.round(top)}|${maxSig}`;
+    if (pop._kpLayoutSig !== sig) {
+      placeAt(plan.left, top);
+      pop.style.setProperty("--kp-arrow-left", `${Math.round(plan.arrowLeft)}px`);
+      pop._kpLayoutSig = sig;
     }
-    placeAt(left, top);
-    const arrowLeft = clamp(targetCenterX - left - 9, 12, Math.max(12, popW - 24));
-    pop.style.setProperty("--kp-arrow-left", `${Math.round(arrowLeft)}px`);
+    watchKeyInfoPopoverSize(pop);
   }
   function paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameters }) {
     const host = pop.querySelector(".kp-popover-settings");

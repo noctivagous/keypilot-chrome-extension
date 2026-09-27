@@ -1,8 +1,10 @@
 /**
  * Search engine catalog (single source of truth).
  * - SEARCH_ENGINE_META: engines selectable as KeyPilot default (settings / omnibox / newtab)
- * - LAUNCHER_SEARCH_SITES: full list shown in Launcher → Searches Sites
+ * - getLauncherSearchSites(): locale list shown in Launcher → Searches Sites
  */
+
+import { getLauncherSearchSites as launcherSearchSitesForLocale, getRegionDefaults } from './region-defaults.js';
 
 /** @typedef {'brave'|'google'|'duckduckgo'} SearchEngineId */
 
@@ -40,20 +42,14 @@ export const SEARCH_ENGINE_META = Object.freeze({
 export const DEFAULT_SEARCH_ENGINE_ID = /** @type {SearchEngineId} */ ('brave');
 
 /**
- * Launcher Sites for the Searches category.
- * Includes settings engines plus additional common search homes.
+ * English launcher search homes. Prefer {@link getLauncherSearchSites} at runtime.
  * @type {ReadonlyArray<{ title: string, url: string, isDefault: true }>}
  */
-export const LAUNCHER_SEARCH_SITES = Object.freeze([
-  Object.freeze({ title: 'Google', url: 'https://google.com', isDefault: true }),
-  Object.freeze({ title: 'Bing', url: 'https://bing.com', isDefault: true }),
-  Object.freeze({ title: 'DuckDuckGo', url: 'https://duckduckgo.com', isDefault: true }),
-  Object.freeze({ title: 'Yahoo', url: 'https://yahoo.com', isDefault: true }),
-  Object.freeze({ title: 'Brave Search', url: 'https://search.brave.com', isDefault: true }),
-  Object.freeze({ title: 'Ecosia', url: 'https://ecosia.org', isDefault: true }),
-  Object.freeze({ title: 'Startpage', url: 'https://startpage.com', isDefault: true }),
-  Object.freeze({ title: 'Yandex', url: 'https://yandex.com', isDefault: true })
-]);
+export const LAUNCHER_SEARCH_SITES = Object.freeze(
+  launcherSearchSitesForLocale('en').map((row) => Object.freeze(row))
+);
+
+export { getLauncherSearchSites } from './region-defaults.js';
 
 /**
  * @param {any} raw
@@ -66,9 +62,17 @@ export function normalizeSearchEngineId(raw) {
 
 /**
  * @param {any} engine
+ * @param {string} [uiLanguage]
  * @returns {SearchEngineMeta}
  */
-export function getSearchEngineMeta(engine) {
+export function getSearchEngineMeta(engine, uiLanguage) {
   const id = normalizeSearchEngineId(engine);
-  return SEARCH_ENGINE_META[id] || SEARCH_ENGINE_META[DEFAULT_SEARCH_ENGINE_ID];
+  const base = SEARCH_ENGINE_META[id] || SEARCH_ENGINE_META[DEFAULT_SEARCH_ENGINE_ID];
+  const override = getRegionDefaults(uiLanguage).searchEngineUrls?.[id];
+  if (!override) return base;
+  return Object.freeze({
+    ...base,
+    ...(override.homeUrl ? { homeUrl: override.homeUrl } : {}),
+    ...(override.searchUrlPrefix ? { searchUrlPrefix: override.searchUrlPrefix } : {})
+  });
 }

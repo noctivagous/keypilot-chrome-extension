@@ -4914,7 +4914,7 @@
     "description": "Bundled Open URLs instance label."
   },
   "fn_stock_social_media_description": {
-    "message": "開啟 Facebook、Instagram、YouTube 和 X",
+    "message": "在新分頁中開啟多個社交媒體網站",
     "description": "Bundled Open URLs instance description."
   },
   "fn_instance_name_label": {
@@ -5975,6 +5975,22 @@
     "message": "私人 Google 結果代理",
     "description": "Launcher search-site description."
   },
+  "launcher_search_seznam_description": {
+    "message": "捷克網頁搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_baidu_description": {
+    "message": "百度網頁搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_sogou_description": {
+    "message": "搜狗網頁搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_yahoo_japan_description": {
+    "message": "日本 Yahoo 搜尋與入口",
+    "description": "Launcher search-site description."
+  },
   "launcher_search_generic_description": {
     "message": "$1 網頁搜尋",
     "description": "Launcher search-site description.",
@@ -6254,5 +6270,33 @@
   "reader_mode_contents_hide": {
     "message": "隱藏目錄",
     "description": "Accessible name for the control that collapses the Reader Mode contents column."
+  },
+  "reader_mode_outline_aria": {
+    "message": "文章大綱",
+    "description": "Accessible name for the Reader Mode outline control in the title bar."
+  },
+  "reader_mode_outline_column": {
+    "message": "目錄欄",
+    "description": "Reader Mode title-bar option that shows the contents column."
+  },
+  "reader_mode_outline_column_title": {
+    "message": "顯示目錄欄",
+    "description": "Tooltip for the Reader Mode contents-column option."
+  },
+  "reader_mode_outline_accordion": {
+    "message": "摺疊",
+    "description": "Reader Mode title-bar option that shows collapsed section accordions."
+  },
+  "reader_mode_outline_accordion_title": {
+    "message": "各節先收起，用點擊元素打開",
+    "description": "Tooltip for the Reader Mode accordion option."
+  },
+  "reader_mode_outline_none": {
+    "message": "無",
+    "description": "Reader Mode title-bar option that shows the article without an outline."
+  },
+  "reader_mode_outline_none_title": {
+    "message": "顯示全文",
+    "description": "Tooltip for the Reader Mode option that hides the outline."
   }
 }

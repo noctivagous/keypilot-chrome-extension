@@ -21,9 +21,11 @@ import {
   collectReaderToc,
   isSamePageHashHref,
   normalizeElementId,
+  normalizeReaderOutlineMode,
   sanitizeArticleHtml
 } from '../utils/reader-mode-extract.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from './popover-titlebar.js';
+import { createSegmentedControl } from './segmented-control.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 
 const OVERLAY_ID = 'kpv2-reader-overlay';
@@ -31,11 +33,15 @@ const OVERLAY_ID = 'kpv2-reader-overlay';
 const SHOW_IMAGES_STORAGE_KEY = 'kp_reader_mode_show_images';
 /** Contents column collapsed to a rail. Default open the first time a list appears. */
 const TOC_COLLAPSED_STORAGE_KEY = 'kp_reader_mode_toc_collapsed';
+/** Titlebar outline: column, accordion, or none. Default is the contents column. */
+const OUTLINE_MODE_STORAGE_KEY = 'kp_reader_mode_outline';
 
 /** @type {HTMLElement|null} */
 let _overlay = null;
 /** @type {HTMLElement|null} */
 let _article = null;
+/** @type {HTMLElement|null} */
+let _tocEl = null;
 /** @type {(() => void)|null} */
 let _onClose = null;
 /** @type {((e: KeyboardEvent) => void)|null} */
@@ -52,6 +58,16 @@ let _showImagesLoaded = false;
 let _tocCollapsed = false;
 /** @type {boolean} */
 let _tocCollapsedLoaded = false;
+/** @type {'column'|'accordion'|'none'} */
+let _outlineMode = 'column';
+/** @type {boolean} */
+let _outlineModeLoaded = false;
+/** Original heading children, restored when leaving accordion mode. */
+/** @type {Map<string, DocumentFragment>} */
+let _headingOriginals = new Map();
+/** Heading ids that belong in the contents list / accordions. */
+/** @type {Set<string>} */
+let _outlineIds = new Set();
 
 function getOverlayRoot() {
   return _overlay?.shadowRoot || _overlay;
@@ -76,6 +92,9 @@ export function requestCloseReaderModeOverlay() {
 export function closeReaderModeOverlay() {
   _mountGeneration += 1;
   _article = null;
+  _tocEl = null;
+  _headingOriginals = new Map();
+  _outlineIds = new Set();
   if (_keyHandler) {
     try { document.removeEventListener('keydown', _keyHandler, true); } catch { /* ignore */ }
     _keyHandler = null;
@@ -118,7 +137,11 @@ export function openReaderModeOverlay({ title, html, byline, siteName, published
  * @param {{ title?: string, html: string, byline?: string, siteName?: string, publishedTime?: string, closeKey?: string }} opts
  */
 async function mountReaderModeOverlay(generation, { title, html, byline, siteName, publishedTime, closeKey }) {
-  const [showImages, tocCollapsed] = await Promise.all([readShowImages(), readTocCollapsed()]);
+  const [showImages, tocCollapsed, outlineMode] = await Promise.all([
+    readShowImages(),
+    readTocCollapsed(),
+    readOutlineMode()
+  ]);
   if (generation !== _mountGeneration) return;
 
   const overlay = document.createElement('div');
@@ -142,22 +165,6 @@ async function mountReaderModeOverlay(generation, { title, html, byline, siteNam
 
   const shell = document.createElement('div');
   shell.className = 'kpv2-reader-shell';
-
-  const hideKey = localizeKeycapLabel(String(closeKey || '').trim() || 'P');
-  const titlebarApi = createPopoverTitlebar({
-    title: getMessage('reader_mode_title'),
-    shortcut: hideKey,
-    icon: 'window',
-    variant: 'preview',
-    showClose: true,
-    onClose: closeReaderModeOverlay,
-    closeTitle: getMessage('popover_titlebar_close'),
-    hint: createTitlebarCloseHint({
-      keys: [localizeKeycapLabel('Esc'), hideKey],
-      suffix: getMessage('popover_hide_hint_suffix')
-    }),
-    className: 'kpv2-reader-titlebar'
-  });
 
   const content = document.createElement('div');
   content.className = `kpv2-reader-content ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
@@ -188,11 +195,60 @@ async function mountReaderModeOverlay(generation, { title, html, byline, siteNam
   content.appendChild(article);
   bindSamePageHashLinks(content);
 
+  const tocEntries = collectReaderToc(article);
+  _outlineIds = new Set(tocEntries.map((entry) => entry.id));
+  const hideKey = localizeKeycapLabel(String(closeKey || '').trim() || 'P');
+  const outlineControl = tocEntries.length
+    ? createSegmentedControl({
+      className: 'kp-segmented-control kpv2-reader-outline',
+      ariaLabel: getMessage('reader_mode_outline_aria'),
+      value: outlineMode,
+      options: [
+        {
+          value: 'column',
+          label: getMessage('reader_mode_outline_column'),
+          title: getMessage('reader_mode_outline_column_title')
+        },
+        {
+          value: 'accordion',
+          label: getMessage('reader_mode_outline_accordion'),
+          title: getMessage('reader_mode_outline_accordion_title')
+        },
+        {
+          value: 'none',
+          label: getMessage('reader_mode_outline_none'),
+          title: getMessage('reader_mode_outline_none_title')
+        }
+      ],
+      onChange: (value) => {
+        applyOutlineMode(value);
+        persistOutlineMode(value);
+      }
+    })
+    : null;
+  const titlebarApi = createPopoverTitlebar({
+    title: getMessage('reader_mode_title'),
+    shortcut: hideKey,
+    icon: 'window',
+    variant: 'preview',
+    showClose: true,
+    onClose: closeReaderModeOverlay,
+    closeTitle: getMessage('popover_titlebar_close'),
+    hint: createTitlebarCloseHint({
+      keys: [localizeKeycapLabel('Esc'), hideKey],
+      suffix: getMessage('popover_hide_hint_suffix')
+    }),
+    className: 'kpv2-reader-titlebar',
+    actions: outlineControl?.root || null
+  });
+
   const body = document.createElement('div');
   body.className = 'kpv2-reader-body';
-  const toc = createReaderToc(content, collectReaderToc(article), tocCollapsed);
+  const toc = createReaderToc(content, tocEntries, tocCollapsed);
+  _tocEl = toc;
   if (toc) body.appendChild(toc);
   body.appendChild(content);
+  applyOutlineMode(outlineMode);
 
   shell.appendChild(titlebarApi.titlebar);
   shell.appendChild(createReaderToolbar(showImages));
@@ -264,6 +320,202 @@ async function readShowImages() {
 /**
  * @returns {Promise<boolean>}
  */
+/**
+ * @returns {Promise<'column'|'accordion'|'none'>}
+ */
+async function readOutlineMode() {
+  if (_outlineModeLoaded) return _outlineMode;
+  try {
+    const stored = await storageGetValue(OUTLINE_MODE_STORAGE_KEY, 'column');
+    _outlineMode = normalizeReaderOutlineMode(stored);
+  } catch {
+    _outlineMode = 'column';
+  }
+  _outlineModeLoaded = true;
+  return _outlineMode;
+}
+
+/**
+ * @param {string} mode
+ */
+function persistOutlineMode(mode) {
+  _outlineMode = normalizeReaderOutlineMode(mode);
+  _outlineModeLoaded = true;
+  try {
+    void storageSetValue(OUTLINE_MODE_STORAGE_KEY, _outlineMode);
+  } catch { /* ignore */ }
+}
+
+/**
+ * @param {string} mode
+ */
+function applyOutlineMode(mode) {
+  const next = normalizeReaderOutlineMode(mode);
+  _outlineMode = next;
+  if (_article) unwrapReaderAccordions(_article);
+  if (next === 'accordion' && _article) wrapReaderAccordions(_article);
+  if (_tocEl) _tocEl.hidden = next !== 'column';
+}
+
+/**
+ * @param {Element} node
+ * @returns {boolean}
+ */
+function isOutlineHeading(node) {
+  if (!node || node.nodeType !== 1) return false;
+  const tag = node.tagName;
+  if (tag !== 'H2' && tag !== 'H3') return false;
+  const id = normalizeElementId(node.id);
+  return !!id && _outlineIds.has(id);
+}
+
+/**
+ * @param {ParentNode|null|undefined} root
+ */
+function wrapReaderAccordions(root) {
+  if (!root) return;
+  const kids = [...root.childNodes];
+  for (let i = 0; i < kids.length; i++) {
+    const node = kids[i];
+    if (!node || node.nodeType !== 1) continue;
+    if (node.classList?.contains('kpv2-reader-article-head')) continue;
+    if (isOutlineHeading(node)) {
+      const level = node.tagName === 'H2' ? 2 : 3;
+      /** @type {ChildNode[]} */
+      const sectionNodes = [];
+      let j = i + 1;
+      while (j < kids.length) {
+        const next = kids[j];
+        if (next?.nodeType === 1 && isOutlineHeading(next)) {
+          const nextLevel = next.tagName === 'H2' ? 2 : 3;
+          if (nextLevel <= level) break;
+        }
+        sectionNodes.push(next);
+        j++;
+      }
+      const acc = buildReaderAccordion(/** @type {HTMLElement} */ (node), level);
+      const panel = acc.querySelector('.kpv2-reader-acc-panel');
+      node.parentNode?.insertBefore(acc, node);
+      acc.insertBefore(node, panel);
+      for (const part of sectionNodes) panel?.appendChild(part);
+      if (panel) wrapReaderAccordions(panel);
+      i = j - 1;
+      continue;
+    }
+    wrapReaderAccordions(node);
+  }
+}
+
+/**
+ * @param {HTMLElement} heading
+ * @param {2|3} level
+ * @returns {HTMLElement}
+ */
+function buildReaderAccordion(heading, level) {
+  const id = normalizeElementId(heading.id);
+  if (id && !_headingOriginals.has(id)) {
+    const saved = document.createDocumentFragment();
+    while (heading.firstChild) saved.appendChild(heading.firstChild);
+    _headingOriginals.set(id, saved);
+  }
+  const saved = id ? _headingOriginals.get(id) : null;
+  const labelText = String(saved?.textContent || heading.textContent || '').replace(/\s+/g, ' ').trim();
+
+  const acc = document.createElement('section');
+  acc.className = `kpv2-reader-acc is-h${level} is-collapsed`;
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'kpv2-reader-acc-toggle';
+  button.setAttribute('aria-expanded', 'false');
+
+  const arrow = document.createElement('span');
+  arrow.className = 'kpv2-reader-acc-arrow';
+  arrow.setAttribute('aria-hidden', 'true');
+  arrow.textContent = '▸';
+
+  const label = document.createElement('span');
+  label.className = 'kpv2-reader-acc-label';
+  label.textContent = labelText;
+
+  button.append(arrow, label);
+  heading.classList.add('kpv2-reader-acc-heading');
+  heading.replaceChildren(button);
+
+  const panel = document.createElement('div');
+  panel.className = 'kpv2-reader-acc-panel';
+  panel.hidden = true;
+  if (id) {
+    const panelId = `kp-reader-acc-${id}`;
+    panel.id = panelId;
+    button.setAttribute('aria-controls', panelId);
+  }
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setAccordionOpen(acc, button.getAttribute('aria-expanded') !== 'true');
+  });
+
+  acc.append(panel);
+  return acc;
+}
+
+/**
+ * @param {HTMLElement} acc
+ * @param {boolean} open
+ */
+function setAccordionOpen(acc, open) {
+  if (!acc) return;
+  const on = !!open;
+  acc.classList.toggle('is-collapsed', !on);
+  const heading = [...acc.children].find((el) => el.tagName === 'H2' || el.tagName === 'H3');
+  const button = heading?.querySelector?.('.kpv2-reader-acc-toggle');
+  const panel = [...acc.children].find((el) => el.classList?.contains('kpv2-reader-acc-panel'));
+  const arrow = button?.querySelector?.('.kpv2-reader-acc-arrow');
+  if (button) button.setAttribute('aria-expanded', on ? 'true' : 'false');
+  if (panel) panel.hidden = !on;
+  if (arrow) arrow.textContent = on ? '▾' : '▸';
+}
+
+/**
+ * Open every accordion that contains `target`, including its own section.
+ * @param {Element} target
+ */
+function revealReaderTarget(target) {
+  let node = target;
+  while (node) {
+    if (node.classList?.contains('kpv2-reader-acc')) setAccordionOpen(/** @type {HTMLElement} */ (node), true);
+    node = node.parentElement;
+  }
+}
+
+/**
+ * @param {ParentNode|null|undefined} root
+ */
+function unwrapReaderAccordions(root) {
+  if (!root || typeof root.querySelectorAll !== 'function') return;
+  const accs = [...root.querySelectorAll('.kpv2-reader-acc')].reverse();
+  for (const acc of accs) {
+    const parent = acc.parentNode;
+    if (!parent) continue;
+    const heading = [...acc.children].find((el) => el.tagName === 'H2' || el.tagName === 'H3');
+    const panel = [...acc.children].find((el) => el.classList?.contains('kpv2-reader-acc-panel'));
+    if (heading) {
+      heading.classList.remove('kpv2-reader-acc-heading');
+      const id = normalizeElementId(heading.id);
+      const saved = id ? _headingOriginals.get(id) : null;
+      heading.replaceChildren();
+      if (saved) heading.appendChild(saved.cloneNode(true));
+      parent.insertBefore(heading, acc);
+    }
+    if (panel) {
+      while (panel.firstChild) parent.insertBefore(panel.firstChild, acc);
+    }
+    acc.remove();
+  }
+}
+
 async function readTocCollapsed() {
   if (_tocCollapsedLoaded) return _tocCollapsed;
   try {
@@ -302,6 +554,7 @@ function scrollReaderToId(scroller, id) {
     target = null;
   }
   if (!(target instanceof HTMLElement)) return;
+  revealReaderTarget(target);
   try {
     const scrollerRect = scroller.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
@@ -601,6 +854,82 @@ ${getNctDarkUiScrollbarCss()}
 .kpv2-reader-toc-item:hover {
   color: ${c.accent};
   background: rgba(74, 144, 200, 0.12);
+}
+.kpv2-reader-acc {
+  margin: 0 0 12px;
+  border: 1px solid #111;
+  border-radius: 6px;
+  background: #161618;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.kpv2-reader-acc.is-h3 {
+  margin: 10px 0;
+}
+.kpv2-reader-article .kpv2-reader-acc-heading {
+  margin: 0;
+}
+.kpv2-reader-acc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 11px 14px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: linear-gradient(180deg, #5a5a5a 0%, #3a3a3a 42%, #2a2a2a 100%);
+  color: ${c.fg};
+  font: 700 16px/1.3 ${NCT_DARK_UI_FONT};
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.kpv2-reader-acc.is-h3 .kpv2-reader-acc-toggle {
+  padding: 9px 12px 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background: linear-gradient(180deg, #4a4a4a 0%, #323232 48%, #262626 100%);
+}
+.kpv2-reader-acc:not(.is-collapsed) .kpv2-reader-acc-toggle {
+  border-bottom-color: #111;
+}
+.kpv2-reader-acc-toggle:hover {
+  color: #fff;
+}
+.kpv2-reader-acc-arrow {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid #1c3d58;
+  background: linear-gradient(180deg, #6ea4cc 0%, #3d6f99 55%, #2a4a66 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.45);
+  color: #f4fbff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.kpv2-reader-acc-label {
+  min-width: 0;
+}
+.kpv2-reader-acc-panel {
+  padding: 14px 16px 6px;
+  background:
+    linear-gradient(180deg, rgba(74, 144, 200, 0.08), transparent 28px),
+    #121214;
+}
+.kpv2-reader-acc-panel > :first-child {
+  margin-top: 0;
 }
 .kpv2-reader-content {
   flex: 1;

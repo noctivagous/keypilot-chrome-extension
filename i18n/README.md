@@ -214,8 +214,11 @@ assess translation quality or layout fit.
 | Store GUI captures | `online-stores/chrome/captures/<locale>/` | Capture KeyPilot in that locale; never reuse a different locale's capture. |
 | Language-neutral documentation screenshots | `extension/userdocs/images/` | Use a locale directory only when the image includes translated UI text. |
 | Marketing site (noctivagous.com) | `promo/web/` | Tagged English HTML/SVGs plus `promo/web/locales/*.json`. Do not put this copy in `messages.json`. |
+| Stock social URLs, Google TLDs, Launcher search engines | `i18n/region-defaults/<locale>.json` | Lists may differ per locale. Brand names stay untranslated. See inventory §1a. |
 
-Do not put Markdown, onboarding copy, or marketing-site strings in `messages.json`.
+Do not put Markdown, onboarding copy, marketing-site strings, or region-default
+URL lists in `messages.json`. Stock social sites and search-engine homes live
+in `i18n/region-defaults/`.
 
 ## Add a locale
 
@@ -226,6 +229,13 @@ Do not put Markdown, onboarding copy, or marketing-site strings in `messages.jso
    `npm run check:locales`. A regional catalog may instead contain only
    the messages that differ from its shipped parent language catalog,
    including `locale_tag`.
+2a. Copy `i18n/region-defaults/en.json` to
+   `i18n/region-defaults/<locale>.json` and set that locale’s Social Media
+   Open URLs list, Google search URLs, and Launcher search sites. Regional
+   catalogs may omit keys inherited from `es` or `zh_TW`. Then run
+   `node scripts/sync-region-defaults.mjs` so the extension package matches.
+   `background.js` imports that generated module; it cannot import the JSON
+   files themselves.
 3. Add `extension/userdocs/<locale>/` only when that locale's documentation is
    ready. It must mirror English topic IDs and filenames.
 4. Add `extension/onboarding/<locale>.xml` when localizing onboarding. It must

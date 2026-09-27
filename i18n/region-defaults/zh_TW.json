@@ -1,0 +1,25 @@
+{
+  "stockSocialMedia": {
+    "urls": [
+      "facebook.com",
+      "instagram.com",
+      "youtube.com",
+      "line.me"
+    ]
+  },
+  "searchEngineUrls": {
+    "google": {
+      "homeUrl": "https://www.google.com.tw/",
+      "searchUrlPrefix": "https://www.google.com.tw/search?q="
+    }
+  },
+  "launcherSearchSites": [
+    { "title": "Google", "url": "https://www.google.com.tw" },
+    { "title": "Bing", "url": "https://bing.com" },
+    { "title": "Yahoo", "url": "https://yahoo.com" },
+    { "title": "DuckDuckGo", "url": "https://duckduckgo.com" },
+    { "title": "Brave Search", "url": "https://search.brave.com" },
+    { "title": "Ecosia", "url": "https://ecosia.org" },
+    { "title": "Startpage", "url": "https://startpage.com" }
+  ]
+}

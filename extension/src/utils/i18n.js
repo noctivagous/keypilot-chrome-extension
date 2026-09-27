@@ -50,7 +50,7 @@ export const DEFAULT_LOCALE = 'en';
 export function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
   const fallback = String(baseLocale || DEFAULT_LOCALE);
   const raw = String(
-    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? fallback
+    uiLanguage ?? globalThis.chrome?.i18n?.getUILanguage?.() ?? fallback
   ).trim();
   const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : '';
   const base = exact.split(/[-_]/)[0].toLowerCase();
@@ -108,13 +108,13 @@ function normalizeLocaleTag(value) {
  */
 export function getUILocaleTag() {
   try {
-    const fromCatalog = normalizeLocaleTag(chrome?.i18n?.getMessage?.('locale_tag'));
+    const fromCatalog = normalizeLocaleTag(globalThis.chrome?.i18n?.getMessage?.('locale_tag'));
     if (fromCatalog) return fromCatalog;
   } catch {
     // ignore
   }
   try {
-    const fromUi = normalizeLocaleTag(chrome?.i18n?.getUILanguage?.());
+    const fromUi = normalizeLocaleTag(globalThis.chrome?.i18n?.getUILanguage?.());
     if (fromUi) return fromUi;
   } catch {
     // ignore
@@ -140,7 +140,7 @@ export function getMessage(key, substitutions) {
   if (!messageKey) return missingMessage(String(key || '(empty key)'));
 
   try {
-    const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+    const message = globalThis.chrome?.i18n?.getMessage?.(messageKey, substitutions);
     return typeof message === 'string' && message
       ? message
       : missingMessage(messageKey);

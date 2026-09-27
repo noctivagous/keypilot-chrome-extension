@@ -4914,7 +4914,7 @@
     "description": "Bundled Open URLs instance label."
   },
   "fn_stock_social_media_description": {
-    "message": "Abrir Facebook, Instagram, YouTube y X",
+    "message": "Abrir varios sitios de redes sociales en pestañas nuevas",
     "description": "Bundled Open URLs instance description."
   },
   "fn_instance_name_label": {
@@ -5975,6 +5975,22 @@
     "message": "Proxy privado de resultados de Google",
     "description": "Launcher search-site description."
   },
+  "launcher_search_seznam_description": {
+    "message": "Búsqueda web checa",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_baidu_description": {
+    "message": "Búsqueda web china",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_sogou_description": {
+    "message": "Búsqueda y servicios web chinos",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_yahoo_japan_description": {
+    "message": "Búsqueda y portal de Yahoo Japón",
+    "description": "Launcher search-site description."
+  },
   "launcher_search_generic_description": {
     "message": "$1 búsqueda web",
     "description": "Launcher search-site description.",
@@ -6254,5 +6270,33 @@
   "reader_mode_contents_hide": {
     "message": "Ocultar contenido",
     "description": "Accessible name for the control that collapses the Reader Mode contents column."
+  },
+  "reader_mode_outline_aria": {
+    "message": "Esquema del artículo",
+    "description": "Accessible name for the Reader Mode outline control in the title bar."
+  },
+  "reader_mode_outline_column": {
+    "message": "Columna",
+    "description": "Reader Mode title-bar option that shows the contents column."
+  },
+  "reader_mode_outline_column_title": {
+    "message": "Mostrar la columna de contenido",
+    "description": "Tooltip for the Reader Mode contents-column option."
+  },
+  "reader_mode_outline_accordion": {
+    "message": "Acordeón",
+    "description": "Reader Mode title-bar option that shows collapsed section accordions."
+  },
+  "reader_mode_outline_accordion_title": {
+    "message": "Contraer secciones; abrirlas con Clic en elemento",
+    "description": "Tooltip for the Reader Mode accordion option."
+  },
+  "reader_mode_outline_none": {
+    "message": "Ninguno",
+    "description": "Reader Mode title-bar option that shows the article without an outline."
+  },
+  "reader_mode_outline_none_title": {
+    "message": "Mostrar el artículo completo",
+    "description": "Tooltip for the Reader Mode option that hides the outline."
   }
 }

@@ -86,6 +86,7 @@ import {
   resolveThemeFromSettings
 } from './modules/theme-manager.js';
 import { characterSlotKeyForCharacter, getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros, physicalSlotKeyForCode, setUserKeyboardLayoutHandedness } from './modules/keyboard-layout-store.js';
+import { userLayoutClaimsKeyOverSystem } from './modules/system-layer-override.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
@@ -1574,9 +1575,21 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       const systemKb = this._systemKeybindings && typeof this._systemKeybindings === 'object'
         ? this._systemKeybindings
         : buildSystemKeybindings(this._settings?.keyboardHandedness);
-      for (const keybinding of Object.values(systemKb || {})) {
+      for (const [actionId, keybinding] of Object.entries(systemKb || {})) {
         if (!keybinding?.handler || !Array.isArray(keybinding.keys)) continue;
         if (!this._matchesKeybinding(keybinding, e)) continue;
+        // A custom layout that occupies this key (Lookup Word on ', an empty
+        // key, anything other than this system action) wins. Built-in layouts
+        // have no slot map, so Esc / Keyboard Reference / Settings stay always-on.
+        if (String(this._currentKeyboardLayoutId || '').startsWith('user:') && userLayoutClaimsKeyOverSystem({
+          slots: this._currentKeySlotMap,
+          actions: this._currentUserActions,
+          code: e?.code,
+          key: e?.key,
+          actionId
+        })) {
+          continue;
+        }
         if (this._isUnsafeToRunActionKey(e)) return false;
         const handlerFn = this[keybinding.handler];
         if (typeof handlerFn !== 'function') return false;
@@ -3419,7 +3432,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     }
 
     // Current keyboard layout handling:
-    // - system layer first (Esc / KB Reference / Settings) — not part of any family
+    // - system layer (Esc / KB Reference / Settings), unless the current custom
+    //   layout occupies that physical key with a different assignment
     // - builtin: layout KEYBINDINGS loop
     // - user:<id>: exclusive custom slots only (no other built-in layout keys)
     // Alt+ chrome hotkeys (Alt+K, Alt+C, …) are handled earlier above.
@@ -4096,9 +4110,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     // Shared inspector pick mode: track any element under cursor (not just clickables).
     this.inspector.updateHover(under);
 
-    // Gallery overlays: don't extend a page text-range onto lightbox images.
+    // Lightbox overlays: don't extend a page text-range onto gallery images.
+    // Reader Mode is a text surface, so Text Select and Element Select keep updating.
     if (this.state.isHighlightMode()) {
-      if (!isPageMediaOverlayOpen() && !isMediaLibraryOverlayOpen() && !isReaderModeOverlayOpen()) {
+      if (!isPageMediaOverlayOpen() && !isMediaLibraryOverlayOpen()) {
         this.updateSelection();
       }
     }
@@ -4861,6 +4876,22 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    */
   findSelectionInShadowDOM() {
     try {
+      // Reader Mode keeps its Selection on the overlay shadow root, which is not
+      // registered with the page shadow-DOM manager.
+      try {
+        const readerRoot = document.getElementById('kpv2-reader-overlay')?.shadowRoot;
+        if (readerRoot && typeof readerRoot.getSelection === 'function') {
+          const readerSelection = readerRoot.getSelection();
+          if (readerSelection
+            && typeof readerSelection.rangeCount === 'number'
+            && readerSelection.rangeCount > 0
+            && typeof readerSelection.toString === 'function'
+            && readerSelection.toString().trim()) {
+            return readerSelection;
+          }
+        }
+      } catch { /* ignore */ }
+
       // Validate shadow DOM manager availability
       if (!this.shadowDOMManager) {
         console.log('[KeyPilot] Shadow DOM manager not available');

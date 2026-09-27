@@ -46,6 +46,39 @@ for (const locale of locales) {
   issues.push(...catalogIssues(source, catalogs.get(locale), locale, parent));
 }
 
+const regionDir = join(root, 'i18n', 'region-defaults');
+const regionSourcePath = join(regionDir, `${sourceLocale}.json`);
+let regionSource;
+try {
+  regionSource = JSON.parse(await readFile(regionSourcePath, 'utf8'));
+} catch (error) {
+  issues.push(`Cannot read ${relative(root, regionSourcePath)}: ${error.message}`);
+}
+
+if (regionSource) {
+  for (const required of ['stockSocialMedia', 'searchEngineUrls', 'launcherSearchSites']) {
+    if (!regionSource[required]) {
+      issues.push(`en region-defaults missing "${required}"`);
+    }
+  }
+  if (!Array.isArray(regionSource.stockSocialMedia?.urls) || !regionSource.stockSocialMedia.urls.length) {
+    issues.push('en region-defaults stockSocialMedia.urls must be a non-empty array');
+  }
+  if (!Array.isArray(regionSource.launcherSearchSites) || !regionSource.launcherSearchSites.length) {
+    issues.push('en region-defaults launcherSearchSites must be a non-empty array');
+  }
+
+  const regionLocales = [sourceLocale, ...locales];
+  for (const locale of regionLocales) {
+    const file = join(regionDir, `${locale}.json`);
+    try {
+      JSON.parse(await readFile(file, 'utf8'));
+    } catch (error) {
+      issues.push(`${locale}: missing or invalid i18n/region-defaults/${locale}.json (${error.message})`);
+    }
+  }
+}
+
 if (issues.length) {
   console.error(`Locale catalog validation failed:\n${issues.map((issue) => `- ${issue}`).join('\n')}`);
   process.exitCode = 1;

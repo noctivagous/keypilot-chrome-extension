@@ -17,7 +17,7 @@ import {
 import { applyCardBackground } from '../ui/page-thumb-ui.js';
 import {
   LAUNCHER_CATALOG_CATEGORY_KEYS,
-  LAUNCHER_SITE_CATALOG
+  getLauncherSiteCatalog
 } from '../config/launcher-sites.js';
 import { createOutlineIcon } from '../ui/preview-open-actions.js';
 import {
@@ -137,7 +137,7 @@ export class LauncherPopover {
     this._addSitePicker = null;
     /** Catalog used for domain history + site filters (full lists, not composed deck). */
     this._defaultSites = Object.fromEntries(
-      Object.entries(LAUNCHER_SITE_CATALOG).map(([key, list]) => [
+      Object.entries(getLauncherSiteCatalog()).map(([key, list]) => [
         key,
         list.map((s) => ({
           title: s.title,

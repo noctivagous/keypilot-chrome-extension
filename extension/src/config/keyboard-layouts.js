@@ -1000,7 +1000,7 @@ export function buildKeybindingsForLayout(layoutId) {
       handler: stock.handler,
       functionId: stock.functionId,
       instanceId: stock.id,
-      parameters: stock.parameters,
+      parameters: localized?.parameters || stock.parameters,
       label: localized?.label || stock.id,
       description: localized?.description || '',
       keyLabel: labels.keyLabel,

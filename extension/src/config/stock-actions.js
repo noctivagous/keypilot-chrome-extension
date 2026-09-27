@@ -6,10 +6,11 @@
 
 import { getMessage } from '../utils/i18n.js';
 import { normalizeOpenUrlList } from '../utils/open-url-list.js';
+import { getStockSocialMediaUrls } from './region-defaults.js';
 
 export const STOCK_ACTION_ID_PREFIX = 'stock:';
 
-/** Open URLs instance: Facebook, Instagram, YouTube, and X. */
+/** Open URLs instance: locale-specific social sites from region-defaults. */
 export const STOCK_SOCIAL_MEDIA_ACTION_ID = 'stock:social-media';
 
 /** Random Bookmark instance: one bookmark from every folder, then switch to it. */
@@ -39,7 +40,7 @@ export const STOCK_ACTIONS = Object.freeze([
     labelKey: 'fn_stock_social_media_label',
     descriptionKey: 'fn_stock_social_media_description',
     label: 'Social media',
-    description: 'Open Facebook, Instagram, YouTube, and X',
+    description: 'Open several social media sites in new tabs',
     parameters: Object.freeze({
       urls: Object.freeze(normalizeOpenUrlList([
         'facebook.com',
@@ -81,8 +82,15 @@ export function getStockActionById(id) {
   const key = String(id || '');
   const found = STOCK_ACTIONS.find((action) => action && action.id === key);
   if (!found) return null;
+  const parameters = found.id === STOCK_SOCIAL_MEDIA_ACTION_ID
+    ? Object.freeze({
+        ...found.parameters,
+        urls: Object.freeze(normalizeOpenUrlList(getStockSocialMediaUrls()))
+      })
+    : found.parameters;
   return {
     ...found,
+    parameters,
     label: getMessage(found.labelKey) || found.label || found.id,
     description: (found.descriptionKey && getMessage(found.descriptionKey)) || found.description || ''
   };

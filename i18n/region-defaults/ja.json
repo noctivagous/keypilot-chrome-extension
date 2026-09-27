@@ -1,0 +1,26 @@
+{
+  "stockSocialMedia": {
+    "urls": [
+      "youtube.com",
+      "x.com",
+      "instagram.com",
+      "line.me",
+      "tiktok.com"
+    ]
+  },
+  "searchEngineUrls": {
+    "google": {
+      "homeUrl": "https://www.google.co.jp/",
+      "searchUrlPrefix": "https://www.google.co.jp/search?q="
+    }
+  },
+  "launcherSearchSites": [
+    { "title": "Google", "url": "https://www.google.co.jp" },
+    { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" },
+    { "title": "Bing", "url": "https://bing.com" },
+    { "title": "DuckDuckGo", "url": "https://duckduckgo.com" },
+    { "title": "Brave Search", "url": "https://search.brave.com" },
+    { "title": "Ecosia", "url": "https://ecosia.org" },
+    { "title": "Startpage", "url": "https://startpage.com" }
+  ]
+}

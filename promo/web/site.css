@@ -1291,6 +1291,104 @@ html:lang(sk) .try-it-key-label {
     max-height: none !important;
 }
 
+.open-url-spotlights {
+    margin-top: 3.25rem;
+}
+
+.open-url-spotlights h3 {
+    font-size: clamp(1.25rem, 3vw, 1.55rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.open-url-spotlights .lede {
+    margin-bottom: 1.5rem;
+}
+
+.open-url-spotlight-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.open-url-spotlight {
+    background: linear-gradient(145deg, var(--tone-0-0), var(--colors-0-0));
+    border: 1px solid var(--tint-0-0);
+    border-radius: 16px;
+    padding: 1.75rem 1.75rem 1.85rem;
+}
+
+.open-url-spotlight h4 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.65rem;
+}
+
+.open-url-spotlight p {
+    color: var(--tint-0-4);
+    font-size: 1.02rem;
+    margin: 0;
+}
+
+.spotlight-key {
+    --spotlight-key: 6.25rem;
+    align-items: flex-start;
+    background: linear-gradient(180deg, #6b4a8c 0%, #573b73 55%, #412c56 100%);
+    border: 1.5px solid #9a78bc;
+    border-radius: 12px;
+    box-shadow: 0 10px 22px hsl(270 35% 8% / 0.35);
+    box-sizing: border-box;
+    color: #f3e9fb;
+    display: flex;
+    font-size: 2.35rem;
+    font-weight: 800;
+    height: var(--spotlight-key);
+    justify-content: flex-start;
+    margin: 1.85rem 0 1.35rem;
+    overflow: visible;
+    padding: 0.7rem 0.85rem;
+    position: relative;
+    width: var(--spotlight-key);
+}
+
+.spotlight-key-label {
+    color: var(--tint-0-4);
+    font-size: 0.62rem;
+    font-weight: 800;
+    left: 0;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    position: absolute;
+    text-align: left;
+    top: -1.45rem;
+    white-space: nowrap;
+}
+
+html:lang(de) .spotlight-key-label,
+html:lang(sk) .spotlight-key-label,
+html:lang(es) .spotlight-key-label,
+html:lang(es-419) .spotlight-key-label {
+    letter-spacing: 0.04em;
+}
+
+.spotlight-key-icon {
+    fill: #1f152b;
+    inset: 8%;
+    opacity: 0.92;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+.spotlight-key-face {
+    display: block;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+}
+
 .shot-grid {
     display: grid;
     gap: 1.75rem;
@@ -1457,6 +1555,9 @@ html:lang(sk) .try-it-key-label {
         width: 100%;
     }
     .feature-grid {
+        grid-template-columns: 1fr;
+    }
+    .open-url-spotlight-grid {
         grid-template-columns: 1fr;
     }
 }

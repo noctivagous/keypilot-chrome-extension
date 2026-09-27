@@ -31,7 +31,7 @@ Move between tabs and browser history without reaching for chrome buttons.
 
 **Open URLs** is an Action Instance in the Tab Control library. In the Keyboard Layout Editor inspector, add the sites you want (for example five news homepages). Place that instance on a key. Pressing the key opens each URL in its own background tab, in list order, just after the current tab. Create another instance for a different set of sites.
 
-Browsing includes a bundled **Social media** instance on <kbd>.</kbd> (right-handed) and <kbd>X</kbd> (left-handed): Facebook, Instagram, YouTube, and X.
+Browsing includes a bundled **Social media** instance on <kbd>.</kbd> (right-handed) and <kbd>X</kbd> (left-handed). The sites on that key follow the browser language.
 
 <h3 id="open-bookmarks">Open Bookmarks</h3>
 
