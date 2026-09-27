@@ -1,4 +1,5 @@
 import { FEATURE_FLAGS } from '../config/constants.js';
+import { deepestEventTarget } from '../utils/element-from-point.js';
 import {
   isClickableKeyPilotChromeElement,
   isInteractiveKeyPilotOverlayElement,
@@ -103,14 +104,7 @@ export class IntersectionObserverManager {
     this._boundDocPointerOver = (e) => {
       try {
         if (!this._domHoverEnabled) return;
-        const path = (e && typeof e.composedPath === 'function') ? e.composedPath() : null;
-        let raw = null;
-        if (Array.isArray(path)) {
-          for (const n of path) {
-            if (n && n.nodeType === 1) { raw = n; break; }
-          }
-        }
-        if (!raw && e?.target && e.target.nodeType === 1) raw = e.target;
+        const raw = deepestEventTarget(e);
         if (!raw || raw.nodeType !== 1) return;
 
         const el = /** @type {HTMLElement} */ (raw);
@@ -704,14 +698,7 @@ export class IntersectionObserverManager {
     try {
       if (!e) return;
 
-      const path = (typeof e.composedPath === 'function') ? e.composedPath() : null;
-      let raw = null;
-      if (Array.isArray(path)) {
-        for (const n of path) {
-          if (n && n.nodeType === 1) { raw = n; break; }
-        }
-      }
-      if (!raw && e.target && e.target.nodeType === 1) raw = e.target;
+      const raw = deepestEventTarget(e);
       if (!raw || raw.nodeType !== 1) return;
       if (this._isKeyPilotUiElement(raw)) return;
 

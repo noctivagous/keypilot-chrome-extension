@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-27T05:42:33.790Z
+ * Generated on 2026-09-27T05:57:57.424Z
  */
 
 (() => {
@@ -3238,6 +3238,24 @@
   }
 
   // src/utils/element-from-point.js
+  function getAccessibleShadowRoot(el) {
+    if (!el) return null;
+    try {
+      if (el.shadowRoot) return el.shadowRoot;
+    } catch {
+    }
+    try {
+      const opened = globalThis.chrome?.dom?.openOrClosedShadowRoot?.(el);
+      if (opened) return opened;
+    } catch {
+    }
+    try {
+      const fx = el.openOrClosedShadowRoot;
+      if (fx) return fx;
+    } catch {
+    }
+    return null;
+  }
   function deepElementFromPoint(x, y, doc = document) {
     let el = null;
     try {
@@ -3246,15 +3264,17 @@
       return null;
     }
     let guard = 0;
-    while (el && el.shadowRoot && guard++ < 10) {
+    while (el && guard++ < 10) {
+      const root = getAccessibleShadowRoot(el);
+      if (!root) break;
       let nested = null;
       try {
-        nested = el.shadowRoot.elementFromPoint(x, y);
+        nested = root.elementFromPoint(x, y);
       } catch {
-        break;
+        nested = null;
       }
       if (!nested || nested === el) {
-        nested = deepestShadowElementAtPoint(el.shadowRoot, x, y);
+        nested = deepestShadowElementAtPoint(root, x, y);
       }
       if (!nested || nested === el) break;
       el = nested;
