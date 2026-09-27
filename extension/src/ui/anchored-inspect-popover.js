@@ -119,6 +119,8 @@ function ensureShellStyles(root) {
   padding: 0;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .${cls}__actions {
   display: flex;

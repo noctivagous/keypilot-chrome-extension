@@ -42,7 +42,7 @@ export function showLookupWordPopover(opts = {}) {
       try { opts.onClose?.(); } catch { /* ignore */ }
     },
     renderBody(body, doc) {
-      body.style.cssText = 'padding:12px;overflow:auto;background:#fff;color:#202122;font:14px/1.55 system-ui,sans-serif;';
+      body.style.cssText = 'display:block;padding:12px;overflow:auto;background:#fff;color:#202122;font:14px/1.55 system-ui,sans-serif;';
       if (opts.loading) {
         body.textContent = getMessage('lookup_word_loading');
         return;
@@ -56,8 +56,11 @@ export function showLookupWordPopover(opts = {}) {
         body.textContent = getMessage('lookup_word_empty');
         return;
       }
-      promoteWiktionaryDefinition(fragment);
-      body.appendChild(fragment);
+      const article = doc.createElement('div');
+      article.style.cssText = 'display:block;max-width:100%;';
+      article.appendChild(fragment);
+      promoteWiktionaryDefinition(article);
+      body.appendChild(article);
     },
     renderActions(actions, doc, btnClass) {
       const openBtn = createInspectActionButton(doc, {
