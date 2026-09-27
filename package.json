@@ -22,6 +22,7 @@
     "store:screenshots:serve": "node scripts/store-screenshots/capture.mjs",
     "store:screenshots:auto": "node scripts/store-screenshots/auto-capture.mjs",
     "debug:chrome": "node scripts/debug-chrome.mjs",
+    "test:ui-flow": "node scripts/ui-flow/run.mjs",
     "fixtures:keyboard-layouts": "node scripts/generate-keyboard-layout-fixtures.mjs",
     "check:locales": "node scripts/sync-region-defaults.mjs --check && node scripts/check-locales.mjs",
     "web:locales": "node promo/web/locales/generate.mjs",

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KeyPilot UI flow fixture</title>
+  <style>
+    body {
+      margin: 0;
+      font: 16px/1.5 system-ui, sans-serif;
+      background: #f4f1ea;
+      color: #1b1f24;
+    }
+    .stage {
+      position: relative;
+      margin-left: 400px;
+      padding: 80px 32px 32px;
+      min-height: 4200px;
+    }
+    a { color: #0b57d0; }
+    input[type="text"] {
+      display: block;
+      margin: 16px 0 24px;
+      padding: 10px 12px;
+      min-width: 280px;
+      font: inherit;
+    }
+    .filler { color: #6b7280; max-width: 40em; }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <h1>UI flow fixture</h1>
+    <p>
+      <a id="practice-link" href="/next.html">Practice link to the next page</a>
+    </p>
+    <p>
+      <a id="practice-link-2" href="/next.html">Second practice link</a>
+    </p>
+    <label for="practice-field">Practice text field</label>
+    <input id="practice-field" type="text" name="q" autocomplete="off" />
+    <div class="filler">
+      <p>Tall page so scroll tasks can move the viewport.</p>
+      <p>Alpha Bravo Charlie Delta Echo Foxtrot Golf Hotel India Juliet.</p>
+      <p>Kilo Lima Mike November Oscar Papa Quebec Romeo Sierra Tango.</p>
+      <p>Uniform Victor Whiskey X-ray Yankee Zulu.</p>
+    </div>
+  </main>
+</body>
+</html>

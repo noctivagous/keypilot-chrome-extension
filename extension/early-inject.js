@@ -1852,7 +1852,7 @@
     },
     "stock:social-media": {
       "label": "Social media",
-      "description": "Open Facebook, Instagram, YouTube, and X",
+      "description": "Open several social media sites in new tabs",
       "keyLabel": ".",
       "displayKey": ".",
       "keyboardClass": "key-open-urls"
@@ -2078,7 +2078,7 @@
     },
     "stock:social-media": {
       "label": "Social media",
-      "description": "Open Facebook, Instagram, YouTube, and X",
+      "description": "Open several social media sites in new tabs",
       "keyLabel": "X",
       "displayKey": "X",
       "keyboardClass": "key-open-urls"
@@ -2891,7 +2891,7 @@
   },
   "stock:social-media": {
     "label": "Social media",
-    "description": "Open Facebook, Instagram, YouTube, and X",
+    "description": "Open several social media sites in new tabs",
     "keyLabel": ".",
     "displayKey": ".",
     "keyboardClass": "key-open-urls"
@@ -7653,6 +7653,7 @@
   let keyboardCustomLayoutSel = '';
   let keyboardLayoutStore = null;
   let keyboardShowNumberRow = false;
+  let keyboardHardwareLayoutId = '';
   let keyboardReferenceCollapsed = false;
   let keyboardHelpRoot = null;
   let keyboardHelpShadowRoot = null;
@@ -8681,6 +8682,7 @@
     keyboardLayoutFamilyId = nextFamily;
     keyboardUsesCustomLayout = nextUsesCustom;
     keyboardCustomLayoutSel = nextCustomSel;
+    keyboardHardwareLayoutId = String(obj?.keyboardHardwareLayoutId || '').trim();
     applyEarlyLayoutSelect();
     return { layoutChanged, familyChanged, customLayoutChanged };
   }
@@ -10680,7 +10682,12 @@
       }
     } catch { /* ignore */ }
     const customReady = !keyboardUsesCustomLayout || !!getEarlyActiveUserLayout();
-    const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && customReady);
+    // Early paint is the US ANSI model. Another hardware layout (for example
+    // JIS) has to stay hidden until the bundled renderer paints it, or the
+    // extra keys visibly pop into an already-open window.
+    const hardwareId = String(keyboardHardwareLayoutId || '').trim();
+    const hardwareReady = !hardwareId || hardwareId === 'us-ansi-qwerty';
+    const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && customReady && hardwareReady);
     if (shouldShow) {
       try { ensureEarlyChromeHostMounted(keyboardHelpRoot); } catch { /* ignore */ }
       setupEarlyKeyboardHelpHostGuard();
@@ -11749,13 +11756,6 @@
           } catch { /* ignore */ }
         }
       }
-    } catch { /* ignore */ }
-
-    // Build the Keyboard Reference shell before the service-worker round trip.
-    // It is hidden by default, so this cannot flash in a popover window; creating
-    // it here lets its styles, fonts, and DOM be ready during a cold worker start.
-    try {
-      ensureEarlyFloatingKeyboardHelpShell();
     } catch { /* ignore */ }
 
     // Resolve before any storage-driven Keyboard Reference paint so separate-window

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-27T00:34:22.756Z
+ * Generated on 2026-09-27T05:21:34.040Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5278,7 +5278,7 @@ var DEFAULT_LOCALE = "en";
 function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
   const fallback = String(baseLocale || DEFAULT_LOCALE);
   const raw = String(
-    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? fallback
+    uiLanguage ?? globalThis.chrome?.i18n?.getUILanguage?.() ?? fallback
   ).trim();
   const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : "";
   const base2 = exact.split(/[-_]/)[0].toLowerCase();
@@ -5301,12 +5301,12 @@ function normalizeLocaleTag(value) {
 }
 function getUILocaleTag() {
   try {
-    const fromCatalog = normalizeLocaleTag(chrome?.i18n?.getMessage?.("locale_tag"));
+    const fromCatalog = normalizeLocaleTag(globalThis.chrome?.i18n?.getMessage?.("locale_tag"));
     if (fromCatalog) return fromCatalog;
   } catch {
   }
   try {
-    const fromUi = normalizeLocaleTag(chrome?.i18n?.getUILanguage?.());
+    const fromUi = normalizeLocaleTag(globalThis.chrome?.i18n?.getUILanguage?.());
     if (fromUi) return fromUi;
   } catch {
   }
@@ -5322,7 +5322,7 @@ function getMessage(key2, substitutions) {
   const messageKey = typeof key2 === "string" ? key2.trim() : "";
   if (!messageKey) return missingMessage(String(key2 || "(empty key)"));
   try {
-    const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+    const message = globalThis.chrome?.i18n?.getMessage?.(messageKey, substitutions);
     return typeof message === "string" && message ? message : missingMessage(messageKey);
   } catch {
     return missingMessage(messageKey);
@@ -5732,6 +5732,76 @@ function normalizeOpenUrlList(raw, max = OPEN_URLS_MAX) {
   return out;
 }
 
+// src/config/region-defaults-data.js
+var regionDefaultFiles = {
+  de: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.de/", "searchUrlPrefix": "https://www.google.de/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.de" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+  en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+  es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+  es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+  ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+  sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+  zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
+  zh_HK: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.hk/", "searchUrlPrefix": "https://www.google.com.hk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.hk" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+  zh_TW: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "line.me"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.tw/", "searchUrlPrefix": "https://www.google.com.tw/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.tw" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] }
+};
+
+// src/config/region-defaults.js
+var REGION_FILES = regionDefaultFiles;
+var en = REGION_FILES.en;
+var REGION_PARENT = Object.freeze({
+  es_419: "es",
+  zh_HK: "zh_TW"
+});
+function catalogId(tag) {
+  return String(tag || "").trim().replace(/-/g, "_");
+}
+function candidateCatalogIds(uiLanguage) {
+  const out = [];
+  for (const tag of getLocaleCandidates(uiLanguage)) {
+    const id = catalogId(tag);
+    if (!id) continue;
+    out.push(id);
+    const parent = REGION_PARENT[id];
+    if (parent) out.push(parent);
+  }
+  return [...new Set(out)];
+}
+function mergeRegion(base2, overlay) {
+  if (!overlay) return base2;
+  const searchEngineUrls = { ...base2.searchEngineUrls || {} };
+  for (const [id, urls] of Object.entries(overlay.searchEngineUrls || {})) {
+    searchEngineUrls[id] = {
+      ...searchEngineUrls[id] || {},
+      ...urls
+    };
+  }
+  return {
+    stockSocialMedia: overlay.stockSocialMedia || base2.stockSocialMedia,
+    searchEngineUrls,
+    launcherSearchSites: overlay.launcherSearchSites || base2.launcherSearchSites
+  };
+}
+function getRegionDefaults(uiLanguage) {
+  let resolved = (
+    /** @type {RegionDefaultsFile} */
+    { ...en }
+  );
+  for (const id of [...candidateCatalogIds(uiLanguage)].reverse()) {
+    const file = REGION_FILES[id];
+    if (file) resolved = mergeRegion(resolved, file);
+  }
+  return resolved;
+}
+function getStockSocialMediaUrls(uiLanguage) {
+  const urls = getRegionDefaults(uiLanguage).stockSocialMedia?.urls;
+  return Array.isArray(urls) ? urls.slice() : [];
+}
+function getLauncherSearchSites(uiLanguage) {
+  const rows = getRegionDefaults(uiLanguage).launcherSearchSites;
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((row2) => row2 && typeof row2.title === "string" && typeof row2.url === "string").map((row2) => ({ title: row2.title, url: row2.url, isDefault: true }));
+}
+
 // src/config/stock-actions.js
 var STOCK_SOCIAL_MEDIA_ACTION_ID = "stock:social-media";
 var STOCK_RANDOM_BOOKMARK_ACTION_ID = "stock:random-bookmark";
@@ -5744,7 +5814,7 @@ var STOCK_ACTIONS = Object.freeze([
     labelKey: "fn_stock_social_media_label",
     descriptionKey: "fn_stock_social_media_description",
     label: "Social media",
-    description: "Open Facebook, Instagram, YouTube, and X",
+    description: "Open several social media sites in new tabs",
     parameters: Object.freeze({
       urls: Object.freeze(normalizeOpenUrlList([
         "facebook.com",
@@ -5773,8 +5843,13 @@ function getStockActionById(id) {
   const key2 = String(id || "");
   const found = STOCK_ACTIONS.find((action) => action && action.id === key2);
   if (!found) return null;
+  const parameters = found.id === STOCK_SOCIAL_MEDIA_ACTION_ID ? Object.freeze({
+    ...found.parameters,
+    urls: Object.freeze(normalizeOpenUrlList(getStockSocialMediaUrls()))
+  }) : found.parameters;
   return {
     ...found,
+    parameters,
     label: getMessage(found.labelKey) || found.label || found.id,
     description: found.descriptionKey && getMessage(found.descriptionKey) || found.description || ""
   };
@@ -6540,7 +6615,7 @@ function buildKeybindingsForLayout(layoutId) {
       handler: stock.handler,
       functionId: stock.functionId,
       instanceId: stock.id,
-      parameters: stock.parameters,
+      parameters: localized?.parameters || stock.parameters,
       label: localized?.label || stock.id,
       description: localized?.description || "",
       keyLabel: labels.keyLabel,
@@ -7710,16 +7785,9 @@ var DEFAULT_SEARCH_ENGINE_ID = (
   /** @type {SearchEngineId} */
   "brave"
 );
-var LAUNCHER_SEARCH_SITES = Object.freeze([
-  Object.freeze({ title: "Google", url: "https://google.com", isDefault: true }),
-  Object.freeze({ title: "Bing", url: "https://bing.com", isDefault: true }),
-  Object.freeze({ title: "DuckDuckGo", url: "https://duckduckgo.com", isDefault: true }),
-  Object.freeze({ title: "Yahoo", url: "https://yahoo.com", isDefault: true }),
-  Object.freeze({ title: "Brave Search", url: "https://search.brave.com", isDefault: true }),
-  Object.freeze({ title: "Ecosia", url: "https://ecosia.org", isDefault: true }),
-  Object.freeze({ title: "Startpage", url: "https://startpage.com", isDefault: true }),
-  Object.freeze({ title: "Yandex", url: "https://yandex.com", isDefault: true })
-]);
+var LAUNCHER_SEARCH_SITES = Object.freeze(
+  getLauncherSearchSites("en").map((row2) => Object.freeze(row2))
+);
 function normalizeSearchEngineId(raw) {
   if (raw === "google" || raw === "duckduckgo" || raw === "brave") return raw;
   return DEFAULT_SEARCH_ENGINE_ID;

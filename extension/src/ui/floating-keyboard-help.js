@@ -890,12 +890,27 @@ export class FloatingKeyboardHelp {
       // User layouts used to wait on an async store read (early-inject left the
       // shell empty). When early-inject already assembled the matching layout,
       // reveal immediately so navigation does not flash an empty then-filled panel.
+      const settings = this._getKeyPilot?.()?._settings || null;
       const layoutSel = String(
-        this._getKeyPilot?.()?._settings?.currentKeyboardLayoutId
+        settings?.currentKeyboardLayoutId
         || this._currentKeyboardLayoutId
         || ''
       );
       if (layoutSel.startsWith('user:') && !this._earlyCustomPaintMatches(layoutSel)) {
+        void this._renderAsync().finally(() => reveal({ render: false }));
+        return;
+      }
+      const hardwareLayoutId = String(settings?.keyboardHardwareLayoutId || '');
+      const builtinLayoutId = String(
+        settings?.keyboardLayoutId
+        || this.layoutId
+        || ''
+      );
+      if (
+        hardwareLayoutId
+        && hardwareLayoutId !== 'us-ansi-qwerty'
+        && !this._earlyBuiltinPaintMatches(builtinLayoutId, hardwareLayoutId)
+      ) {
         void this._renderAsync().finally(() => reveal({ render: false }));
         return;
       }
@@ -2265,6 +2280,19 @@ export class FloatingKeyboardHelp {
       api.setOptions(options);
       api.setValue(v, { silent: true });
     } catch { /* ignore */ }
+  }
+
+  _earlyBuiltinPaintMatches(layoutId, hardwareLayoutId) {
+    const wanted = [layoutId, hardwareLayoutId].filter(Boolean).join(':');
+    if (!wanted || !this.keyboardContainer) return false;
+    let visual = null;
+    try { visual = this.keyboardContainer.querySelector(':scope > .keyboard-visual'); } catch { /* ignore */ }
+    if (!visual) {
+      try { visual = this.keyboardContainer.querySelector('.keyboard-visual'); } catch { /* ignore */ }
+    }
+    return !!visual?.dataset
+      && visual.dataset.kpKeyboardBuilt === 'true'
+      && String(visual.dataset.kpLayoutId || '') === wanted;
   }
 
   _earlyCustomPaintMatches(sel) {

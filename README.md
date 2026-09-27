@@ -55,7 +55,7 @@ on the keyboard in specific places to make web navigation quick.
 | `S` | Navigate to the site origin |
 | `B` | Origin-based continuous scroll |
 | `,` | Open one random bookmark |
-| `.` | Open Facebook, Instagram, YouTube, and X |
+| `.` | Open several social media sites in new tabs |
 | `'` | Open KeyPilot Settings |
 
 #### Tabs
