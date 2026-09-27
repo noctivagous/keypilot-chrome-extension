@@ -16,10 +16,7 @@ import { mediaLibraryService } from './src/utils/media-library-service.js';
 import { blobToDataUrl } from './src/utils/media-library-transfer.js';
 import { resolveVideoThumbnailUrl } from './src/utils/youtube-thumb.js';
 import { isServiceWorkerFetchableVideoUrl } from './src/utils/video-url-utils.js';
-import {
-  fetchDictionaryDefinition,
-  normalizeWordForLookup
-} from './src/utils/dictionary-lookup.js';
+import { fetchWiktionaryEntry } from './src/utils/dictionary-lookup.js';
 import { startKeyPilotDebugFromSettings } from './src/utils/debug.js';
 import {
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
@@ -1999,27 +1996,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case MSG.DICTIONARY_LOOKUP: {
+        case MSG.WIKTIONARY_LOOKUP: {
+          const word = typeof message.word === 'string' ? message.word : '';
+          const uiLocale = typeof message.uiLocale === 'string' ? message.uiLocale : '';
           try {
-            const word = normalizeWordForLookup(message.word);
-            if (!word) {
-              sendResponse({
-                type: MSG.DICTIONARY_LOOKUP,
-                ok: false,
-                word: '',
-                error: 'No word under cursor'
-              });
-              break;
-            }
-            const result = await fetchDictionaryDefinition(word);
-            sendResponse({ type: MSG.DICTIONARY_LOOKUP, ...result });
+            const result = await fetchWiktionaryEntry(word, uiLocale);
+            sendResponse({ type: MSG.WIKTIONARY_LOOKUP, ...result });
           } catch (error) {
-            console.error('KP_DICTIONARY_LOOKUP failed:', error);
+            console.error('KP_WIKTIONARY_LOOKUP failed:', error);
             sendResponse({
-              type: MSG.DICTIONARY_LOOKUP,
+              type: MSG.WIKTIONARY_LOOKUP,
               ok: false,
-              word: normalizeWordForLookup(message.word),
-              error: error?.message || 'Dictionary lookup failed'
+              word,
+              url: '',
+              error: error?.message || 'Wiktionary lookup failed'
             });
           }
           break;

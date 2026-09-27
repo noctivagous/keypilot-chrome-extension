@@ -51,7 +51,7 @@ Popover with family, size, file type, and download URL for the styled text under
 
 <h3 id="lookup-word">Lookup Word</h3>
 
-Free Dictionary API definition for the word under the cursor. Optional Ask AI source on the Action Instance when that path is available.
+Wiktionary popover for the word under the cursor. Shows a brief notice if the cursor is not on a word. Optional Ask AI source on the Action Instance when that path is available.
 
 <h3 id="translate">Translate</h3>
 

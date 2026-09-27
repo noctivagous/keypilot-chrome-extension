@@ -2713,6 +2713,22 @@
     "message": "Schriftarteninformationen",
     "description": "Accessible name for the Font Info popover."
   },
+  "lookup_word_aria": {
+    "message": "Dictionary lookup",
+    "description": "Accessible name for the Lookup Word popover."
+  },
+  "lookup_word_title": {
+    "message": "Wiktionary",
+    "description": "Title of the Lookup Word popover."
+  },
+  "lookup_word_loading": {
+    "message": "Wiktionary wird geladen…",
+    "description": "Status while the localized Wiktionary entry is loading."
+  },
+  "lookup_word_empty": {
+    "message": "Kein Definitionsinhalt gefunden.",
+    "description": "Fallback when Wiktionary returned no rendered definition content."
+  },
   "font_info_url": {
     "message": "URL",
     "description": "Label for a font file URL."
@@ -4200,11 +4216,11 @@
     "description": "Function Library label for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "Wörterbuchdefinition unter dem Cursor",
+    "message": "Wiktionary für das Wort unter dem Cursor",
     "description": "Function Library description for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_details": {
-    "message": "Zeigt ein Free Dictionary API-Definitions-Popover für das Wort unter dem Cursor an. Keine KI-Einrichtung erforderlich; Schalten Sie optional die Quelle auf „Ask AI“ in der Aktionsinstanz um.",
+    "message": "Öffnet Wiktionary in einem Popover für das Wort unter dem Cursor. Kurzer Hinweis, wenn der Cursor nicht auf einem Wort liegt. Keine KI-Einrichtung erforderlich; optional Quelle auf „Ask AI“ in der Aktionsinstanz umschalten.",
     "description": "Function Library details for LOOKUP_WORD."
   },
   "fn_param_source": {

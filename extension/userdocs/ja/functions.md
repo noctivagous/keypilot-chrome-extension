@@ -51,7 +51,7 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 <h3 id="lookup-word">単語を調べる</h3>
 
-英語辞書機能です。カーソル下の英単語について Free Dictionary API の定義を表示します。日本語辞書には対応していません。パスが利用可能な場合、アクションインスタンスで Ask AI ソースをオプションとして選べます。
+カーソル下の単語について Wiktionary をポップオーバーで開きます。単語の上にない場合は短い通知だけを出します。パスが利用可能な場合、アクションインスタンスで Ask AI ソースをオプションとして選べます。
 
 <h3 id="translate">翻訳</h3>
 

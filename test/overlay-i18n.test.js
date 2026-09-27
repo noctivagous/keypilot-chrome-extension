@@ -10,10 +10,18 @@ const OVERLAY_KEYS = [
     'popup_settings',
     'popup_control_strip'
   ]],
-  ['extension/src/ui/font-info-popover.js', [
+    ['extension/src/ui/font-info-popover.js', [
     'font_info_title',
     'font_info_copy',
     'font_info_download',
+    'font_info_done'
+  ]],
+  ['extension/src/ui/lookup-word-popover.js', [
+    'lookup_word_title',
+    'lookup_word_aria',
+    'lookup_word_loading',
+    'lookup_word_empty',
+    'preview_open_new_tab',
     'font_info_done'
   ]],
   ['extension/src/ui/procedure-result-popover.js', [

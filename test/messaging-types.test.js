@@ -21,6 +21,7 @@ describe('messaging types', () => {
     assert.equal(MSG.SUCCESS, 'KP_SUCCESS');
     assert.equal(MSG.ERROR, 'KP_ERROR');
     assert.equal(MSG.ACK, 'KP_ACK');
+    assert.equal(MSG.WIKTIONARY_LOOKUP, 'KP_WIKTIONARY_LOOKUP');
   });
 
   it('registers SW response types used by background handlers', () => {
@@ -58,6 +59,7 @@ describe('messaging validate', () => {
     assert.equal(isServiceWorkerRequestType(MSG.FRAME_ACTIVATE), false);
     assert.equal(isServiceWorkerRequestType(MSG.FRAME_MEDIA_SEEK), true);
     assert.equal(isServiceWorkerRequestType(MSG.FRAME_MEDIA_VOLUME), true);
+    assert.equal(isServiceWorkerRequestType(MSG.WIKTIONARY_LOOKUP), true);
     assert.equal(
       validateRuntimeMessage({ type: MSG.GET_STATE }, { requireSwRequest: true }),
       null
@@ -68,6 +70,7 @@ describe('messaging validate', () => {
     );
     assert.match(validateRuntimeMessage(null) || '', /non-null object/);
     assert.match(validateRuntimeMessage({ type: 'KP_NOPE' }) || '', /Unknown message type/);
+    assert.match(validateRuntimeMessage({ type: MSG.WIKTIONARY_LOOKUP }) || '', /word/);
   });
 
   it('checks high-value payloads', () => {

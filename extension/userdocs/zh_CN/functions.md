@@ -51,7 +51,7 @@
 
 <h3 id="lookup-word">查词</h3>
 
-使用 Free Dictionary API 获取光标下单词的定义。当路径可用时，可在操作实例中选择 Ask AI 来源。
+在弹出框中打开光标下单词的 Wiktionary 页面。光标不在单词上时只显示简短提示。路径可用时，可在操作实例中选择 Ask AI 来源。
 
 <h3 id="translate">翻译</h3>
 

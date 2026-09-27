@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { planKeyInfoPopoverLayout } from '../extension/src/ui/key-info-popover-layout.js';
+import { planAnchoredPopoverLayout } from '../extension/src/ui/anchored-popover-layout.js';
 
 const GAP = 10;
 
@@ -83,5 +84,25 @@ describe('planKeyInfoPopoverLayout', () => {
     assert.equal(below.top, 80 + GAP);
     assert.ok(below.settingsMaxHeight != null && below.settingsMaxHeight < 400);
     assert.equal(below.usedH, 100 + below.settingsMaxHeight);
+  });
+
+  it('exposes the same planner as the generic anchored layout util', () => {
+    const metrics = {
+      targetTop: 400,
+      targetBottom: 440,
+      targetCenterX: 200,
+      popW: 320,
+      popH: 500,
+      settingsH: 500,
+      vw: 800,
+      vh: 600
+    };
+    const keyInfo = planKeyInfoPopoverLayout(metrics);
+    const generic = planAnchoredPopoverLayout({ ...metrics, overflowH: metrics.settingsH });
+    assert.equal(keyInfo.placement, generic.placement);
+    assert.equal(keyInfo.left, generic.left);
+    assert.equal(keyInfo.top, generic.top);
+    assert.equal(keyInfo.usedH, generic.usedH);
+    assert.equal(keyInfo.settingsMaxHeight, generic.overflowMaxHeight);
   });
 });

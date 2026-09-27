@@ -254,6 +254,7 @@ export function isClickableKeyPilotChromeElement(element) {
       '.kpv2-tabs-overview-panel',
       '.kpv2-settings-host',
       '.kpv2-docs-host',
+      '.kp-inspect',
       '.kpv2-popover-container',
       '.kp-launcher-container',
       // OS popup Link Preview / Open Popover: injected titlebar (Open, New Tab, ×)
@@ -282,6 +283,7 @@ export function isKeyPilotChromeElement(element) {
       '.kp-action-config-panel',
       '.kp-practice-popover',
       '.kp-procedure-result',
+      '.kp-inspect',
       '.kpv2-tab-history-panel',
       '.kpv2-tabs-overview-panel',
       '.kp-launcher-container',

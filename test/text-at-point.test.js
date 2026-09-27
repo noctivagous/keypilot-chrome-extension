@@ -135,6 +135,39 @@ describe('word under cursor across text nodes', () => {
     assert.equal(result.range?.endOffset, 1);
   });
 
+  it('directWord does not snap to a neighboring word', () => {
+    globalThis.Node = { TEXT_NODE, ELEMENT_NODE };
+    globalThis.NodeFilter = { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2 };
+
+    const block = new FakeElement('p');
+    const text = new FakeText('hello  world', block);
+    block.childNodes.push(text);
+    const onLetter = fakeDocument(text, 1);
+    block.ownerDocument = onLetter;
+    assert.equal(
+      getTextAtPoint(0, 0, {
+        granularity: 'word',
+        directWord: true,
+        doc: /** @type {any} */ (onLetter)
+      }).text,
+      'hello'
+    );
+
+    const gapDoc = fakeDocument(text, 6);
+    block.ownerDocument = gapDoc;
+    const inGap = getTextAtPoint(0, 0, {
+      granularity: 'word',
+      directWord: true,
+      doc: /** @type {any} */ (gapDoc)
+    });
+    const neighbor = getTextAtPoint(0, 0, {
+      granularity: 'word',
+      doc: /** @type {any} */ (gapDoc)
+    });
+    assert.equal(inGap.text, '');
+    assert.equal(neighbor.text, 'world');
+  });
+
   it('segments words and sentences with the page language', () => {
     globalThis.Node = { TEXT_NODE, ELEMENT_NODE };
     globalThis.NodeFilter = { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2 };

@@ -363,7 +363,7 @@ All implemented in `buildDataAcquisitionFunctionDefs()` (`function-library.js`) 
 
 | Function id | `dataSource` / `dataKind` | `destinations` | Notes |
 |---|---|---|---|
-| `LOOKUP_WORD` | `underCursor`, `text` (`word`) | `popover` (default) | Dictionary definition popover via Free Dictionary API (`api.dictionaryapi.dev`) through the service worker. Optional `source: 'ai'` parameter is gated until the AI key system is available. Category `Lookup`. |
+| `LOOKUP_WORD` | `underCursor`, `text` (`word`) | `popover` (default) | Wiktionary in the shared anchored inspect popover for the word directly under the cursor. Toast if the cursor is not on a word. Optional `source: 'ai'` parameter is gated until the AI key system is available. Category `Lookup`. |
 | `TRANSLATE` | `textRange` if an active selection exists, else `underCursor` (`word`\|`sentence`\|`paragraph`, user-configurable granularity) | `modifyPage`, `popover` | Same on-device AI provider, prompted to translate to a configurable target language. No `clipboard`/`mediaLibrary` — translating "to clipboard" isn't a meaningful default. Category `Translate`. |
 | `GET_TEXT_AT_CURSOR` / `GET_MEDIA_AT_CURSOR` | see above | `clipboard` only | Low-level getters, key-assignable so they're useful today; also feed Macro destination Steps. |
 | `GET_TEXT_RANGE` | `textRange`, `text` | none (yields prior result) | Macro Step only (`assignableToKey: false`). Same acquisition as Copy; Copy is the key action. |

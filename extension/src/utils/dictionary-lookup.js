@@ -1,126 +1,134 @@
 /**
- * Free Dictionary API helpers for LOOKUP_WORD.
- * API: GET https://api.dictionaryapi.dev/api/v2/entries/en/{word}
+ * Word capture and Wiktionary URL helpers for LOOKUP_WORD.
  */
 
-export const DICTIONARY_API_BASE = 'https://api.dictionaryapi.dev/api/v2/entries/en';
+const WIKTIONARY_WIKI_BY_LANGUAGE = Object.freeze({
+  de: 'de',
+  en: 'en',
+  es: 'es',
+  ja: 'ja',
+  sk: 'sk',
+  zh: 'zh'
+});
 
 /**
  * Normalize a captured token for dictionary lookup.
+ * English possessives stop before the apostrophe; internal hyphens stay.
  * @param {string|null|undefined} raw
  * @returns {string}
  */
 export function normalizeWordForLookup(raw) {
   let w = String(raw || '').trim();
   if (!w) return '';
-  // Strip surrounding punctuation / quotes / brackets; keep internal hyphens and apostrophes.
+  // Strip surrounding punctuation / quotes / brackets; keep internal hyphens.
   w = w.replace(/^[^\p{L}\p{N}]+/u, '').replace(/[^\p{L}\p{N}]+$/u, '');
-  w = w.trim().toLowerCase();
-  return w;
+  w = w.trim();
+  if (!w) return '';
+  if (isLatinLookupToken(w)) {
+    w = w.replace(/['\u2019\u02BC]s$/iu, '');
+    w = w.replace(/['\u2019\u02BC]$/u, '');
+  }
+  return w.toLowerCase();
 }
 
 /**
- * Format Free Dictionary API entry JSON into plain text for the result popover.
- * @param {any} data
- * @param {string} word
+ * @param {string} w
+ */
+function isLatinLookupToken(w) {
+  return /^[\p{Script=Latin}\p{N}'\u2019\u02BC\-]+$/u.test(w);
+}
+
+/**
+ * @param {string|null|undefined} raw
+ * @returns {string} Empty when there is no usable word.
+ */
+export function wiktionaryUrlForWord(raw) {
+  return wiktionaryUrlForLocalizedWord(raw);
+}
+
+/**
+ * Wiktionary site selected from the extension UI locale.
+ * @param {string|null|undefined} uiLocale
  * @returns {string}
  */
-export function formatDictionaryEntries(data, word) {
-  const entries = Array.isArray(data) ? data : [];
-  if (!entries.length) return '';
-
-  const lines = [];
-  const head = String(entries[0]?.word || word || '').trim() || word;
-  const phonetic =
-    String(entries[0]?.phonetic || '').trim()
-    || String(entries[0]?.phonetics?.find?.((p) => p?.text)?.text || '').trim();
-  lines.push(phonetic ? `${head}  ${phonetic}` : head);
-
-  let posCount = 0;
-  for (const entry of entries) {
-    const meanings = Array.isArray(entry?.meanings) ? entry.meanings : [];
-    for (const meaning of meanings) {
-      if (posCount >= 3) break;
-      const pos = String(meaning?.partOfSpeech || '').trim() || 'sense';
-      const defs = Array.isArray(meaning?.definitions) ? meaning.definitions : [];
-      if (!defs.length) continue;
-      posCount += 1;
-      lines.push('');
-      lines.push(pos);
-      let defCount = 0;
-      for (const d of defs) {
-        if (defCount >= 2) break;
-        const definition = String(d?.definition || '').trim();
-        if (!definition) continue;
-        defCount += 1;
-        lines.push(`${defCount}. ${definition}`);
-        const example = String(d?.example || '').trim();
-        if (example) lines.push(`   e.g. ${example}`);
-      }
-    }
-    if (posCount >= 3) break;
-  }
-
-  if (posCount === 0) return '';
-
-  lines.push('');
-  lines.push('Source: Free Dictionary API');
-  return lines.join('\n');
+export function wiktionaryOriginForLocale(uiLocale) {
+  const language = String(uiLocale || 'en').trim().replace(/_/g, '-').split('-')[0].toLowerCase();
+  const wiki = WIKTIONARY_WIKI_BY_LANGUAGE[language] || 'en';
+  return `https://${wiki}.wiktionary.org`;
 }
 
 /**
- * Fetch and format a definition from the Free Dictionary API.
- * Intended for the service worker (host_permissions bypass CORS).
- *
- * @param {string} word Already-normalized word
- * @param {{ signal?: AbortSignal }} [opts]
- * @returns {Promise<{ ok: true, text: string, word: string }
- *   | { ok: false, error: string, word: string }>}
+ * @param {string|null|undefined} raw
+ * @param {string|null|undefined} [uiLocale]
+ * @returns {string} Empty when there is no usable word.
  */
-export async function fetchDictionaryDefinition(word, opts = {}) {
-  const w = normalizeWordForLookup(word);
-  if (!w) {
-    return { ok: false, error: 'No word under cursor', word: '' };
+export function wiktionaryUrlForLocalizedWord(raw, uiLocale) {
+  const w = normalizeWordForLookup(raw);
+  if (!w) return '';
+  return `${wiktionaryOriginForLocale(uiLocale)}/wiki/${encodeURIComponent(w)}`;
+}
+
+/**
+ * Fetch the parsed, skin-free HTML of a localized Wiktionary entry.
+ * Intended for the service worker so the request is independent of page CORS.
+ *
+ * @param {string} word
+ * @param {string|null|undefined} [uiLocale]
+ * @param {{ signal?: AbortSignal }} [opts]
+ * @returns {Promise<{ ok: true, word: string, url: string, origin: string, html: string }
+ *   | { ok: false, word: string, url: string, error: string }>}
+ */
+export async function fetchWiktionaryEntry(word, uiLocale, opts = {}) {
+  const normalized = normalizeWordForLookup(word);
+  const url = wiktionaryUrlForLocalizedWord(normalized, uiLocale);
+  if (!normalized || !url) {
+    return { ok: false, word: '', url: '', error: 'No word under cursor' };
   }
 
-  const url = `${DICTIONARY_API_BASE}/${encodeURIComponent(w)}`;
-  let res;
+  const origin = wiktionaryOriginForLocale(uiLocale);
+  const apiUrl = new URL('/w/api.php', origin);
+  apiUrl.searchParams.set('action', 'parse');
+  apiUrl.searchParams.set('page', normalized);
+  apiUrl.searchParams.set('prop', 'text');
+  apiUrl.searchParams.set('format', 'json');
+  apiUrl.searchParams.set('formatversion', '2');
+
+  let response;
   try {
-    res = await fetch(url, {
+    response = await fetch(apiUrl, {
       credentials: 'omit',
       redirect: 'follow',
       cache: 'default',
       signal: opts.signal
     });
-  } catch (e) {
+  } catch (error) {
     return {
       ok: false,
-      error: e?.message || 'Dictionary request failed',
-      word: w
+      word: normalized,
+      url,
+      error: error?.message || 'Wiktionary request failed'
     };
   }
 
   let data = null;
   try {
-    data = await res.json();
+    data = await response.json();
   } catch {
     data = null;
   }
 
-  if (res.status === 404 || data?.title === 'No Definitions Found') {
-    return { ok: false, error: 'No definition found', word: w };
+  const html = typeof data?.parse?.text === 'string' ? data.parse.text.trim() : '';
+  if (response.status === 404 || data?.error?.code === 'missingtitle') {
+    return { ok: false, word: normalized, url, error: 'No definition found' };
   }
-  if (!res.ok) {
+  if (!response.ok || data?.error) {
     return {
       ok: false,
-      error: `Dictionary lookup failed (${res.status})`,
-      word: w
+      word: normalized,
+      url,
+      error: String(data?.error?.info || `Wiktionary lookup failed (${response.status})`)
     };
   }
-
-  const text = formatDictionaryEntries(data, w);
-  if (!text) {
-    return { ok: false, error: 'No definition found', word: w };
-  }
-  return { ok: true, text, word: w };
+  if (!html) return { ok: false, word: normalized, url, error: 'No definition found' };
+  return { ok: true, word: normalized, url, origin, html };
 }

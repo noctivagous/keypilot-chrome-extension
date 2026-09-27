@@ -2713,6 +2713,22 @@
     "message": "フォント情報",
     "description": "Accessible name for the Font Info popover."
   },
+  "lookup_word_aria": {
+    "message": "Dictionary lookup",
+    "description": "Accessible name for the Lookup Word popover."
+  },
+  "lookup_word_title": {
+    "message": "Wiktionary",
+    "description": "Title of the Lookup Word popover."
+  },
+  "lookup_word_loading": {
+    "message": "Wiktionary を読み込み中…",
+    "description": "Status while the localized Wiktionary entry is loading."
+  },
+  "lookup_word_empty": {
+    "message": "定義の内容が見つかりません。",
+    "description": "Fallback when Wiktionary returned no rendered definition content."
+  },
   "font_info_url": {
     "message": "URL",
     "description": "Label for a font file URL."
@@ -4200,11 +4216,11 @@
     "description": "Function Library label for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "カーソル下の単語の辞書定義",
+    "message": "カーソル下の単語を Wiktionary で表示",
     "description": "Function Library description for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_details": {
-    "message": "カーソル下の単語について、Free Dictionary APIの定義ポップオーバーを表示します。AIの設定は不要です。任意でアクションインスタンス上のソースをAsk AIに切り替えられます。",
+    "message": "カーソル下の単語の Wiktionary をポップオーバーで開きます。単語の上にない場合は短い通知だけを出します。AI の設定は不要です。アクションインスタンスでソースを Ask AI に切り替えられます。",
     "description": "Function Library details for LOOKUP_WORD."
   },
   "fn_param_source": {

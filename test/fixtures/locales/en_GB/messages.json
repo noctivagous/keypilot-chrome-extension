@@ -2761,6 +2761,22 @@
     "message": "[GB] Font Info",
     "description": "Accessible name for the Font Info popover."
   },
+  "lookup_word_aria": {
+    "message": "[GB] Dictionary lookup",
+    "description": "Accessible name for the Lookup Word popover."
+  },
+  "lookup_word_title": {
+    "message": "[GB] Wiktionary",
+    "description": "Title of the Lookup Word popover."
+  },
+  "lookup_word_loading": {
+    "message": "[GB] Loading Wiktionary…",
+    "description": "Status while the localized Wiktionary entry is loading."
+  },
+  "lookup_word_empty": {
+    "message": "[GB] No definition content found.",
+    "description": "Fallback when Wiktionary returned no rendered definition content."
+  },
   "font_info_url": {
     "message": "[GB] URL",
     "description": "Label for a font file URL."
@@ -4478,11 +4494,11 @@
     "description": "LOOKUP_WORD label."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "[GB] Dictionary definition under cursor",
+    "message": "[GB] Wiktionary for the word under the cursor",
     "description": "LOOKUP_WORD short description."
   },
   "fn_LOOKUP_WORD_details": {
-    "message": "[GB] Shows a Free Dictionary API definition popover for the word under the cursor. No AI setup required; optionally switch the source to Ask AI on the Action Instance.",
+    "message": "[GB] Opens Wiktionary in a popover for the word under the cursor. Shows a brief notice if the cursor is not on a word. No AI setup required; optionally switch the source to Ask AI on the Action Instance.",
     "description": "LOOKUP_WORD inspector details."
   },
   "fn_TRANSLATE_label": {

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-27T06:26:50.758Z
+ * Generated on 2026-09-27T06:56:33.034Z
  */
 
 (() => {
@@ -87,8 +87,8 @@
     MEDIA_LIBRARY_ZIP: "KP_MEDIA_LIBRARY_ZIP",
     /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
     MEDIA_LIBRARY_CHANGED: "KP_MEDIA_LIBRARY_CHANGED",
-    // --- Dictionary lookup (Free Dictionary API via SW; LOOKUP_WORD) ---
-    DICTIONARY_LOOKUP: "KP_DICTIONARY_LOOKUP",
+    // --- Dictionary lookup (localized Wiktionary parsed entry) ---
+    WIKTIONARY_LOOKUP: "KP_WIKTIONARY_LOOKUP",
     // --- Per-tab navigation graph ---
     NAVGRAPH_GET: "KP_NAVGRAPH_GET",
     /** Response payload for NAVGRAPH_GET */

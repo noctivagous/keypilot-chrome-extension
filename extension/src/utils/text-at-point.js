@@ -82,21 +82,40 @@ function segmentText(text, granularity, doc) {
 }
 
 /**
- * Find the word-like `Intl.Segmenter` segment at `offset`, preferring the nearest word-like
- * neighbor when `offset` lands on whitespace/punctuation between words.
+ * Find the word-like `Intl.Segmenter` segment at `offset`.
+ * When `directWord` is false, prefer the nearest word-like neighbor if `offset`
+ * lands on whitespace/punctuation. When true, only a word the caret is in
+ * (or exactly at the end of) counts.
  * @param {string} text
  * @param {number} offset
  * @param {Document|null|undefined} doc
+ * @param {{ directWord?: boolean }} [opts]
  * @returns {{ segment: string, index: number }|null}
  */
-function wordSegmentAt(text, offset, doc) {
+function wordSegmentAt(text, offset, doc, opts = {}) {
   try {
     const segments = segmentText(text, 'word', doc);
     if (!segments) return null;
     let idx = segments.findIndex((s) => offset >= s.index && offset < s.index + s.segment.length);
-    if (idx === -1) idx = segments.length - 1;
+    if (idx === -1) {
+      if (opts.directWord) {
+        if (offset === text.length && segments.length) {
+          const last = segments[segments.length - 1];
+          if (last.isWordLike) return { segment: last.segment, index: last.index };
+        }
+        return null;
+      }
+      idx = segments.length - 1;
+    }
     if (idx < 0) return null;
     if (!segments[idx].isWordLike) {
+      if (opts.directWord) {
+        const prev = idx > 0 ? segments[idx - 1] : null;
+        if (prev?.isWordLike && offset === prev.index + prev.segment.length) {
+          return { segment: prev.segment, index: prev.index };
+        }
+        return null;
+      }
       const before = [...segments.slice(0, idx)].reverse().find((s) => s.isWordLike);
       const after = segments.slice(idx + 1).find((s) => s.isWordLike);
       const chosen = after || before;
@@ -325,14 +344,21 @@ function sentenceAtPoint(x, y, doc) {
  * @param {Document} doc
  * @returns {{ text: string, range: Range|null }}
  */
-function wordAtPoint(x, y, doc) {
+function wordAtPoint(x, y, doc, opts = {}) {
+  const directWord = !!opts.directWord;
   const block = closestBlockAtPoint(x, y, doc);
   if (!block) return { text: '', range: null };
   const { text, pieces } = textPiecesIn(block);
   if (!text.trim() || !pieces.length) return { text: '', range: null };
   const caret = caretRangeAtPoint(x, y, doc);
-  const offset = caret ? caretOffsetInPieces(caret, pieces) : 0;
-  const found = wordSegmentAt(text, offset, doc);
+  if (!caret) return { text: '', range: null };
+  if (directWord) {
+    const node = caret.startContainer;
+    if (!node || node.nodeType !== Node.TEXT_NODE) return { text: '', range: null };
+    if (!pieces.some((p) => p.node === node)) return { text: '', range: null };
+  }
+  const offset = caretOffsetInPieces(caret, pieces);
+  const found = wordSegmentAt(text, offset, doc, { directWord });
   if (!found || !String(found.segment || '').trim()) return { text: '', range: null };
   const end = Math.min(found.index + found.segment.length, text.length);
   const range = rangeFromTextOffsets(doc, pieces, found.index, end);
@@ -349,7 +375,7 @@ function wordAtPoint(x, y, doc) {
  *
  * @param {number} x
  * @param {number} y
- * @param {{ granularity?: 'word'|'sentence'|'paragraph'|'hyperlink', doc?: Document }} [opts]
+ * @param {{ granularity?: 'word'|'sentence'|'paragraph'|'hyperlink', doc?: Document, directWord?: boolean }} [opts]
  * @returns {{ text: string, range: Range|null }}
  */
 export function getTextAtPoint(x, y, opts = {}) {
@@ -366,5 +392,5 @@ export function getTextAtPoint(x, y, opts = {}) {
     return sentenceAtPoint(x, y, doc);
   }
 
-  return wordAtPoint(x, y, doc);
+  return wordAtPoint(x, y, doc, { directWord: !!opts.directWord });
 }

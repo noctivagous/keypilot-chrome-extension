@@ -26,8 +26,9 @@ KeyPilot makes limited requests only when needed for a feature or lookup:
 
 - Site icons may be requested through the browser's favicon service, using the
   relevant site URL or domain.
-- A dictionary lookup sends the single word requested to
-  `api.dictionaryapi.dev`.
+- Lookup Word requests the parsed entry for the word under the cursor from
+  the Wiktionary site matching the extension UI language (for example,
+  `en.wiktionary.org`, `de.wiktionary.org`, or `zh.wiktionary.org`).
 - Video preview lookups send the specific video URL or video ID requested to
   the relevant provider, such as Vimeo, Rumble, Odysee, or YouTube's image
   service.

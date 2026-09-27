@@ -2713,6 +2713,22 @@
     "message": "字型資訊",
     "description": "Accessible name for the Font Info popover."
   },
+  "lookup_word_aria": {
+    "message": "Dictionary lookup",
+    "description": "Accessible name for the Lookup Word popover."
+  },
+  "lookup_word_title": {
+    "message": "Wiktionary",
+    "description": "Title of the Lookup Word popover."
+  },
+  "lookup_word_loading": {
+    "message": "正在載入維基詞典…",
+    "description": "Status while the localized Wiktionary entry is loading."
+  },
+  "lookup_word_empty": {
+    "message": "找不到釋義內容。",
+    "description": "Fallback when Wiktionary returned no rendered definition content."
+  },
   "font_info_url": {
     "message": "網址",
     "description": "Label for a font file URL."
@@ -4200,11 +4216,11 @@
     "description": "Function Library label for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "檢視游標下單字的詞典釋義",
+    "message": "用 Wiktionary 查看游標下的單字",
     "description": "Function Library description for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_details": {
-    "message": "顯示遊標下單字的免費字典 API 定義彈出視窗。無需AI設定；（可選）將來源切換到操作實例上的 Ask AI。",
+    "message": "在彈出框中開啟游標下單字的 Wiktionary。游標不在單字上時只顯示簡短提示。無需設定 AI；可在動作執行個體中將來源切換為 Ask AI。",
     "description": "Function Library details for LOOKUP_WORD."
   },
   "fn_param_source": {

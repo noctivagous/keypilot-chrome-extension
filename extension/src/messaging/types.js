@@ -98,8 +98,8 @@ export const MSG = Object.freeze({
   /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
   MEDIA_LIBRARY_CHANGED: 'KP_MEDIA_LIBRARY_CHANGED',
 
-  // --- Dictionary lookup (Free Dictionary API via SW; LOOKUP_WORD) ---
-  DICTIONARY_LOOKUP: 'KP_DICTIONARY_LOOKUP',
+  // --- Dictionary lookup (localized Wiktionary parsed entry) ---
+  WIKTIONARY_LOOKUP: 'KP_WIKTIONARY_LOOKUP',
 
   // --- Per-tab navigation graph ---
   NAVGRAPH_GET: 'KP_NAVGRAPH_GET',

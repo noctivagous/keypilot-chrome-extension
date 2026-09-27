@@ -24,7 +24,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.GET_HISTORY_FOR_DOMAINS,
   MSG.GET_RECENT_HISTORY,
   MSG.GET_VIDEO_THUMB,
-  MSG.DICTIONARY_LOOKUP,
+  MSG.WIKTIONARY_LOOKUP,
   MSG.MEDIA_LIBRARY_ADD,
   MSG.MEDIA_LIBRARY_LIST,
   MSG.MEDIA_LIBRARY_GET,
@@ -181,9 +181,9 @@ export function validateRuntimeMessage(message, opts = {}) {
       }
       break;
     }
-    case MSG.DICTIONARY_LOOKUP:
+    case MSG.WIKTIONARY_LOOKUP:
       if (typeof message.word !== 'string' || !message.word.trim()) {
-        return 'DICTIONARY_LOOKUP requires word: string';
+        return 'WIKTIONARY_LOOKUP requires word: string';
       }
       break;
     case MSG.FRAME_MEDIA_SEEK:

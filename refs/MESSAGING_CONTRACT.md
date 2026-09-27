@@ -53,7 +53,6 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 | `OPEN_RANDOM_BOOKMARK` | `folderId?: string`, `count: integer 1–30` | `SUCCESS` (`opened`) / `ERROR`. Empty `folderId` samples every bookmark. The first new tab is activated. |
 | `ZOOM_STEP` | `direction: 1 \| -1` (optional `apply: false` to preview) or `zoomFactor` | `SUCCESS` (`oldZoom`, `newZoom`, `changed`) / `ERROR` |
 | `OPEN_POPOVER_WINDOW` | `url: string` | `SUCCESS` (+ window ids) / `ERROR` |
-| `DICTIONARY_LOOKUP` | `word: string` | `DICTIONARY_LOOKUP` echo |
 | `OPEN_SETTINGS_POPOVER` | optional `panelId` | `SUCCESS` after forward |
 | `OPEN_DOCS_POPOVER` | optional `topicId`, `hash` | `SUCCESS` after forward |
 | `OMNIBOX_SUGGEST` | query fields as today | `OMNIBOX_SUGGESTIONS` |

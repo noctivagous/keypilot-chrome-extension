@@ -51,7 +51,7 @@ Popover mit Familie, Größe, Dateityp und Download-URL für den gestalteten Tex
 
 <h3 id="lookup-word">Lookup Word</h3>
 
-Kostenlose Wörterbuch-API-Definition für das Wort unter dem Cursor. Optional AI-Quelle auf der Aktionsinstanz fragen, wann dieser Pfad verfügbar ist.
+Kostenloses Wiktionary-Popover für das Wort unter dem Cursor. Kurzer Hinweis, wenn der Cursor nicht auf einem Wort liegt. Optional AI-Quelle auf der Aktionsinstanz, wenn dieser Pfad verfügbar ist.
 
 <h3 id="translate">Translate</h3>
 

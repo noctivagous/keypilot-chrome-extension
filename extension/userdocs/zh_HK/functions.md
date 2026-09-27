@@ -33,7 +33,7 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 <h3 id="font-info">Font Info</h3>
 顯示游標下已套用樣式文字的字型家族、大小、檔案類型、下載 URL 的浮動視窗，以及該文字範圍的外框。
 <h3 id="lookup-word">Lookup Word</h3>
-透過 Free Dictionary API 取得游標下單字的定義。當路徑可用時，動作執行個體可選用 Ask AI 來源。
+在彈出框中開啟游標下單字的 Wiktionary 頁面。游標不在單字上時只顯示簡短提示。路徑可用時，動作執行個體可選用 Ask AI 來源。
 <h3 id="translate">Translate</h3>
 翻譯醒目提示內容，或游標下的字詞/句子/段落。目的地可以取代頁面文字或開啟浮動視窗。
 <h3 id="send-text-to-ai">Send selection to AI</h3>

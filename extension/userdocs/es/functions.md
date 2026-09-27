@@ -51,7 +51,7 @@ Ventana emergente con familia, tamaño, tipo de archivo y URL de descarga para e
 
 <h3 id="lookup-word">Lookup Word</h3>
 
-Definición de API de diccionario gratuito para la palabra debajo del cursor. Opcional: Preguntar a la fuente de IA en la instancia de acción cuando esa ruta esté disponible.
+Popover de Wiktionary para la palabra bajo el cursor. Aviso breve si el cursor no está sobre una palabra. Opcional: Ask AI en la instancia de acción cuando esa ruta esté disponible.
 
 <h3 id="translate">Translate</h3>
 
