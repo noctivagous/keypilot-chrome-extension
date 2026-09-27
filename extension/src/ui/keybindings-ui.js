@@ -1312,7 +1312,11 @@ export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot, pinOn
 
   function handleKeyEnter(e) {
     const keyEl = e.currentTarget;
-    if (_pinnedActionId && keyEl?.dataset?.kpActionId !== _pinnedActionId) return;
+    // A pinned settings popover rebuilds its form on every show. Growing that
+    // form (bookmark folders loading) moves the popover across the pointer,
+    // which re-enters the key and starts the rebuild again. Hover must not
+    // touch a key that is already pinned.
+    if (_pinnedActionId) return;
     showForKeyEl(keyEl, { pinned: false });
   }
 

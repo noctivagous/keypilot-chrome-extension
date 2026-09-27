@@ -915,8 +915,12 @@ export class FloatingKeyboardHelp {
       }
       // Matching early paint skips a keyboard rebuild, but the titlebar select
       // is created empty. Fill its options or the trigger shows the raw id.
+      // The rebuild is also what wires hover popovers. Run it anyway so the
+      // reused keys still get tooltips; renderKeybindingsKeyboard keeps the
+      // existing DOM when the layout id matches.
       void this._refreshLayoutSelectOptions();
       reveal({ render: false });
+      this._render();
     };
 
     if (this._positionHydrated) {
