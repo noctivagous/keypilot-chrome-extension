@@ -76,27 +76,37 @@ q.a. check: key actions:
 
 [ ] Key Action category: AI
 
+
 [ ]  AI - Explain Rect. key action - using selection rectangle, but may not need conventional text range 
 selection, it will explain what is inside the rect.  Explain Rect. will be the key action that allows 
 instances where the user provides preface prompts, such as "Explain the [aspect] of [topic]," 
 allowing the user to inform the AI what the use of the key action is or what should show up
 in the popover window (the same one used by Lookup Word).  For example, one key action
 would be used for looking up Chinese words to learn Chinese while another one would be
-used for getting historical information/explanations and descriptions.  When the AI has
-information it can process the text the right way, allowing the user to customize its use.
+used for getting historical information/explanations and descriptions.  The same
+characters were captured by the user inside the selection rectangle. When the AI has
+information it can process the text for the user's desired way, allowing the user to customize the processing of data by AI.
+  
   --> macro builder will allow user to customize how the data is processed by the AI,
   including what to show in a popover.
 
 
-------------
-[-] If a key action on the keyboard keyboard ref window does not have settings, clicking its keycap should not fix the popover in place like in settings mode.  It should do nothing.   Then if it does have settings, the popover should have a titlebar that says "Settings". The Key Action name 
-at the top of the Inspector when it is loaded should be in bold.
+Extra
 
+[ ]  add: Key Action: Query Hovered Word (into Link Popover style window). 
+In instances of this key action, custom URL query is set up by user for popover that for the word underneath the cursor 
+and shows up in chrome window popover.  Like Lookup Word key action.
+      - Hovered Word
+      - Hovered Image
+      - Hovered Paragraph
 
 [ ] Sometimes a web page hasn't loaded but you want to use certain keys.
 
 
+----------------
 
+[-] If a key action on the keyboard keyboard ref window does not have settings, clicking its keycap should not fix the popover in place like in settings mode.  It should do nothing.   Then if it does have settings, the popover should have a titlebar that says "Settings". The Key Action name 
+at the top of the Inspector when it is loaded should be in bold.
 
 Gmixer Audience Page Customization
 [ ] restyle every page - override headers, paragraph, links.
