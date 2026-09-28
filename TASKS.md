@@ -93,8 +93,15 @@ information it can process the text for the user's desired way, allowing the use
 
 Extra
 
-[ ]  add: Key Action: Query Hovered Word (into Link Popover style window). 
-In instances of this key action, custom URL query is set up by user for popover that for the word underneath the cursor 
+Query Hovered
+
+Without building a macro in the macro builder, the user can set up
+custom query URLs that send data underneath the cursor.  This way
+the user can set up keys that use the word, paragraph, or image underneath
+the cursor and get query results in a popover window.
+
+[ ]  add: Key Action: Query Hovered Word (into Link Popover style window but
+sized smaller). In instances of this key action, custom URL query is set up by user for popover that for the word underneath the cursor 
 and shows up in chrome window popover.  Like Lookup Word key action.
       - Hovered Word
       - Hovered Image
