@@ -13,7 +13,7 @@ extension-firefox/
 dist/
 
 #TASKS
-TASKS.md
+#TASKS.md
 
 # macOS
 .DS_Store
