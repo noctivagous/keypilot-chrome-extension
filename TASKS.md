@@ -1,30 +1,37 @@
 
+[-] bug: Click New Tab opens first link on page into new tab if no link is under cursor.
+
 [ ] Contextual Menu updates 
-  - Add shortcuts to every list item
+  - Ensure kb shortcuts are on every list item
  - Add "Control Strip (Alt/Opt + J)"
- - Toggle Keyboard Ref window  K
+ - Toggle Keyboard Ref window  K instead of separate for turning on and off
  
  [ ] - Assign Scroll Line Key Action to Spacebar by default.  Setting is global/system and can be turned off in
  contextual menu.  It will be listed in the select dropdown in the Keyboard Ref. Titlebar.
 
-[ ] add Key Action: Keyboard Ref. Titlebar (Toggle) - collapse to titlebar/restore window 
+[ ] add Key Action: KB Ref. Titlebar (Toggle) - collapse to titlebar/restore Keyboard Ref. window  
 
 [ ] add Key Action category: Playback: Play, Pause, Volume Up, Volume Down, Seek Forward, Seek Backward.
 
 [ ] modify Top Sites: allow resizing vertically to 2 rows instead of min 3.
 
-[ ]  modify: Tabs and Windows Overview - add close button to window titlebars and tabs list items.
+[ ]  modify: Tabs Overview - add close button to window titlebars and tabs list items.
 
 [ ] add: Key Action: Popout Image - pops image under cursor out into floating window, uses the same floating window as Lookup Word.
 resizable, has zoom icon controls, shows image information.  Uses code from Copy Image to pull out.  Has button
 in toolbar for downloading, copying to clipboard.
 
-[ ] modify Delete Mode: to have three submodes: Continuous - will delete until another key is pressed (mentioned in persistent toast alert),
+[ ] add: Key Action: Hide Img - hides all images on the current tab, leaving text in layout.  does not change layout.
+A toggle.
+
+[ ] modify Key Action Delete Mode: to have three submodes: Continuous - will delete until another key is pressed (mention in persistent toast alert),
 Single - current, just select and delete, Quick - No select box preview, just deletes the first element underneath cursor.  Put these three
 modes in the toast as a segm ctrl as well as the settings state of the popover tooltip.
 
-[ ] add: Key Action category: Page Appearance Modification.
+[ ] add: Key Action category: Page Appearance.
     - Key Action: Monochrome Images - will monochrome every image on every navigated page, uses css filter.
+
+
 
 [ ] More Keyboard layouts: 
    - Scrapbook Browsing - right side is Copying media to clipboard or Media Library.
@@ -50,13 +57,18 @@ stock instance: Countdown All Tabs - closes all tabs after 15 min, shows countdo
 stock instance: Countdown in Tab - closes current tab after 15 min, shows countdown timer
 
 
+[ ] -  Add setting in Settings window: zoom in and zoom out will rescale Control Strip and Keyboard Ref. so that
+they are the same size as at 100% magn.  GUI magn. consistency.
 
-q/a check: key actions:
+[ ] - improve Page Top and Page Bottom cover sequence.
+
+q.a. check: key actions:
     [ ] Select Word.
     [ ] Select Sentence.
     [ ] Select Paragraph.
     [ ] Select Image.
 
+[ ] add: Key Action category: Web Developer
 
 
 ------------

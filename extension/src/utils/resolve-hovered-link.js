@@ -2,9 +2,10 @@
  * Resolve a navigable URL from a hover / activation target.
  *
  * 1) Ancestor <a href> or [role=link][data-kp-url] (incl. open-shadow host hops)
- * 2) If the pointer is on a card body with no wrapping link (X/Mastodon feeds,
- *    many article rows), pick a descendant permalink — especially <a><time>
- *    and /status|/posts paths — not profile / analytics / media chrome.
+ * 2) If the pointer is on a compact card body with no wrapping link (X/Mastodon
+ *    feeds, many article rows), pick a descendant permalink — especially
+ *    <a><time> and /status|/posts paths — not profile / analytics / media chrome.
+ *    Viewport-sized shells (`main`, page `<article>`) are not cards.
  */
 
 /**
@@ -142,18 +143,57 @@ function resolveDescendantPermalink(host) {
 }
 
 /**
+ * Layout shells (`main`, `#app`, a page-wrapping `<article>`) fill the
+ * viewport. Descendant link search on those hosts opens the first permalink
+ * on the page when the cursor is not on a link.
  * @param {Element} el
- * @returns {Element}
+ * @returns {boolean}
+ */
+function isViewportSizedHost(el) {
+  if (!el || el.nodeType !== 1) return true;
+  try {
+    if (typeof document !== 'undefined' &&
+        (el === document.body || el === document.documentElement)) {
+      return true;
+    }
+  } catch { /* ignore */ }
+  try {
+    const tag = el.tagName;
+    if (tag === 'HTML' || tag === 'BODY') return true;
+  } catch { /* ignore */ }
+  try {
+    const r = el.getBoundingClientRect();
+    const vw = (typeof window !== 'undefined' && window.innerWidth) || 0;
+    const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
+    if (!(r && r.width > 0 && r.height > 0)) return false;
+    if (vw > 0 && vh > 0 && r.width >= vw * 0.72 && r.height >= vh * 0.55) {
+      return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * @param {Element} el
+ * @returns {Element|null}
  */
 function findPermalinkCardHost(el) {
   let n = el;
   let depth = 0;
-  while (n && n.nodeType === 1 && n !== document.body && n !== document.documentElement && depth++ < 16) {
+  while (n && n.nodeType === 1 && depth++ < 16) {
+    try {
+      if (typeof document !== 'undefined' &&
+          (n === document.body || n === document.documentElement)) {
+        break;
+      }
+    } catch { /* ignore */ }
     const role = ((n.getAttribute && n.getAttribute('role')) || '').trim().toLowerCase();
-    if (n.tagName === 'ARTICLE' || role === 'article') return n;
+    if (n.tagName === 'ARTICLE' || role === 'article') {
+      return isViewportSizedHost(n) ? null : n;
+    }
     n = n.parentElement || composedParent(n);
   }
-  return el;
+  return null;
 }
 
 /**
@@ -204,11 +244,14 @@ export function resolveHoveredLink(el) {
   }
 
   // Gmail left-nav `.TO` rows wrap a single hash <a> (score too low for permalink).
-  const unique = uniqueDescendantNavigableLink(el);
-  if (unique) return unique;
+  // Skip page-sized hosts — that would take the first unique dest on the page.
+  if (!isViewportSizedHost(el)) {
+    const unique = uniqueDescendantNavigableLink(el);
+    if (unique) return unique;
+  }
 
   const card = findPermalinkCardHost(/** @type {Element} */ (el));
-  return resolveDescendantPermalink(card);
+  return card ? resolveDescendantPermalink(card) : null;
 }
 
 /**
