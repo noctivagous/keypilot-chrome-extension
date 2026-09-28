@@ -1,15 +1,15 @@
 
-[-] bug: Click New Tab opens first link on page into new tab if no link is under cursor.
+[x] bug: Click New Tab opens first link on page into new tab if no link is under cursor.
 
 [ ] Contextual Menu updates 
   - Ensure kb shortcuts are on every list item
  - Add "Control Strip (Alt/Opt + J)"
- - Toggle Keyboard Ref window  K instead of separate for turning on and off
+ - "Toggle Keyboard Ref window" K instead of separate for turning on and off
  
  [ ] - Assign Scroll Line Key Action to Spacebar by default.  Setting is global/system and can be turned off in
  contextual menu.  It will be listed in the select dropdown in the Keyboard Ref. Titlebar.
 
-[ ] add Key Action: KB Ref. Titlebar (Toggle) - collapse to titlebar/restore Keyboard Ref. window  
+[ ] add Key Action: KB Ref. Titlebar - (Toggle) collapse to titlebar/restore Keyboard Ref. window  
 
 [ ] add Key Action category: Playback: Play, Pause, Volume Up, Volume Down, Seek Forward, Seek Backward.
 
@@ -18,8 +18,12 @@
 [ ]  modify: Tabs Overview - add close button to window titlebars and tabs list items.
 
 [ ] add: Key Action: Popout Image - pops image under cursor out into floating window, uses the same floating window as Lookup Word.
-resizable, has zoom icon controls, shows image information.  Uses code from Copy Image to pull out.  Has button
+resizable, has zoom icon controls, shows image information. Uses code from Copy Image to select
+image html element.  Has button
 in toolbar for downloading, copying to clipboard.
+
+[ ] add Key Action: Image Info. - does the same thing as Font Info. except for the image under the cursor.   Uses code from Copy Image to select
+image html element.
 
 [ ] add: Key Action: Hide Img - hides all images on the current tab, leaving text in layout.  does not change layout.
 A toggle.
@@ -31,7 +35,7 @@ modes in the toast as a segm ctrl as well as the settings state of the popover t
 [ ] add: Key Action category: Page Appearance.
     - Key Action: Monochrome Images - will monochrome every image on every navigated page, uses css filter.
 
-
+[ ] add: Key Action: Notepad (panel window). toggle.  plain text editor.  autosaves contents.
 
 [ ] More Keyboard layouts: 
    - Scrapbook Browsing - right side is Copying media to clipboard or Media Library.
@@ -69,6 +73,19 @@ q.a. check: key actions:
     [ ] Select Image.
 
 [ ] add: Key Action category: Web Developer
+
+[ ] Key Action category: AI
+
+[ ]  AI - Explain Rect. key action - using selection rectangle, but may not need conventional text range 
+selection, it will explain what is inside the rect.  Explain Rect. will be the key action that allows 
+instances where the user provides preface prompts, such as "Explain the [aspect] of [topic]," 
+allowing the user to inform the AI what the use of the key action is or what should show up
+in the popover window (the same one used by Lookup Word).  For example, one key action
+would be used for looking up Chinese words to learn Chinese while another one would be
+used for getting historical information/explanations and descriptions.  When the AI has
+information it can process the text the right way, allowing the user to customize its use.
+  --> macro builder will allow user to customize how the data is processed by the AI,
+  including what to show in a popover.
 
 
 ------------
