@@ -560,7 +560,7 @@
     "description": "Function Library label for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "カーソル下の単語の辞書定義",
+    "message": "カーソル下の単語を Wiktionary で表示",
     "description": "Function Library description for LOOKUP_WORD."
   },
   "fn_SHOW_POPOVER_label": {
@@ -816,7 +816,7 @@
     "description": "Bundled Open URLs instance label."
   },
   "fn_stock_social_media_description": {
-    "message": "Facebook、Instagram、YouTube、X を開く",
+    "message": "複数のソーシャルメディアサイトを新しいタブで開きます",
     "description": "Bundled Open URLs instance description."
   },
   "fn_instance_name_label": {

@@ -560,7 +560,7 @@
     "description": "Function Library label for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "Wörterbuchdefinition unter dem Cursor",
+    "message": "Wiktionary für das Wort unter dem Cursor",
     "description": "Function Library description for LOOKUP_WORD."
   },
   "fn_SHOW_POPOVER_label": {
@@ -816,7 +816,7 @@
     "description": "Bundled Open URLs instance label."
   },
   "fn_stock_social_media_description": {
-    "message": "Facebook, Instagram, YouTube und X öffnen",
+    "message": "Mehrere Social-Media-Websites in neuen Tabs öffnen",
     "description": "Bundled Open URLs instance description."
   },
   "fn_instance_name_label": {

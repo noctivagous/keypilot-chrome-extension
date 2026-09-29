@@ -22,6 +22,16 @@
     console.warn(`[KeyPilot i18n] Missing message: ${key2}`);
     return `[i18n:${key2}]`;
   }
+  function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
+    const fallback = String(baseLocale || DEFAULT_LOCALE);
+    const raw = String(
+      uiLanguage ?? globalThis.chrome?.i18n?.getUILanguage?.() ?? fallback
+    ).trim();
+    const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : "";
+    const base = exact.split(/[-_]/)[0].toLowerCase();
+    const alt = exact.includes("-") ? exact.replace(/-/g, "_") : exact.includes("_") ? exact.replace(/_/g, "-") : "";
+    return [...new Set([exact, alt, base, fallback].filter(Boolean))];
+  }
   function localizeKeycapLabel(text) {
     const raw = String(text || "");
     const key2 = KEYCAP_MESSAGE_KEYS[raw];
@@ -34,12 +44,12 @@
   }
   function getUILocaleTag() {
     try {
-      const fromCatalog = normalizeLocaleTag(chrome?.i18n?.getMessage?.("locale_tag"));
+      const fromCatalog = normalizeLocaleTag(globalThis.chrome?.i18n?.getMessage?.("locale_tag"));
       if (fromCatalog) return fromCatalog;
     } catch {
     }
     try {
-      const fromUi = normalizeLocaleTag(chrome?.i18n?.getUILanguage?.());
+      const fromUi = normalizeLocaleTag(globalThis.chrome?.i18n?.getUILanguage?.());
       if (fromUi) return fromUi;
     } catch {
     }
@@ -49,7 +59,7 @@
     const messageKey = typeof key2 === "string" ? key2.trim() : "";
     if (!messageKey) return missingMessage(String(key2 || "(empty key)"));
     try {
-      const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+      const message = globalThis.chrome?.i18n?.getMessage?.(messageKey, substitutions);
       return typeof message === "string" && message ? message : missingMessage(messageKey);
     } catch {
       return missingMessage(messageKey);
@@ -519,6 +529,83 @@
     }
   });
 
+  // extension/src/config/region-defaults-data.js
+  var regionDefaultFiles;
+  var init_region_defaults_data = __esm({
+    "extension/src/config/region-defaults-data.js"() {
+      regionDefaultFiles = {
+        de: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.de/", "searchUrlPrefix": "https://www.google.de/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.de" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+        en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+        es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+        es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+        ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+        sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+        zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
+        zh_HK: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.hk/", "searchUrlPrefix": "https://www.google.com.hk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.hk" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+        zh_TW: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "line.me"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.tw/", "searchUrlPrefix": "https://www.google.com.tw/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.tw" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] }
+      };
+    }
+  });
+
+  // extension/src/config/region-defaults.js
+  function catalogId(tag) {
+    return String(tag || "").trim().replace(/-/g, "_");
+  }
+  function candidateCatalogIds(uiLanguage) {
+    const out = [];
+    for (const tag of getLocaleCandidates(uiLanguage)) {
+      const id = catalogId(tag);
+      if (!id) continue;
+      out.push(id);
+      const parent = REGION_PARENT[id];
+      if (parent) out.push(parent);
+    }
+    return [...new Set(out)];
+  }
+  function mergeRegion(base, overlay) {
+    if (!overlay) return base;
+    const searchEngineUrls = { ...base.searchEngineUrls || {} };
+    for (const [id, urls] of Object.entries(overlay.searchEngineUrls || {})) {
+      searchEngineUrls[id] = {
+        ...searchEngineUrls[id] || {},
+        ...urls
+      };
+    }
+    return {
+      stockSocialMedia: overlay.stockSocialMedia || base.stockSocialMedia,
+      searchEngineUrls,
+      launcherSearchSites: overlay.launcherSearchSites || base.launcherSearchSites
+    };
+  }
+  function getRegionDefaults(uiLanguage) {
+    let resolved = (
+      /** @type {RegionDefaultsFile} */
+      { ...en }
+    );
+    for (const id of [...candidateCatalogIds(uiLanguage)].reverse()) {
+      const file = REGION_FILES[id];
+      if (file) resolved = mergeRegion(resolved, file);
+    }
+    return resolved;
+  }
+  function getStockSocialMediaUrls(uiLanguage) {
+    const urls = getRegionDefaults(uiLanguage).stockSocialMedia?.urls;
+    return Array.isArray(urls) ? urls.slice() : [];
+  }
+  var REGION_FILES, en, REGION_PARENT;
+  var init_region_defaults = __esm({
+    "extension/src/config/region-defaults.js"() {
+      init_i18n();
+      init_region_defaults_data();
+      REGION_FILES = regionDefaultFiles;
+      en = REGION_FILES.en;
+      REGION_PARENT = Object.freeze({
+        es_419: "es",
+        zh_HK: "zh_TW"
+      });
+    }
+  });
+
   // extension/src/config/stock-actions.js
   function isStockActionId(id) {
     return String(id || "").startsWith(STOCK_ACTION_ID_PREFIX);
@@ -527,8 +614,13 @@
     const key2 = String(id || "");
     const found = STOCK_ACTIONS.find((action) => action && action.id === key2);
     if (!found) return null;
+    const parameters = found.id === STOCK_SOCIAL_MEDIA_ACTION_ID ? Object.freeze({
+      ...found.parameters,
+      urls: Object.freeze(normalizeOpenUrlList(getStockSocialMediaUrls()))
+    }) : found.parameters;
     return {
       ...found,
+      parameters,
       label: getMessage(found.labelKey) || found.label || found.id,
       description: found.descriptionKey && getMessage(found.descriptionKey) || found.description || ""
     };
@@ -538,6 +630,7 @@
     "extension/src/config/stock-actions.js"() {
       init_i18n();
       init_open_url_list();
+      init_region_defaults();
       STOCK_ACTION_ID_PREFIX = "stock:";
       STOCK_SOCIAL_MEDIA_ACTION_ID = "stock:social-media";
       STOCK_RANDOM_BOOKMARK_ACTION_ID = "stock:random-bookmark";
@@ -550,7 +643,7 @@
           labelKey: "fn_stock_social_media_label",
           descriptionKey: "fn_stock_social_media_description",
           label: "Social media",
-          description: "Open Facebook, Instagram, YouTube, and X",
+          description: "Open several social media sites in new tabs",
           parameters: Object.freeze({
             urls: Object.freeze(normalizeOpenUrlList([
               "facebook.com",
@@ -710,7 +803,7 @@
         handler: stock.handler,
         functionId: stock.functionId,
         instanceId: stock.id,
-        parameters: stock.parameters,
+        parameters: localized?.parameters || stock.parameters,
         label: localized?.label || stock.id,
         description: localized?.description || "",
         keyLabel: labels.keyLabel,
@@ -726,8 +819,24 @@
     if (!id) return null;
     if (keybindings && keybindings[id]) return keybindings[id];
     const catalog = CATALOG_KEYBINDINGS[id];
-    if (!catalog) return null;
-    return { ...catalog, ...localizedActionCopy(id, KEYBINDING_ACTION_DEFS[id]) };
+    if (catalog) {
+      return { ...catalog, ...localizedActionCopy(id, KEYBINDING_ACTION_DEFS[id]) };
+    }
+    const stock = getStockActionById(id);
+    if (!stock) return null;
+    return {
+      keys: [],
+      handler: stock.handler,
+      functionId: stock.functionId,
+      instanceId: stock.id,
+      parameters: stock.parameters,
+      label: stock.label,
+      description: stock.description,
+      keyboardClass: stock.keyboardClass ?? null,
+      row: null,
+      displayKey: "",
+      keyLabel: ""
+    };
   }
   function physicalAssignment(code, displayKey) {
     return Object.freeze({
@@ -1276,7 +1385,7 @@
           keyboardClass: "key-highlight",
           row: 2
         }),
-        // Rectangle region select (Y on right-handed; R free on left-handed).
+        // Rectangle region select (Y on right-handed; Q on left-handed — R is Lookup Word).
         RECTANGLE_HIGHLIGHT: Object.freeze({
           handler: "handleRectangleHighlightKey",
           label: "Element Select",
@@ -1285,7 +1394,7 @@
           keyboardClass: "key-rect-highlight",
           row: 1
         }),
-        // Copy image under cursor (I on right-handed; E on left-handed — I is READER_MODE there).
+        // Copy image under cursor — Clipboard category (I on right-handed; E on left-handed — I is READER_MODE there).
         COPY_HOVERED_IMAGE: Object.freeze({
           handler: "handleCopyHoveredImageKey",
           label: "Copy Image",
@@ -1294,16 +1403,25 @@
           keyboardClass: "key-page-media",
           row: 1
         }),
-        // Copy hyperlink under cursor (U on right-handed; no default on left — U is FORWARD there).
+        // Copy hyperlink under cursor — Clipboard category; Actions Library only (no built-in layout key).
         COPY_HOVERED_URL: Object.freeze({
           handler: "handleCopyHoveredUrlKey",
           label: "Copy URL",
           description: "Copy hovered link URL",
-          details: "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.",
+          details: "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource. No default layout key \u2014 bind it in Layout Editor if you need it.",
+          keyboardClass: "key-page-media",
+          row: null
+        }),
+        // Dictionary for the word under the cursor (U on right-handed; R on left-handed, the KeyU mirror).
+        LOOKUP_WORD: Object.freeze({
+          handler: "handleLookupWordKey",
+          label: "Lookup Word",
+          description: "Look up the word under the cursor",
+          details: "Opens a Wiktionary popover for the word directly under the cursor. Shows a brief notice if there is no word there.",
           keyboardClass: "key-page-media",
           row: 1
         }),
-        // Copy video under cursor — Actions Library only (no built-in layout key).
+        // Copy video under cursor — Clipboard category; Actions Library only (no built-in layout key).
         COPY_HOVERED_VIDEO: Object.freeze({
           handler: "handleCopyHoveredVideoKey",
           label: "Copy Video",
@@ -1452,10 +1570,8 @@
         ZOOM_IN: "Scroll",
         HIGHLIGHT: "Get Page Data",
         RECTANGLE_HIGHLIGHT: "Get Page Data",
-        COPY_HOVERED_IMAGE: "Get Page Data",
-        COPY_HOVERED_URL: "Get Page Data",
-        COPY_HOVERED_VIDEO: "Get Page Data",
         FONT_INFO: "Get Page Data",
+        LOOKUP_WORD: "Lookup",
         PAGE_MEDIA: "Get Page Data",
         READER_MODE: "Get Page Data",
         DELETE: "Select",
@@ -1465,6 +1581,9 @@
         CLIPBOARD_CUT: "Clipboard",
         CLIPBOARD_PASTE: "Clipboard",
         CLIPBOARD_SELECT_ALL: "Clipboard",
+        COPY_HOVERED_IMAGE: "Clipboard",
+        COPY_HOVERED_URL: "Clipboard",
+        COPY_HOVERED_VIDEO: "Clipboard",
         SELECT_WORD: "Clipboard",
         SELECT_SENTENCE: "Clipboard",
         SELECT_PARAGRAPH: "Clipboard",
@@ -1487,6 +1606,7 @@
         "Select",
         "Media Library",
         "Clipboard",
+        "Lookup",
         "AI",
         "KeyPilot",
         "Tools",
@@ -1537,7 +1657,7 @@
         ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
         RECTANGLE_HIGHLIGHT: physicalAssignment("KeyY", "Y"),
         COPY_HOVERED_IMAGE: physicalAssignment("KeyI", "I"),
-        COPY_HOVERED_URL: physicalAssignment("KeyU", "U"),
+        LOOKUP_WORD: physicalAssignment("KeyU", "U"),
         PAGE_MEDIA: physicalAssignment("KeyO", "O"),
         // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
         OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
@@ -1567,9 +1687,11 @@
         BACK: physicalAssignment("KeyK", "K"),
         ACTIVATE: physicalAssignment("KeyJ", "J"),
         ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
-        // H is background-tab open on left; G/R free for selection.
+        // H is background-tab open on left; G is text select.
         HIGHLIGHT: physicalAssignment("KeyG", "G"),
-        RECTANGLE_HIGHLIGHT: physicalAssignment("KeyR", "R"),
+        // Mirror of right-handed KeyU (Lookup Word). Rectangle moves to KeyQ (free on left).
+        LOOKUP_WORD: physicalAssignment("KeyR", "R"),
+        RECTANGLE_HIGHLIGHT: physicalAssignment("KeyQ", "Q"),
         // Utility actions on the left avoid colliding with J/K/L cluster.
         // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
         TAB_HISTORY: physicalAssignment("KeyF", "F"),
@@ -1646,7 +1768,7 @@
           { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
           { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
           { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
-          { type: "action", id: "COPY_HOVERED_URL", fallbackText: "Copy URL" },
+          { type: "action", id: "LOOKUP_WORD", fallbackText: "Lookup Word" },
           { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
           { type: "action", id: "PAGE_MEDIA", fallbackText: "Page Media" },
           { type: "action", id: "READER_MODE", fallbackText: "Reader Mode" },
@@ -1687,13 +1809,14 @@
       KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
         [
           { type: "special", text: "Tab", className: "key key-tab" },
-          { type: "key", text: "Q" },
+          { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
+          // Q (Y's true mirror is T)
           { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
           // W
           { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
           // E
-          { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
-          // R
+          { type: "action", id: "LOOKUP_WORD", fallbackText: "Lookup Word" },
+          // R, mirror of U
           { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
           // T
           { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
@@ -6198,8 +6321,8 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     MEDIA_LIBRARY_ZIP: "KP_MEDIA_LIBRARY_ZIP",
     /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
     MEDIA_LIBRARY_CHANGED: "KP_MEDIA_LIBRARY_CHANGED",
-    // --- Dictionary lookup (Free Dictionary API via SW; LOOKUP_WORD) ---
-    DICTIONARY_LOOKUP: "KP_DICTIONARY_LOOKUP",
+    // --- Dictionary lookup (localized Wiktionary parsed entry) ---
+    WIKTIONARY_LOOKUP: "KP_WIKTIONARY_LOOKUP",
     // --- Per-tab navigation graph ---
     NAVGRAPH_GET: "KP_NAVGRAPH_GET",
     /** Response payload for NAVGRAPH_GET */
@@ -7134,10 +7257,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     LAUNCHER: 160,
     OMNIBOX: 170,
     // Get Page Data
-    COPY_HOVERED_IMAGE: 200,
-    COPY_HOVERED_VIDEO: 201,
-    COPY_HOVERED_URL: 202,
-    FONT_INFO: 203,
+    FONT_INFO: 200,
     PAGE_MEDIA: 205,
     READER_MODE: 206,
     RECTANGLE_HIGHLIGHT: 210,
@@ -7147,10 +7267,13 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     CLIPBOARD_CUT: 231,
     CLIPBOARD_PASTE: 232,
     CLIPBOARD_SELECT_ALL: 233,
-    SELECT_WORD: 234,
-    SELECT_SENTENCE: 235,
-    SELECT_PARAGRAPH: 236,
-    SELECT_IMAGE: 237,
+    COPY_HOVERED_IMAGE: 234,
+    COPY_HOVERED_URL: 235,
+    COPY_HOVERED_VIDEO: 236,
+    SELECT_WORD: 237,
+    SELECT_SENTENCE: 238,
+    SELECT_PARAGRAPH: 239,
+    SELECT_IMAGE: 240,
     // KeyPilot
     TOGGLE_KEYBOARD_HELP: 280,
     OPEN_SETTINGS_POPOVER: 290
@@ -8270,7 +8393,9 @@ ${getSelectMenuCss()}`
     const findChoice = (value) => choiceOptions().find((o) => String(o.value) === String(value)) || null;
     const syncTrigger = () => {
       const choice = findChoice(currentValue);
-      const label = choice?.label != null ? String(choice.label) : currentValue ? String(currentValue) : "";
+      const held = config.displayLabel != null ? String(config.displayLabel) : "";
+      const raw = currentValue ? String(currentValue) : "";
+      const label = choice?.label != null ? String(choice.label) : held || (raw.includes(":") ? "" : raw);
       triggerLabel.textContent = label;
       const iconId = choice?.icon;
       let showIcon = false;
@@ -9621,17 +9746,17 @@ ${getSelectMenuCss()}`
   // extension/src/ui/keybindings-ui.js
   init_i18n();
 
-  // extension/src/ui/key-info-popover-layout.js
-  function planKeyInfoPopoverLayout(metrics) {
+  // extension/src/ui/anchored-popover-layout.js
+  function planAnchoredPopoverLayout(metrics) {
     const margin = metrics.margin ?? 10;
     const gap = metrics.gap ?? 10;
-    const minSettings = metrics.minSettings ?? 48;
+    const minOverflow = metrics.minOverflow ?? 48;
     const targetTop = metrics.targetTop;
     const targetBottom = metrics.targetBottom;
     const targetCenterX = metrics.targetCenterX;
     const popW = Math.max(0, metrics.popW || 0);
     const popH = Math.max(0, metrics.popH || 0);
-    const settingsH = Math.max(0, metrics.settingsH || 0);
+    const overflowH = Math.max(0, metrics.overflowH || 0);
     const vw = Math.max(0, metrics.vw || 0);
     const vh = Math.max(0, metrics.vh || 0);
     const availableAbove = Math.max(0, targetTop - gap - margin);
@@ -9642,19 +9767,34 @@ ${getSelectMenuCss()}`
     else if (fits("bottom", popH)) placement = "bottom";
     else placement = availableAbove >= availableBelow ? "top" : "bottom";
     const available = placement === "top" ? availableAbove : availableBelow;
-    let settingsMaxHeight = null;
+    let overflowMaxHeight = null;
     let usedH = popH;
-    if (popH > available + 0.5 && settingsH > 0) {
-      const chrome2 = Math.max(0, popH - settingsH);
+    if (popH > available + 0.5 && overflowH > 0) {
+      const chrome2 = Math.max(0, popH - overflowH);
       const budget = available - chrome2;
-      settingsMaxHeight = Math.max(minSettings, budget);
-      usedH = chrome2 + Math.min(settingsH, settingsMaxHeight);
+      overflowMaxHeight = Math.max(minOverflow, budget);
+      usedH = chrome2 + Math.min(overflowH, overflowMaxHeight);
     }
     const maxLeft = Math.max(margin, vw - margin - popW);
     const left = clamp(targetCenterX - popW / 2, margin, maxLeft);
     const top = placement === "top" ? targetTop - gap - usedH : targetBottom + gap;
     const arrowLeft = clamp(targetCenterX - left - 9, 12, Math.max(12, popW - 24));
-    return { placement, left, top, usedH, settingsMaxHeight, arrowLeft };
+    return { placement, left, top, usedH, overflowMaxHeight, arrowLeft };
+  }
+  function planKeyInfoPopoverLayout(metrics) {
+    const plan = planAnchoredPopoverLayout({
+      ...metrics,
+      overflowH: metrics.settingsH,
+      minOverflow: metrics.minSettings
+    });
+    return {
+      placement: plan.placement,
+      left: plan.left,
+      top: plan.top,
+      usedH: plan.usedH,
+      settingsMaxHeight: plan.overflowMaxHeight,
+      arrowLeft: plan.arrowLeft
+    };
   }
   function clamp(n, min, max) {
     return Math.max(min, Math.min(max, n));
@@ -9686,6 +9826,33 @@ ${getSelectMenuCss()}`
   function actionHasSettings(actionId) {
     const id = settingsFunctionId(actionId);
     return actionHasModes(id) || actionHasDestination(id) || getActionInlineEnumDefs(id).length > 0 || actionHasParameters(id);
+  }
+  function bindingFromFunctionId(id, keyEl) {
+    if (!id || id.startsWith("action:") || id.startsWith("stock:")) return null;
+    const fn = getFunctionDef(id);
+    if (!fn) return null;
+    const letter = (keyEl?.querySelector?.(".key-label")?.textContent || "").trim();
+    return {
+      keys: [],
+      handler: fn.handler,
+      functionId: fn.id,
+      label: fn.label,
+      description: fn.description || "",
+      keyboardClass: fn.keyboardClass ?? null,
+      row: null,
+      displayKey: letter,
+      keyLabel: letter
+    };
+  }
+  function resolveBindingForKeyEl(keyEl, keybindings) {
+    const actionId = String(keyEl?.dataset?.kpActionId || "");
+    const instanceId = String(keyEl?.dataset?.kpInstanceId || "");
+    const ids = [...new Set([instanceId, actionId].filter(Boolean))];
+    for (const id of ids) {
+      const binding = resolveKeybinding(id, keybindings) || bindingFromFunctionId(id, keyEl);
+      if (binding) return { actionId: id, binding };
+    }
+    return { actionId, binding: null };
   }
   function getRuntimeFontUrls() {
     try {
@@ -9756,10 +9923,17 @@ ${getSelectMenuCss()}`
     if (!actionEls || actionEls.length === 0) return false;
     for (const keyEl of actionEls) {
       const actionId = keyEl.dataset.kpActionId;
+      const instanceId = keyEl.dataset.kpInstanceId || "";
       const binding = keybindings && keybindings[actionId];
+      const stock = getStockActionById(instanceId) || getStockActionById(actionId);
+      const fn = getFunctionDef(stock?.functionId || actionId);
       const baseClass = keyEl.dataset.kpBaseClass || "key";
-      const keyboardClass = binding && binding.keyboardClass ? String(binding.keyboardClass) : "";
-      keyEl.className = `${baseClass}${keyboardClass ? " " + keyboardClass : ""}`;
+      const keyboardClass = String(
+        binding && binding.keyboardClass || stock?.keyboardClass || fn?.keyboardClass || ""
+      );
+      if (keyboardClass) {
+        keyEl.className = `${baseClass}${keyboardClass ? " " + keyboardClass : ""}`;
+      }
       ensureKeyBackgroundIcon(doc, keyEl);
       ensureKeyPressOverlay(doc, keyEl);
       const title = binding && (binding.description || binding.label) || actionId;
@@ -9769,7 +9943,8 @@ ${getSelectMenuCss()}`
       }
       keyEl.setAttribute("aria-label", title);
       const main = keyEl.querySelector(".key-main");
-      if (main) main.textContent = binding && binding.label || actionId;
+      const label = binding && binding.label || stock?.label || fn?.label || "";
+      if (main && label) main.textContent = label;
       const labelText = localizeKeycapLabel(binding && (binding.displayKey || binding.keyLabel) || "");
       const existingLabel = keyEl.querySelector(".key-label");
       if (labelText) {
@@ -10639,12 +10814,14 @@ ${getSelectMenuCss()}`
         if (keyEl.classList?.contains("kp-key-text-mode-disabled")) return;
       } catch {
       }
-      const actionId = keyEl.dataset.kpActionId;
-      const binding = resolveKeybinding(actionId, keybindings);
+      const pinId = keyEl.dataset.kpActionId;
+      const resolved = resolveBindingForKeyEl(keyEl, keybindings);
+      const binding = resolved.binding;
+      const actionId = resolved.actionId || pinId;
       if (!binding) return;
       clearHideTimer();
       if (pinned) {
-        _pinnedActionId = actionId;
+        _pinnedActionId = pinId;
         _pinnedKeyEl = keyEl;
       }
       showPopoverForTarget({
@@ -10653,7 +10830,7 @@ ${getSelectMenuCss()}`
         targetEl: keyEl,
         binding,
         actionId,
-        pinned: pinned || _pinnedActionId === actionId,
+        pinned: pinned || _pinnedActionId === pinId,
         settingsHint: !!pinOnClick
       });
       emitKeyboardHelpKeyHover({ actionId, keyEl });
@@ -10673,7 +10850,7 @@ ${getSelectMenuCss()}`
     }
     function handleKeyEnter(e) {
       const keyEl = e.currentTarget;
-      if (_pinnedActionId && keyEl?.dataset?.kpActionId !== _pinnedActionId) return;
+      if (_pinnedActionId) return;
       showForKeyEl(keyEl, { pinned: false });
     }
     function handleKeyLeave() {

@@ -1,10 +1,24 @@
 
-[x] bug: Click New Tab opens first link on page into new tab if no link is under cursor.
+
+[ ] some graphical indicator on the KB Ref. that the key action has settings, such as a small dot or rectangle.
+
+[ ] optional flag: key cap shapes. indicate to the user what the  actions on the page have corner clipped.  
+UI launchers like Top Sites, Keyboard, etc. have corner radius of 0.  scroll keys have small entasis of edges.
 
 [ ] Contextual Menu updates 
   - Ensure kb shortcuts are on every list item
  - Add "Control Strip (Alt/Opt + J)"
  - "Toggle Keyboard Ref window" K instead of separate for turning on and off
+ 
+ [ ] - Scroll Bookmark - scroll location bookmark key.  When user presses it on the page, it looks for text first or another object first for
+ returning to the position.  it will store scrollY as well.  a combination of weighted info.   It places a tag at that place on the page. 
+ When the user revisits the page, after the page loads, if KeyPilot's Scroll Bookmark data is not empty for that URL, it will 
+ scroll it to that position.  If the user clicks the (x) on the tag, it will remove it from KeyPilot's db.  domain.
+ --> implies distinction of reading bookmarks vs. stored favorite URLs and the need to make the two.  
+Reading bookmarks are the same as regular bookmarks.  Stored Favorite URLs ("Bookmarks" convention) 
+is a catalog like card file catalog or rolodex. Storing an address in a catalog is different than 
+tracking where you were so that you can come back is different than.
+A real web browser would ship with a scrapbook like KeyPilot's Media Library and these distinctions.
  
  [ ] - Assign Scroll Line Key Action to Spacebar by default.  Setting is global/system and can be turned off in
  contextual menu.  It will be listed in the select dropdown in the Keyboard Ref. Titlebar.
@@ -36,6 +50,8 @@ modes in the toast as a segm ctrl as well as the settings state of the popover t
     - Key Action: Monochrome Images - will monochrome every image on every navigated page, uses css filter.
 
 [ ] add: Key Action: Notepad (panel window). toggle.  plain text editor.  autosaves contents.
+
+[ ] Click New Tab should really be the same as Click New Tab in Background
 
 [ ] More Keyboard layouts: 
    - Scrapbook Browsing - right side is Copying media to clipboard or Media Library.
@@ -98,7 +114,7 @@ Query Hovered
 Without building a macro in the macro builder, the user can set up
 custom query URLs that send data underneath the cursor.  This way
 the user can set up keys that use the word, paragraph, or image underneath
-the cursor and get query results in a popover window.
+the cursor and get query results in a popover window or a new tab.
 
 [ ]  add: Key Action: Query Hovered Word (into Link Popover style window but
 sized smaller). In instances of this key action, custom URL query is set up by user for popover that for the word underneath the cursor 

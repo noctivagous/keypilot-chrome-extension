@@ -80,3 +80,50 @@ Leave untagged: KeyPilot, Noctivagous Software, the store URL, the email, `nocti
 5. Run `npm run web:locales`.
 
 Ship `en`, `de`, `es`, `es_419`, `ja`, `sk`, `zh_CN`, `zh_TW` as directory names (underscore). HTML `lang` uses hyphens: `es-419`, `zh-CN`, `zh-TW`.
+
+
+---
+
+RSYNC notes
+
+Only transfer differing files — the "quick check" (size + mtime comparison) is the core algorithm; rsync always skips files that haven't changed.
+
+NOT default (you need -a or at least -r):
+
+**`rsync -av ./ user@remote-host:/remote/path/`**
+
+This is the default rsync behavior: it pushes the contents of your current directory to the remote path, **transferring only files that differ** (by size or modification time), and **leaves everything else on the remote untouched** — including files that exist only on the remote. No `--delete` flag is needed (and you must **not** add it, since that would remove remote-only files).
+
+Key details:
+
+- **`-a`** = archive mode: recursive, preserves permissions, timestamps, symlinks, etc.
+- **`-v`** = verbose output so you can see what's being transferred.
+- The **trailing slash on `./`** matters: it copies the *contents* of the current directory into `/remote/path/`. Without it, rsync would create a subdirectory named after the current folder inside `/remote/path/`.
+
+Optional additions:
+
+- **`-z`** — compress data during transfer (useful on slow connections).
+- **`-P`** — show progress bar and keep partially transferred files.
+- **`-n`** (`--dry-run`) — preview what *would* happen without actually copying anything. Add it first if you want to verify:
+  ```bash
+  rsync -av -n ./ user@remote-host:/remote/path/
+  ```
+
+Partially. Here's the breakdown:
+
+**Default (no flags needed):**
+- **No deletion** — `--delete` is never the default, so remote-only files are always safe.
+- **Only transfer differing files** — the "quick check" (size + mtime comparison) is the core algorithm; rsync always skips files that haven't changed.
+
+**NOT default (you need `-a` or at least `-r`):**
+- **Recursion into subdirectories** — without `-r`, rsync skips all directories it encounters and only syncs top-level files. If your directory has subdirectories, you **do** need `-a` (or `-r`).
+- **Preserving permissions, timestamps, symlinks, ownership** — these are the other parts of `-a` (`-rlptgoD`).
+
+So the minimal command that does what you want (recursive, no delete, only transfer differences) is:
+
+```bash
+rsync -r ./ user@remote-host:/remote/path/
+```
+
+`-a` is the standard recommendation because it also preserves metadata, but `-r` alone is the only strictly required flag beyond the "don't delete" and "skip unchanged files" behavior you already get for free.
+

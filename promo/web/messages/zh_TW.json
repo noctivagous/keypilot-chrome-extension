@@ -560,7 +560,7 @@
     "description": "Function Library label for LOOKUP_WORD."
   },
   "fn_LOOKUP_WORD_description": {
-    "message": "檢視游標下單字的詞典釋義",
+    "message": "用 Wiktionary 查看游標下的單字",
     "description": "Function Library description for LOOKUP_WORD."
   },
   "fn_SHOW_POPOVER_label": {
@@ -816,7 +816,7 @@
     "description": "Bundled Open URLs instance label."
   },
   "fn_stock_social_media_description": {
-    "message": "開啟 Facebook、Instagram、YouTube 和 X",
+    "message": "在新分頁中開啟多個社群媒體網站",
     "description": "Bundled Open URLs instance description."
   },
   "fn_instance_name_label": {
