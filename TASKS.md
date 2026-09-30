@@ -39,15 +39,20 @@ in toolbar for downloading, copying to clipboard.
 [ ] add Key Action: Image Info. - does the same thing as Font Info. except for the image under the cursor.   Uses code from Copy Image to select
 image html element.
 
-[ ] add: Key Action: Hide Img - hides all images on the current tab, leaving text in layout.  does not change layout.
-A toggle.
+
+
+[ ] add Key Action: Screenshot 
 
 [ ] modify Key Action Delete Mode: to have three submodes: Continuous - will delete until another key is pressed (mention in persistent toast alert),
 Single - current, just select and delete, Quick - No select box preview, just deletes the first element underneath cursor.  Put these three
 modes in the toast as a segm ctrl as well as the settings state of the popover tooltip.
 
 [ ] add: Key Action category: Page Appearance.
-    - Key Action: Monochrome Images - will monochrome every image on every navigated page, uses css filter.
+    - Key Action: Monochrome Images - will monochrome every image on every navigated page, every open tab, uses css filter.
+
+    [ ] add: Key Action: Hide Img, category: Page Appearance - hides all images on every navigated page, every open tab, leaving text in layout.  does not change layout.  
+    A toggle.
+
 
 [ ] add: Key Action: Notepad (panel window). toggle.  plain text editor.  autosaves contents.
 

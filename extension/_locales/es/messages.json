@@ -2966,8 +2966,8 @@
     "description": "Media Library Documents category."
   },
   "media_library_empty_urls": {
-    "message": "Aún no hay URL. Establezca el destino de Copiar URL en Biblioteca multimedia o Ambos.",
-    "description": "Empty Media Library URLs view."
+    "message": "Aún no hay URL.",
+    "description": "Empty Media Library URLs view lead."
   },
   "media_library_empty_urls_domain": {
     "message": "No hay URL de $1",
@@ -2980,8 +2980,8 @@
     }
   },
   "media_library_empty_videos": {
-    "message": "Aún no hay vídeos. Establezca el destino de Copiar video en Biblioteca multimedia o Ambos.",
-    "description": "Empty Media Library videos view."
+    "message": "Aún no hay vídeos.",
+    "description": "Empty Media Library videos view lead."
   },
   "media_library_empty_videos_domain": {
     "message": "No hay vídeos de $1",
@@ -2994,8 +2994,8 @@
     }
   },
   "media_library_empty_documents": {
-    "message": "Aún no hay documentos. Utilice Recuperar URL para la biblioteca multimedia o envíe desde Page Media.",
-    "description": "Empty Media Library documents view."
+    "message": "Aún no hay documentos.",
+    "description": "Empty Media Library documents view lead."
   },
   "media_library_empty_documents_domain": {
     "message": "No hay documentos de $1",
@@ -3008,8 +3008,8 @@
     }
   },
   "media_library_empty_images": {
-    "message": "Aún no hay imágenes. Envíe desde Page Media (O) o establezca el destino de Copiar imagen en Biblioteca multimedia.",
-    "description": "Empty Media Library images view."
+    "message": "Aún no hay imágenes.",
+    "description": "Empty Media Library images view lead."
   },
   "media_library_empty_images_domain": {
     "message": "No hay imágenes de $1",
@@ -6324,5 +6324,137 @@
   "reader_mode_outline_none_title": {
     "message": "Mostrar el artículo completo",
     "description": "Tooltip for the Reader Mode option that hides the outline."
+  },
+  "media_library_empty_place_on_keyboard": {
+    "message": "Colóquela en su teclado en $1",
+    "description": "Parenthetical when a mentioned function is not on the current layout. $1 is Keyboard Layout Editor.",
+    "placeholders": {
+      "editor": {
+        "content": "$1",
+        "example": "Keyboard Layout Editor"
+      }
+    }
+  },
+  "media_library_empty_dest_both": {
+    "message": "Ambos",
+    "description": "Short name for the Clipboard and Media Library destination in Media Library empty hints."
+  },
+  "media_library_empty_howto_images": {
+    "message": "Cómo añadir imágenes a la Biblioteca multimedia:",
+    "description": "Heading above the empty Images tab how-to list."
+  },
+  "media_library_empty_howto_urls": {
+    "message": "Cómo añadir URL a la Biblioteca multimedia:",
+    "description": "Heading above the empty URLs tab how-to list."
+  },
+  "media_library_empty_howto_videos": {
+    "message": "Cómo añadir vídeos a la Biblioteca multimedia:",
+    "description": "Heading above the empty Videos tab how-to list."
+  },
+  "media_library_empty_howto_documents": {
+    "message": "Cómo añadir documentos a la Biblioteca multimedia:",
+    "description": "Heading above the empty Documents tab how-to list."
+  },
+  "media_library_empty_opt_use_copy": {
+    "message": "Use la tecla $1.",
+    "description": "Empty Media Library how-to: use a Copy function. $1 is the function name with its layout key.",
+    "placeholders": {
+      "function": {
+        "content": "$1",
+        "example": "Copy Image"
+      }
+    }
+  },
+  "media_library_empty_opt_set_dest": {
+    "message": "Establezca su destino en $1:",
+    "description": "Empty Media Library how-to: change the copy destination. $1 is Media Library, or Media Library or Both.",
+    "placeholders": {
+      "destination": {
+        "content": "$1",
+        "example": "Media Library"
+      }
+    }
+  },
+  "media_library_empty_click_bound": {
+    "message": "haga clic en la tecla $1 de la ventana $2.",
+    "description": "How to set destination when the function is on the layout. $1 is the keycap, $2 is Keyboard Reference.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "I"
+      },
+      "window": {
+        "content": "$2",
+        "example": "Keyboard Reference"
+      }
+    }
+  },
+  "media_library_empty_click_after_place": {
+    "message": "$1, y luego haga clic en esa tecla de la ventana $2.",
+    "description": "How to set destination when the function is not on the layout. $1 is Place on Your Keyboard… with Layout Editor shortcut, $2 is Keyboard Reference.",
+    "placeholders": {
+      "place": {
+        "content": "$1",
+        "example": "Place on Your Keyboard in Keyboard Layout Editor, Opt + C"
+      },
+      "window": {
+        "content": "$2",
+        "example": "Keyboard Reference"
+      }
+    }
+  },
+  "media_library_empty_opt_send_page": {
+    "message": "Haga clic en «$1» en cualquier $2 de la superposición $3, que recopila y muestra los medios de la página.",
+    "description": "Empty Media Library how-to: send from Page Media. $1 is Send to Media Library, $2 is image/video/document, $3 is Page Media with its key.",
+    "placeholders": {
+      "send": {
+        "content": "$1",
+        "example": "Send to Media Library"
+      },
+      "kind": {
+        "content": "$2",
+        "example": "image"
+      },
+      "page_media": {
+        "content": "$3",
+        "example": "Page Media"
+      }
+    }
+  },
+  "media_library_empty_kind_image": {
+    "message": "imagen",
+    "description": "Noun used in the Page Media send how-to for the Images tab."
+  },
+  "media_library_empty_kind_video": {
+    "message": "vídeo",
+    "description": "Noun used in the Page Media send how-to for the Videos tab."
+  },
+  "media_library_empty_kind_document": {
+    "message": "documento",
+    "description": "Noun used in the Page Media send how-to for the Documents tab."
+  },
+  "media_library_empty_opt_add_url": {
+    "message": "Use $1 en un enlace bajo el cursor.",
+    "description": "Empty Media Library URLs how-to for Add URL to Media Library. $1 is the function name with its layout key.",
+    "placeholders": {
+      "function": {
+        "content": "$1",
+        "example": "Add URL to Media Library"
+      }
+    }
+  },
+  "media_library_empty_opt_fetch_url": {
+    "message": "Use $1 en un enlace de archivo bajo el cursor.",
+    "description": "Empty Media Library documents how-to for Fetch URL for Media Library. $1 is the function name with its layout key.",
+    "placeholders": {
+      "function": {
+        "content": "$1",
+        "example": "Fetch URL for Media Library"
+      }
+    }
+  },
+  "media_library_empty_or": {
+    "message": "o",
+    "description": "Conjunction joining Media Library and Both in empty-tab destination copy."
   }
 }

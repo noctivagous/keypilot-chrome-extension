@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-27T08:08:08.860Z
+ * Generated on 2026-09-30T00:03:43.033Z
  */
 
 (() => {
@@ -4740,15 +4740,48 @@
     if (!url) return null;
     return { url, link: best };
   }
+  function isViewportSizedHost(el) {
+    if (!el || el.nodeType !== 1) return true;
+    try {
+      if (typeof document !== "undefined" && (el === document.body || el === document.documentElement)) {
+        return true;
+      }
+    } catch {
+    }
+    try {
+      const tag = el.tagName;
+      if (tag === "HTML" || tag === "BODY") return true;
+    } catch {
+    }
+    try {
+      const r = el.getBoundingClientRect();
+      const vw = typeof window !== "undefined" && window.innerWidth || 0;
+      const vh = typeof window !== "undefined" && window.innerHeight || 0;
+      if (!(r && r.width > 0 && r.height > 0)) return false;
+      if (vw > 0 && vh > 0 && r.width >= vw * 0.72 && r.height >= vh * 0.55) {
+        return true;
+      }
+    } catch {
+    }
+    return false;
+  }
   function findPermalinkCardHost(el) {
     let n = el;
     let depth = 0;
-    while (n && n.nodeType === 1 && n !== document.body && n !== document.documentElement && depth++ < 16) {
+    while (n && n.nodeType === 1 && depth++ < 16) {
+      try {
+        if (typeof document !== "undefined" && (n === document.body || n === document.documentElement)) {
+          break;
+        }
+      } catch {
+      }
       const role = (n.getAttribute && n.getAttribute("role") || "").trim().toLowerCase();
-      if (n.tagName === "ARTICLE" || role === "article") return n;
+      if (n.tagName === "ARTICLE" || role === "article") {
+        return isViewportSizedHost(n) ? null : n;
+      }
       n = n.parentElement || composedParent2(n);
     }
-    return el;
+    return null;
   }
   function resolveHoveredLink(el) {
     if (!el || el.nodeType !== 1) return null;
@@ -4800,13 +4833,15 @@
       }
       probe = root.host;
     }
-    const unique = uniqueDescendantNavigableLink(el);
-    if (unique) return unique;
+    if (!isViewportSizedHost(el)) {
+      const unique = uniqueDescendantNavigableLink(el);
+      if (unique) return unique;
+    }
     const card = findPermalinkCardHost(
       /** @type {Element} */
       el
     );
-    return resolveDescendantPermalink(card);
+    return card ? resolveDescendantPermalink(card) : null;
   }
   function uniqueDescendantNavigableLink(host) {
     if (!host || host.nodeType !== 1) return null;

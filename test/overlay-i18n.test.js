@@ -34,6 +34,18 @@ const OVERLAY_KEYS = [
     'media_library_download_selected',
     'media_library_delete_selected'
   ]],
+  ['extension/src/ui/media-library-empty-hint.js', [
+    'media_library_empty_images',
+    'media_library_empty_howto_images',
+    'media_library_empty_opt_use_copy',
+    'media_library_empty_opt_set_dest',
+    'media_library_empty_click_bound',
+    'media_library_empty_click_after_place',
+    'media_library_empty_opt_send_page',
+    'media_library_empty_opt_add_url',
+    'media_library_empty_opt_fetch_url',
+    'media_library_empty_place_on_keyboard'
+  ]],
   ['extension/src/ui/reader-mode-overlay.js', [
     'reader_mode_contents',
     'reader_mode_contents_show',

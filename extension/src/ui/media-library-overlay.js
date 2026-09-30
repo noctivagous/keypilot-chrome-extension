@@ -16,6 +16,7 @@ import {
   NCT_DARK_UI_PANEL_BORDER,
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_BACKDROP_CLASS,
   NCT_DARK_UI_SCROLLBAR_CLASS,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
@@ -31,6 +32,10 @@ import {
   registerContentRuntimeHandler
 } from '../messaging/content-runtime-router.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
+import {
+  createMediaLibraryEmptyHint,
+  createMediaLibraryEmptyTextCard
+} from './media-library-empty-hint.js';
 import {
   listMediaLibrary,
   getMediaLibraryOriginal,
@@ -587,32 +592,26 @@ function renderGrid() {
   content.replaceChildren();
 
   if (!kindHasGallery(_kind)) {
-    const empty = document.createElement('div');
-    empty.className = 'kpv2-media-lib-empty';
-    empty.textContent = getMessage('media_library_coming_soon');
-    content.appendChild(empty);
+    content.appendChild(createMediaLibraryEmptyTextCard(
+      content.ownerDocument,
+      getMessage('media_library_coming_soon')
+    ));
     return;
   }
 
   if (!_items.length) {
-    const empty = document.createElement('div');
-    empty.className = 'kpv2-media-lib-empty';
-    empty.textContent = _kind === 'url'
-      ? (_domain
+    const domainEmpty = _domain
+      ? (_kind === 'url'
         ? getMessage('media_library_empty_urls_domain', _domain)
-        : getMessage('media_library_empty_urls'))
-      : _kind === 'video'
-        ? (_domain
+        : _kind === 'video'
           ? getMessage('media_library_empty_videos_domain', _domain)
-          : getMessage('media_library_empty_videos'))
-      : _kind === 'document'
-        ? (_domain
-          ? getMessage('media_library_empty_documents_domain', _domain)
-          : getMessage('media_library_empty_documents'))
-      : (_domain
-        ? getMessage('media_library_empty_images_domain', _domain)
-        : getMessage('media_library_empty_images'));
-    content.appendChild(empty);
+          : _kind === 'document'
+            ? getMessage('media_library_empty_documents_domain', _domain)
+            : getMessage('media_library_empty_images_domain', _domain))
+      : '';
+    content.appendChild(domainEmpty
+      ? createMediaLibraryEmptyTextCard(content.ownerDocument, domainEmpty)
+      : createMediaLibraryEmptyHint(content.ownerDocument, _kind));
     return;
   }
 
@@ -1593,11 +1592,55 @@ ${getNctDarkUiScrollbarCss()}
   padding: 16px 18px 24px;
 }
 .kpv2-media-lib-empty {
-  padding: 64px 24px;
-  text-align: center;
-  color: ${c.fgMute};
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 24px 32px;
+}
+.kpv2-media-lib-empty-card {
+  max-width: 42rem;
+  width: 100%;
+  padding: 16px 18px 18px;
+  background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+  border: ${NCT_DARK_UI_PANEL_BORDER};
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+  color: ${c.fg};
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
+  text-align: left;
+}
+.kpv2-media-lib-empty-lead {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: ${c.fg};
+}
+.kpv2-media-lib-empty-howto {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: ${c.fgDim};
+}
+.kpv2-media-lib-empty-list {
+  margin: 0;
+  padding: 0 0 0 1.35em;
+  color: ${c.fgDim};
+}
+.kpv2-media-lib-empty-list li {
+  margin: 0 0 10px;
+  padding-left: 0.2em;
+}
+.kpv2-media-lib-empty-list li:last-child {
+  margin-bottom: 0;
+}
+.kpv2-media-lib-empty-body {
+  margin: 0;
+  color: ${c.fgDim};
+}
+.kpv2-media-lib-empty-kbd {
+  vertical-align: 1px;
+  margin: 0 1px;
 }
 .kpv2-media-lib-section {
   margin-bottom: 22px;
