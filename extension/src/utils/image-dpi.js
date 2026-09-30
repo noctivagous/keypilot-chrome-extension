@@ -99,3 +99,71 @@ export function parseDpiFromImageBytes(buf) {
   }
   return null;
 }
+
+/**
+ * File-type extension from image magic bytes (png, jpg, gif, webp, avif, …).
+ * Empty string when the buffer is too short or unrecognized.
+ *
+ * @param {ArrayBuffer|Uint8Array|null|undefined} buf
+ * @returns {string}
+ */
+export function extFromImageMagicBytes(buf) {
+  if (!buf) return '';
+  const u8 = buf instanceof Uint8Array
+    ? buf
+    : (buf instanceof ArrayBuffer ? new Uint8Array(buf) : null);
+  if (!u8 || u8.byteLength < 3) return '';
+
+  const ascii = (start, n) => {
+    const end = Math.min(u8.byteLength, start + n);
+    let s = '';
+    for (let i = start; i < end; i++) s += String.fromCharCode(u8[i]);
+    return s;
+  };
+
+  if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47) return 'png';
+  if (u8[0] === 0xff && u8[1] === 0xd8 && u8[2] === 0xff) return 'jpg';
+  if (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x38) return 'gif';
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') return 'webp';
+  if (u8[0] === 0x42 && u8[1] === 0x4d) return 'bmp';
+  if (u8[0] === 0x00 && u8[1] === 0x00 && u8[2] === 0x01 && u8[3] === 0x00) return 'ico';
+  if (
+    (u8[0] === 0x49 && u8[1] === 0x49 && u8[2] === 0x2a && u8[3] === 0x00)
+    || (u8[0] === 0x4d && u8[1] === 0x4d && u8[2] === 0x00 && u8[3] === 0x2a)
+  ) return 'tif';
+
+  if (ascii(4, 4) === 'ftyp') {
+    const brands = ascii(8, Math.min(28, u8.byteLength - 8)).toLowerCase();
+    if (brands.includes('avif') || brands.includes('avis') || brands.includes('avio')) return 'avif';
+    if (
+      brands.includes('heic')
+      || brands.includes('heix')
+      || brands.includes('heif')
+      || brands.includes('mif1')
+      || brands.includes('msf1')
+    ) return 'heic';
+  }
+
+  let i = 0;
+  if (u8[0] === 0xef && u8[1] === 0xbb && u8[2] === 0xbf) i = 3;
+  while (i < u8.byteLength && (u8[i] === 0x20 || u8[i] === 0x09 || u8[i] === 0x0a || u8[i] === 0x0d)) i += 1;
+  const head = ascii(i, Math.min(80, u8.byteLength - i)).toLowerCase();
+  if (head.startsWith('<svg') || head.startsWith('<!doctype svg')) return 'svg';
+  if (head.startsWith('<?xml') && head.includes('<svg')) return 'svg';
+  return '';
+}
+
+/**
+ * @param {string} ext
+ * @returns {string}
+ */
+export function mimeFromImageExt(ext) {
+  const e = String(ext || '').toLowerCase();
+  if (e === 'jpg' || e === 'jpeg') return 'image/jpeg';
+  if (e === 'svg') return 'image/svg+xml';
+  if (e === 'tif' || e === 'tiff') return 'image/tiff';
+  if (e === 'ico') return 'image/x-icon';
+  if (e === 'heic' || e === 'heif') return 'image/heic';
+  if (e && /^[a-z0-9]+$/.test(e)) return `image/${e}`;
+  return '';
+}

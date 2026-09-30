@@ -134,6 +134,7 @@ import {
   isChordSlotKey,
   parseChordSlotKey
 } from '../utils/key-chord.js';
+import { formatLayoutSlotKeyLabel } from '../utils/layout-slot-label.js';
 import {
   PANEL_POSITION_MARGIN_PX,
   applyPanelPosition,
@@ -5162,7 +5163,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     wrap.appendChild(sub);
 
     const keys = this._findSlotKeysForItem(item).slice().sort((a, b) => (
-      formatChordSlotKeyLabel(a).localeCompare(formatChordSlotKeyLabel(b))
+      this._formatSlotLabel(a).localeCompare(this._formatSlotLabel(b))
     ));
     if (!keys.length) {
       const empty = document.createElement('p');
@@ -5191,15 +5192,15 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const tdKey = document.createElement('td');
       const kbd = document.createElement('kbd');
       kbd.className = 'kp-cfg-assign-kbd';
-      kbd.textContent = formatChordSlotKeyLabel(slot);
+      kbd.textContent = this._formatSlotLabel(slot);
       tdKey.appendChild(kbd);
       const tdAct = document.createElement('td');
       const del = document.createElement('button');
       del.type = 'button';
       del.className = 'kp-cfg-btn';
       setCfgBtnLabel(del, 'Delete', 'kp-cfg-i-trash');
-      del.title = `Remove from ${formatChordSlotKeyLabel(slot)}`;
-      del.setAttribute('aria-label', `Remove assignment from ${formatChordSlotKeyLabel(slot)}`);
+      del.title = `Remove from ${this._formatSlotLabel(slot)}`;
+      del.setAttribute('aria-label', `Remove assignment from ${this._formatSlotLabel(slot)}`);
       del.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -7158,6 +7159,18 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   /**
+   * Paint label for a stored slot id. Does not change the slot map key.
+   * @param {string} slotKey
+   * @returns {string}
+   */
+  _formatSlotLabel(slotKey) {
+    return formatLayoutSlotKeyLabel(
+      slotKey,
+      this._kp?._settings?.keyboardHardwareLayoutId
+    );
+  }
+
+  /**
    * Split a key label into line elements (one word per line when multi-word).
    * @param {HTMLElement} mainEl
    * @param {string} label
@@ -7323,7 +7336,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       if (info && info.count > 0) {
         const lab = document.createElement('div');
         lab.className = 'key-label';
-        lab.textContent = info.count > 1 ? `×${info.count}` : String(info.first || '');
+        lab.textContent = info.count > 1 ? `×${info.count}` : this._formatSlotLabel(info.first);
         keyEl.appendChild(main);
         keyEl.appendChild(lab);
       } else {
@@ -7851,10 +7864,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       let slotsText = '—';
       let slotsTitle = '';
       if (info && info.count > 0) {
-        slotsText = info.count > 1 ? `×${info.count}` : String(info.first || '');
+        slotsText = info.count > 1 ? `×${info.count}` : this._formatSlotLabel(info.first);
         slotsTitle = info.count > 1
           ? `Assigned to ${info.count} slots`
-          : `Assigned to ${info.first}`;
+          : `Assigned to ${this._formatSlotLabel(info.first)}`;
       }
 
       const actionsRow = document.createElement('div');
@@ -8334,7 +8347,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!hintEl) return;
     const slots = this._findSlotKeysForItem(item).filter((s) => isChordSlotKey(s));
     if (slots.length) {
-      hintEl.textContent = `Bound as ${slots.map((s) => formatChordSlotKeyLabel(s)).join(', ')}`;
+      hintEl.textContent = `Bound as ${slots.map((s) => this._formatSlotLabel(s)).join(', ')}`;
       return;
     }
     const preview = this._formatModsPreview(this._getChordModsForItem(item), 'Key');
@@ -8505,7 +8518,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     for (const { nextKey } of moves) {
       const occupant = slots[nextKey];
       if (occupant && !(occupant.type === item.type && String(occupant.id) === String(item.id))) {
-        this._notify(`Already bound: ${formatChordSlotKeyLabel(nextKey)}.`, 'error');
+        this._notify(`Already bound: ${this._formatSlotLabel(nextKey)}.`, 'error');
         return false;
       }
     }
@@ -8989,7 +9002,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       }
       await this._afterSlotWrite(result.layout, ensured.becameCurrent);
       try { this._renderInspector(); } catch { /* ignore */ }
-      this._notify(`Removed ${formatChordSlotKeyLabel(slot)}.`, 'success');
+      this._notify(`Removed ${this._formatSlotLabel(slot)}.`, 'success');
     } catch {
       this._notify('Failed to remove key.', 'error');
     }
@@ -9060,7 +9073,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         meta: !!ev.metaKey
       });
       await this._assignSlotKey(slotKey, item);
-      this._notify(`Bound to ${formatChordSlotKeyLabel(slotKey)}.`, 'success');
+      this._notify(`Bound to ${this._formatSlotLabel(slotKey)}.`, 'success');
       if (this._inspectorSelection
         && this._inspectorSelection.type === item.type
         && this._inspectorSelection.id === item.id) {

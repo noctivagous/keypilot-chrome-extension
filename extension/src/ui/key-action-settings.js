@@ -18,6 +18,7 @@ import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import { getFunctionDef } from '../config/function-library.js';
+import { getStockActionById } from '../config/stock-actions.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -152,6 +153,21 @@ export function actionHasParameters(actionId) {
  */
 export function actionHasDestination(actionId) {
   return !!getActionDestinationDef(actionId);
+}
+
+/**
+ * True when the Keyboard Reference can configure this action (mode, destination,
+ * inline enum, or other parameters). Stock instance ids resolve to their Function.
+ * @param {string} actionId Function id or `stock:…` instance id
+ * @returns {boolean}
+ */
+export function actionHasSettings(actionId) {
+  const stock = getStockActionById(actionId);
+  const id = stock?.functionId || actionId;
+  return actionHasModes(id)
+    || actionHasDestination(id)
+    || getActionInlineEnumDefs(id).length > 0
+    || actionHasParameters(id);
 }
 
 /**

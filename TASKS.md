@@ -1,8 +1,8 @@
 
 
-[ ] some graphical indicator on the KB Ref. that the key action has settings, such as a small dot or rectangle.
+[ ] some graphical indicator on the KB Ref. that the key action has settings, such as a rectangle that looks like a form in the lower right corner.
 
-[ ] optional flag: key cap shapes. indicate to the user what the  actions on the page have corner clipped.  
+[ ] optional flag for testing, set it to on: key cap shapes. it will indicate to the user what the key actions do by their shape. the actions on the page have corner clipped.  
 UI launchers like Top Sites, Keyboard, etc. have corner radius of 0.  scroll keys have small entasis of edges.
 
 [ ] Contextual Menu updates 

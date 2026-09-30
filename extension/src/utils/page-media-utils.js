@@ -6,10 +6,10 @@
  */
 
 import { extractFirstBackgroundImageUrl } from './image-utils.js';
-import { parseDpiFromImageBytes } from './image-dpi.js';
+import { parseDpiFromImageBytes, extFromImageMagicBytes, mimeFromImageExt } from './image-dpi.js';
 import { collectPageFonts } from './font-at-point.js';
 
-export { parseDpiFromImageBytes };
+export { parseDpiFromImageBytes, extFromImageMagicBytes, mimeFromImageExt };
 
 /** @typedef {'image'|'video'|'text'|'url'|'pageText'|'font'} PageMediaCategory */
 
@@ -149,6 +149,28 @@ function normalizeStoredExt(ext) {
   if (e === 'tiff') return 'tif';
   if (e === 'svg+xml') return 'svg';
   return e;
+}
+
+const PLACEHOLDER_IMAGE_EXTS = new Set(['img', 'bg', 'video', 'video-poster', 'unknown']);
+
+/**
+ * @param {string|null|undefined} ext
+ * @returns {boolean}
+ */
+function isPlaceholderImageExt(ext) {
+  const e = normalizeStoredExt(ext);
+  return !e || PLACEHOLDER_IMAGE_EXTS.has(e);
+}
+
+/**
+ * @param {string|null|undefined} mime
+ * @returns {boolean}
+ */
+function hasConcreteImageMime(mime) {
+  const m = String(mime || '').toLowerCase().split(';')[0].trim();
+  if (!m.startsWith('image/')) return false;
+  const sub = m.slice(6).split('+')[0];
+  return !!sub && sub !== '*' && sub !== 'unknown';
 }
 
 /** Asset / internal page resources excluded from the URLs tab. */
@@ -1425,7 +1447,7 @@ export function formatFileSize(bytes) {
  */
 export function formatImageFileType(item) {
   const ext = String(item?.ext || '').toLowerCase();
-  if (ext && ext !== 'img' && ext !== 'bg' && ext !== 'video-poster') {
+  if (ext && !isPlaceholderImageExt(ext)) {
     return ext.toUpperCase() === 'JPEG' ? 'JPG' : ext.toUpperCase();
   }
   const mime = String(item?.mimeType || '').toLowerCase();
@@ -1529,6 +1551,7 @@ export async function enrichImageMetadata(item) {
   const needDims = !(Number(item.width) > 0 && Number(item.height) > 0);
   const needSize = !(Number(item.fileSizeBytes) > 0);
   const needDpi = !(Number(item.dpi) > 0);
+  const needType = isPlaceholderImageExt(item.ext) && !hasConcreteImageMime(item.mimeType);
 
   if (needDims) {
     try {
@@ -1540,34 +1563,55 @@ export async function enrichImageMetadata(item) {
     } catch { /* ignore */ }
   }
 
-  if ((needSize || needDpi) && !/^data:/i.test(item.url)) {
+  if ((needSize || needDpi || needType) && !/^data:/i.test(item.url)) {
     try {
-      const meta = await fetchImageNetworkMeta(item.url, { needSize, needDpi });
-      if (meta.fileSizeBytes != null && !(Number(item.fileSizeBytes) > 0)) {
-        item.fileSizeBytes = meta.fileSizeBytes;
-      }
-      if (meta.dpi != null && !(Number(item.dpi) > 0)) item.dpi = meta.dpi;
-      if (meta.mimeType && !item.mimeType) item.mimeType = meta.mimeType;
-      if (meta.ext && (!item.ext || item.ext === 'img' || item.ext === 'bg')) {
-        item.ext = meta.ext;
-      }
+      const meta = await fetchImageNetworkMeta(item.url, { needSize, needDpi, needType });
+      applyImageNetworkMeta(item, meta);
     } catch { /* ignore */ }
   }
 
-  if (needDpi && /^data:/i.test(item.url) && !(Number(item.dpi) > 0)) {
+  if ((needDpi || needType) && /^data:/i.test(item.url)) {
     try {
       const res = await fetch(item.url);
       const buf = await res.arrayBuffer();
-      const dpi = parseDpiFromImageBytes(buf.slice(0, Math.min(buf.byteLength, 65536)));
-      if (dpi) item.dpi = dpi;
-      if (!item.mimeType) {
-        const ct = res.headers.get('content-type');
-        if (ct) item.mimeType = ct;
+      const head = buf.slice(0, Math.min(buf.byteLength, 65536));
+      if (needDpi && !(Number(item.dpi) > 0)) {
+        const dpi = parseDpiFromImageBytes(head);
+        if (dpi) item.dpi = dpi;
       }
+      const ct = res.headers.get('content-type');
+      applyImageNetworkMeta(item, {
+        mimeType: ct || undefined,
+        ext: extFromImageMagicBytes(head) || extFromMimeType(ct) || undefined
+      });
     } catch { /* ignore */ }
   }
 
   return item;
+}
+
+/**
+ * @param {PageMediaItem} item
+ * @param {{ fileSizeBytes?: number, dpi?: number, mimeType?: string, ext?: string }} meta
+ */
+function applyImageNetworkMeta(item, meta) {
+  if (!item || !meta) return;
+  if (meta.fileSizeBytes != null && !(Number(item.fileSizeBytes) > 0)) {
+    item.fileSizeBytes = meta.fileSizeBytes;
+  }
+  if (meta.dpi != null && !(Number(item.dpi) > 0)) item.dpi = meta.dpi;
+  const fromMime = extFromMimeType(meta.mimeType);
+  const ext = normalizeStoredExt(meta.ext || fromMime);
+  if (meta.mimeType && (!item.mimeType || !hasConcreteImageMime(item.mimeType))) {
+    item.mimeType = String(meta.mimeType);
+  }
+  if (ext && isPlaceholderImageExt(item.ext)) {
+    item.ext = ext;
+    if (!hasConcreteImageMime(item.mimeType)) {
+      const inferred = mimeFromImageExt(ext);
+      if (inferred) item.mimeType = inferred;
+    }
+  }
 }
 
 /**
@@ -1601,7 +1645,7 @@ function loadImageDimensions(url) {
 
 /**
  * @param {string} url
- * @param {{ needSize?: boolean, needDpi?: boolean }} [opts]
+ * @param {{ needSize?: boolean, needDpi?: boolean, needType?: boolean }} [opts]
  * @returns {Promise<{ fileSizeBytes?: number, dpi?: number, mimeType?: string, ext?: string }>}
  */
 async function fetchImageNetworkMeta(url, opts = {}) {
@@ -1609,41 +1653,56 @@ async function fetchImageNetworkMeta(url, opts = {}) {
   const out = {};
   const needSize = opts.needSize !== false;
   const needDpi = !!opts.needDpi;
+  const needType = opts.needType !== false;
 
-  if (needSize) {
+  /**
+   * @param {string|null} ct
+   */
+  const applyContentType = (ct) => {
+    if (!ct) return;
+    if (!out.mimeType) out.mimeType = ct;
+    const fromMime = extFromMimeType(ct);
+    if (fromMime && isPlaceholderImageExt(out.ext)) out.ext = fromMime;
+  };
+
+  /**
+   * @param {ArrayBuffer} buf
+   */
+  const applyMagic = (buf) => {
+    const magic = extFromImageMagicBytes(buf);
+    if (!magic) return;
+    out.ext = magic;
+    const inferred = mimeFromImageExt(magic);
+    if (inferred) out.mimeType = inferred;
+  };
+
+  if (needSize || needType) {
     try {
       const head = await fetch(url, { method: 'HEAD', credentials: 'omit', cache: 'force-cache' });
       if (head.ok) {
         const len = head.headers.get('content-length');
         if (len && /^\d+$/.test(len)) out.fileSizeBytes = Number(len);
-        const ct = head.headers.get('content-type');
-        if (ct) {
-          out.mimeType = ct;
-          const fromMime = extFromMimeType(ct);
-          if (fromMime) out.ext = fromMime;
-        }
+        applyContentType(head.headers.get('content-type'));
       }
     } catch { /* ignore */ }
   }
 
-  if (needDpi || out.fileSizeBytes == null) {
+  const stillNeedType = needType && isPlaceholderImageExt(out.ext);
+  const stillNeedSize = needSize && out.fileSizeBytes == null;
+  if (needDpi || stillNeedSize || stillNeedType) {
     try {
+      const wantBytes = needDpi || stillNeedType;
       let res = await fetch(url, {
         method: 'GET',
         credentials: 'omit',
         cache: 'force-cache',
-        headers: needDpi ? { Range: 'bytes=0-65535' } : undefined
+        headers: wantBytes ? { Range: 'bytes=0-65535' } : undefined
       });
       if (!res.ok && res.status !== 206) {
         res = await fetch(url, { method: 'GET', credentials: 'omit', cache: 'force-cache' });
       }
       if (res.ok || res.status === 206) {
-        const ct = res.headers.get('content-type');
-        if (ct && !out.mimeType) out.mimeType = ct;
-        if (ct && !out.ext) {
-          const fromMime = extFromMimeType(ct);
-          if (fromMime) out.ext = fromMime;
-        }
+        applyContentType(res.headers.get('content-type'));
         if (out.fileSizeBytes == null) {
           const cr = res.headers.get('content-range');
           const m = cr && cr.match(/\/(\d+)\s*$/);
@@ -1653,10 +1712,13 @@ async function fetchImageNetworkMeta(url, opts = {}) {
             if (len && /^\d+$/.test(len) && res.status !== 206) out.fileSizeBytes = Number(len);
           }
         }
-        if (needDpi) {
+        if (wantBytes) {
           const buf = await res.arrayBuffer();
-          const dpi = parseDpiFromImageBytes(buf);
-          if (dpi) out.dpi = dpi;
+          applyMagic(buf);
+          if (needDpi) {
+            const dpi = parseDpiFromImageBytes(buf);
+            if (dpi) out.dpi = dpi;
+          }
           if (out.fileSizeBytes == null && res.status !== 206) {
             out.fileSizeBytes = buf.byteLength;
           }

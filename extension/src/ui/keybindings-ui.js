@@ -11,6 +11,7 @@ import {
   KEYBINDINGS_UI_FONT_STYLE_ATTR,
   ensureKeyBackgroundIcon,
   ensureKeyPressOverlay,
+  syncKeySettingsMark,
   getActionIconDataUri,
   getKeybindingsUiCss,
   getKeybindingsUiFontFaceCss,
@@ -20,6 +21,7 @@ import {
   actionHasDestination,
   actionHasModes,
   actionHasParameters,
+  actionHasSettings,
   getActionInlineEnumDefs,
   getActionDestinationDef,
   getActionMode,
@@ -74,14 +76,6 @@ const KEY_INFO_POPOVER_INNER_HTML = `
 function settingsFunctionId(actionId) {
   const stock = getStockActionById(actionId);
   return stock?.functionId || actionId;
-}
-
-function actionHasSettings(actionId) {
-  const id = settingsFunctionId(actionId);
-  return actionHasModes(id)
-    || actionHasDestination(id)
-    || getActionInlineEnumDefs(id).length > 0
-    || actionHasParameters(id);
 }
 
 /**
@@ -167,7 +161,7 @@ export function ensureStylesInjected(root = document) {
   try {
     const doc = root && root.nodeType === 9 ? root : (root?.ownerDocument || document);
     preloadKeybindingsUiFonts(doc, fontUrls);
-    // Register @font-face on the document as well as the shadow tree so Dosis
+    // Register @font-face on the document as well as the shadow tree so TitilliumText
     // can start loading before the first Keyboard Reference paint.
     if (doc && fontUrls) {
       injectChromeStyles(doc, {
@@ -195,6 +189,9 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
   // Strip leftover icon layers from keys that have no KeyPilot function.
   try {
     container.querySelectorAll('.key:not([data-kp-action-id]) > .key-bg-icon').forEach((el) => {
+      try { el.remove(); } catch { /* ignore */ }
+    });
+    container.querySelectorAll('.key:not([data-kp-action-id]) > .key-settings-mark').forEach((el) => {
       try { el.remove(); } catch { /* ignore */ }
     });
   } catch { /* ignore */ }
@@ -229,6 +226,8 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     // Only function-bearing keys get FA background icons.
     ensureKeyBackgroundIcon(doc, keyEl);
     ensureKeyPressOverlay(doc, keyEl);
+    const settingsId = getFunctionDef(actionId) ? actionId : (instanceId || actionId);
+    syncKeySettingsMark(doc, keyEl, actionHasSettings(settingsId));
 
     const title = (binding && (binding.description || binding.label)) || actionId;
     // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
@@ -366,6 +365,7 @@ export function renderKeybindingsKeyboard({
       );
       // Only keys with functions get FA background icons.
       ensureKeyBackgroundIcon(doc, keyEl);
+      syncKeySettingsMark(doc, keyEl, actionHasSettings(item.id));
 
       const main = el(
         doc,

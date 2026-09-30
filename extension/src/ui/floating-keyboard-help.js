@@ -23,7 +23,8 @@ import {
   setKeyPressedState,
   KEYBINDINGS_UI_ROOT_CLASS,
   ensureKeyBackgroundIcon,
-  ensureKeyPressOverlay
+  ensureKeyPressOverlay,
+  syncKeySettingsMark
 } from './keybindings-ui-shared.js';
 import { MODES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
@@ -41,6 +42,7 @@ import {
 } from '../config/keyboard-layouts.js';
 import { getFunctionDef } from '../config/function-library.js';
 import { getStockActionById } from '../config/stock-actions.js';
+import { actionHasSettings } from './key-action-settings.js';
 
 /**
  * Startup paint stamps stock instances as if they were unknown function ids.
@@ -2881,6 +2883,12 @@ export class FloatingKeyboardHelp {
 
       btn.appendChild(main);
       btn.appendChild(label);
+      syncKeySettingsMark(
+        doc,
+        btn,
+        !!(displayAssigned && displayAssigned.type === 'function' && resolvedFn
+          && actionHasSettings(resolvedFn.functionId))
+      );
       ensureKeyPressOverlay(doc, btn);
 
       if (editMode && editable && assigned && !placeActive) {

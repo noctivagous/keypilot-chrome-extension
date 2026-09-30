@@ -11,7 +11,7 @@
 
 export const KEYBINDINGS_UI_STYLE_ATTR = 'data-kp-keybindings-ui-style';
 export const KEYBINDINGS_UI_ROOT_CLASS = 'kp-keybindings-ui';
-/** Document-level @font-face sheet so Dosis starts loading before the first keycap paint. */
+/** Document-level @font-face sheet so TitilliumText can start loading before the first keycap paint. */
 export const KEYBINDINGS_UI_FONT_STYLE_ATTR = 'data-kp-keybindings-fonts';
 export const KEYBINDINGS_UI_FONT_PRELOAD_ATTR = 'data-kp-keybindings-font-preload';
 
@@ -215,6 +215,11 @@ function faIconDataUri(pathD, fill = 'black', viewBox = '0 0 512 512') {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
+/** Same 16×16 gear used on keycaps with settings and on the key-info hint chip. */
+function keySettingsGearDataUri(fill = 'black') {
+  return faIconDataUri(ACCURATE_GEAR_PATH_16, fill, '0 0 16 16');
+}
+
 /**
  * Data-URI for a KeyPilot action's Font Awesome-style icon (for popovers / UI chrome).
  * @param {string} actionId
@@ -389,6 +394,55 @@ export function ensureKeyBackgroundIcon(doc, keyEl) {
 }
 
 /**
+ * Gear mark for keys whose action has settings (mask painted by CSS).
+ * @param {Document} doc
+ * @returns {HTMLSpanElement}
+ */
+function createKeySettingsMark(doc) {
+  const mark = doc.createElement('span');
+  mark.className = 'key-settings-mark';
+  mark.setAttribute('aria-hidden', 'true');
+  return mark;
+}
+
+/**
+ * Show or remove the settings gear mark.
+ * Inserted after the background icon and before legends so it paints above the
+ * icon (z-index 0) and under the action name and letter (same or higher z-index,
+ * later in the tree).
+ * @param {Document} doc
+ * @param {HTMLElement} keyEl
+ * @param {boolean} show
+ */
+export function syncKeySettingsMark(doc, keyEl, show) {
+  if (!doc || !keyEl) return;
+  let mark = null;
+  try {
+    mark = keyEl.querySelector(':scope > .key-settings-mark');
+  } catch {
+    mark = keyEl.querySelector('.key-settings-mark');
+  }
+  if (!show) {
+    if (mark) mark.remove();
+    return;
+  }
+  if (mark && mark.tagName !== 'SPAN') {
+    mark.remove();
+    mark = null;
+  }
+  if (!mark) mark = createKeySettingsMark(doc);
+  let legend = null;
+  try {
+    legend = keyEl.querySelector(':scope > .key-main, :scope > .key-label, :scope > .key-text');
+  } catch {
+    legend = keyEl.querySelector('.key-main, .key-label, .key-text');
+  }
+  if (mark.parentNode !== keyEl || mark.nextSibling !== legend) {
+    keyEl.insertBefore(mark, legend);
+  }
+}
+
+/**
  * Ensure a key has a dedicated press-feedback overlay element.
  * Appended last so it paints above legends/icons.
  * Safe to call repeatedly (idempotent).
@@ -510,7 +564,7 @@ export function getKeybindingsUiFontFaceCss(fontUrls = {}) {
 
 /**
  * Start fetching keyboard fonts before the first keycap paint.
- * Dosis is the key-label face; the others are declared in the same @font-face sheet.
+ * TitilliumText (bold) is the keycap face; the others are declared in the same @font-face sheet.
  *
  * @param {Document|null|undefined} doc
  * @param {{ robotech?: string, titillium?: string, titilliumBold?: string, cubellan?: string, ezarion?: string, dosis?: string }|null|undefined} fontUrls
@@ -544,8 +598,11 @@ export function preloadKeybindingsUiFonts(doc, fontUrls) {
     } catch { /* ignore */ }
   }
   try {
+    if (fontUrls.titilliumBold && !String(fontUrls.titilliumBold).includes('__KP_FONT_') && doc.fonts?.load) {
+      void doc.fonts.load('700 10px "TitilliumText"');
+    }
     if (fontUrls.dosis && !String(fontUrls.dosis).includes('__KP_FONT_') && doc.fonts?.load) {
-      void doc.fonts.load('10px "Dosis"');
+      void doc.fonts.load('700 10px "Dosis"');
     }
   } catch { /* ignore */ }
 }
@@ -571,6 +628,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   const urlEzarion = (fontUrls && fontUrls.ezarion) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.EZARION;
   const urlDosis = (fontUrls && fontUrls.dosis) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
 
+  const settingsGearMaskUri = keySettingsGearDataUri('black');
   const keyIconCss = getKeyboardKeyIconCss();
   const scrollCss = [
     getNctDarkUiScrollbarCss({ className: 'kp-bookmark-folder-scroll' }),
@@ -639,6 +697,9 @@ ${fontFaceCss}
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
   --kp-key-glow: transparent;
+  /* Letter tint of the key face. Action names use a stronger mix (--kp-key-main-ink). */
+  --kp-key-ink: color-mix(in srgb, var(--kp-key-face) 36%, white);
+  --kp-key-main-ink: color-mix(in srgb, var(--kp-key-face) 54%, white);
 
   position: relative;
   /*
@@ -777,13 +838,13 @@ ${fontFaceCss}
   margin: 0;
   padding: 0 1px;
   font-size: 11px;
-  font-weight: 650;
+  font-family: "TitilliumText", ui-sans-serif, system-ui, sans-serif;
+  font-weight: bold !important;
   letter-spacing: 0.02em;
   line-height: 1.1;
-  opacity: 0.9;
   text-transform: uppercase;
-  color: rgba(248, 250, 252, 0.94);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  color: var(--kp-key-main-ink);
+  text-shadow: 1px 2px black;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -814,15 +875,45 @@ ${fontFaceCss}
   white-space: nowrap;
   line-height: 1;
   text-align: center;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  font-family: "TitilliumText", ui-sans-serif, system-ui, sans-serif;
+  font-weight: bold !important;
+  text-shadow: 1px 1px black;
+  color: var(--kp-key-ink);
   pointer-events: none;
 }
 
 .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-label {
+  font-family: "Dosis", ui-sans-serif, system-ui, sans-serif;
   font-size: 12px;
-  font-weight: 700;
   letter-spacing: 0.03em;
-  color: var(--kp-accent, #5be2f1);
+}
+
+/*
+ * Settings gear: this action has settings. Same stack level as the action name
+ * (.key-main is z-index 1) but earlier in the tree, so the name and the letter
+ * (.key-label is z-index 2) paint over it. Background icon stays at z-index 0.
+ * Screen blend keeps the glyph bright on every key family.
+ */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-settings-mark {
+  position: absolute;
+  z-index: 1;
+  right: 1px;
+  bottom: 1px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 1);
+  background-image: none;
+  -webkit-mask-image: ${settingsGearMaskUri};
+  mask-image: ${settingsGearMaskUri};
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  mix-blend-mode: screen;
+  opacity: 0.5;
 }
 
 /* Edit-mode slot delete: fixed overlay on the keycap, independent of .key-main. */
@@ -877,9 +968,7 @@ ${fontFaceCss}
 /* Special chrome labels (Tab/Caps/…) */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-text {
   font-size: 10px;
-  font-weight: 650;
   letter-spacing: 0.02em;
-  color: rgba(248, 250, 252, 0.92);
 }
 
 /* Unassigned letter-only keys: still bottom-centered (same letter layer) */
@@ -888,8 +977,6 @@ ${fontFaceCss}
   top: auto;
   transform: none;
   font-size: 12px;
-  font-weight: 700;
-  color: var(--kp-accent, #5be2f1);
 }
 
 /* Special keys: wider, same height */
@@ -1279,7 +1366,8 @@ ${fontFaceCss}
       var(--kp-key-deep) 100%);
 }
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-bg-icon,
-.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-main {
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-main,
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-settings-mark {
   display: none !important;
 }
 /* Pattern overlays (hatch / checkerboard / …) — plain face only while typing. */
@@ -1288,8 +1376,8 @@ ${fontFaceCss}
 }
 /*
  * Center physical letters on every plain key. !important beats the higher-specificity
- * unassigned key-text rule (cyan / bottom-pinned) that would otherwise leave empty
- * keys like U O [ ] N , / looking different from assigned key-label keys.
+ * unassigned key-text rule that would otherwise leave empty keys like U O [ ]
+ * looking different from assigned key-label keys.
  */
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-label,
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-text {
@@ -1299,10 +1387,10 @@ ${fontFaceCss}
   right: 0 !important;
   transform: translateY(-50%) !important;
   font-size: 14px !important;
-  font-weight: 700 !important;
+  font-weight: bold !important;
   letter-spacing: 0.02em !important;
-  color: rgba(248, 250, 252, 0.94) !important;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+  color: var(--kp-key-ink) !important;
+  text-shadow: 1px 1px black !important;
 }
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key.kp-key-text-mode-disabled {
   pointer-events: none;
@@ -1495,6 +1583,8 @@ ${fontFaceCss}
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint {
+  position: relative;
+  isolation: isolate;
   flex: 0 1 auto;
   max-width: 11em;
   font-size: 10px;
@@ -1505,11 +1595,36 @@ ${fontFaceCss}
   overflow-wrap: break-word;
   text-align: center;
   line-height: 1.25;
-  padding: 2px 8px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+  padding: 4px 10px 4px 22px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.32);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.kp-keybindings-popover .kp-popover-settings-hint::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  width: 1.45em;
+  height: 1.45em;
+  transform: translateY(-50%);
+  z-index: 0;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 1);
+  -webkit-mask-image: ${settingsGearMaskUri};
+  mask-image: ${settingsGearMaskUri};
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  mix-blend-mode: screen;
+  opacity: 0.5;
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint[hidden] {

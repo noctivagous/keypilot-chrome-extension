@@ -45,6 +45,7 @@ import { storageGetValue, storageSetValue } from '../utils/storage.js';
 import { createSegmentedControl } from './segmented-control.js';
 import { createHierarchicalTable, getHierarchicalTableCss } from './hierarchical-table.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
+import { createOutlineIcon } from './preview-open-actions.js';
 
 const OVERLAY_ID = 'kpv2-page-media-overlay';
 /** Slider 1–2.5; default 1.5×. Persisted as the CSS scale factor. */
@@ -72,6 +73,40 @@ const URL_VIEW_DEFAULT = /** @type {UrlViewMode} */ ('table');
 /** Temporarily hidden tabs (restore by emptying this set). */
 const HIDDEN_PAGE_MEDIA_TABS = new Set(['pageText', 'url']);
 
+/** 24×24 outline paths for titlebar tabs (stroke via createOutlineIcon). */
+const PAGE_MEDIA_TAB_ICONS = {
+  image: [
+    { tag: 'rect', attrs: { x: '3', y: '3', width: '18', height: '18', rx: '2' } },
+    { tag: 'circle', attrs: { cx: '9', cy: '9', r: '2' } },
+    { attrs: { d: 'm21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21' } }
+  ],
+  video: [
+    { tag: 'rect', attrs: { x: '2', y: '6', width: '14', height: '12', rx: '2' } },
+    { attrs: { d: 'm16 10 6-3v10l-6-3z' } }
+  ],
+  text: [
+    { attrs: { d: 'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z' } },
+    { attrs: { d: 'M14 2v4a2 2 0 0 0 2 2h4' } },
+    { attrs: { d: 'M10 9H8' } },
+    { attrs: { d: 'M16 13H8' } },
+    { attrs: { d: 'M16 17H8' } }
+  ],
+  font: [
+    { attrs: { d: 'M4 7V4h16v3' } },
+    { attrs: { d: 'M9 20h6' } },
+    { attrs: { d: 'M12 4v16' } }
+  ],
+  pageText: [
+    { attrs: { d: 'M4 6h16' } },
+    { attrs: { d: 'M4 12h10' } },
+    { attrs: { d: 'M4 18h14' } }
+  ],
+  url: [
+    { attrs: { d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' } },
+    { attrs: { d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' } }
+  ]
+};
+
 /** @type {HTMLElement|null} */
 let _overlay = null;
 /** @type {(() => void)|null} */
@@ -88,6 +123,10 @@ let _fullViewIndex = 0;
 let _prevOverflow = null;
 /** @type {number} */
 let _enrichGen = 0;
+/** @type {number|null} */
+let _regroupTimer = null;
+/** @type {boolean} */
+let _regroupPending = false;
 /** @type {WeakMap<object, HTMLElement>} */
 let _cardByItem = new WeakMap();
 /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
@@ -128,6 +167,21 @@ function getOverlayRoot() {
 }
 
 /**
+ * @param {string} tabId
+ * @returns {SVGElement|null}
+ */
+function createPageMediaTabIcon(tabId) {
+  const paths = PAGE_MEDIA_TAB_ICONS[tabId];
+  if (!paths) return null;
+  const svg = createOutlineIcon(document, paths);
+  svg.classList.add('kpv2-page-media-tab-icon');
+  svg.setAttribute('width', '13');
+  svg.setAttribute('height', '13');
+  svg.style.cssText = 'flex-shrink: 0; display: block; color: inherit;';
+  return svg;
+}
+
+/**
  * @returns {boolean}
  */
 export function isPageMediaOverlayOpen() {
@@ -158,6 +212,7 @@ export function closePageMediaOverlay() {
     try { clearTimeout(_regroupTimer); } catch { /* ignore */ }
     _regroupTimer = null;
   }
+  _regroupPending = false;
   if (_overlay) {
     try { _overlay.remove(); } catch { /* ignore */ }
     _overlay = null;
@@ -714,11 +769,14 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
     btn.disabled = count === 0;
     btn.setAttribute('aria-selected', id === _activeTab ? 'true' : 'false');
     if (id === _activeTab) btn.classList.add('is-active');
+    const icon = createPageMediaTabIcon(id);
     const name = document.createElement('span');
+    name.className = 'kpv2-page-media-tab-label';
     name.textContent = getMessage(labelKey);
     const badge = document.createElement('span');
     badge.className = 'kpv2-page-media-tab-badge';
     badge.textContent = String(count);
+    if (icon) btn.appendChild(icon);
     btn.appendChild(name);
     btn.appendChild(badge);
     btn.addEventListener('click', (e) => {
@@ -749,6 +807,10 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   const content = document.createElement('div');
   content.className = `kpv2-page-media-content ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
   content.id = 'kpv2-page-media-grid';
+  content.addEventListener('mouseleave', () => flushImageRegroupIfPending());
+  content.addEventListener('focusout', () => {
+    requestAnimationFrame(() => flushImageRegroupIfPending());
+  });
 
   const fullView = document.createElement('div');
   fullView.className = 'kpv2-page-media-fullview';
@@ -894,8 +956,13 @@ function startImageEnrichment() {
     onProgress: () => {
       if (gen !== _enrichGen || !isPageMediaOverlayOpen()) return;
       if (_activeTab !== 'image') return;
-      // Re-group as dimensions arrive (items may move between size bands).
-      renderImageGrid({ preserveScroll: true });
+      for (const item of images) {
+        const card = _cardByItem.get(item);
+        if (card) updateImageCardMeta(card, item);
+      }
+      if (_imageSortMode === 'size-desc' || _imageSortMode === 'size-asc') {
+        scheduleImageRegroup();
+      }
     }
   }).catch(() => { /* ignore */ });
 }
@@ -972,6 +1039,110 @@ function renderGrid() {
 }
 
 /**
+ * @param {import('../utils/page-media-utils.js').PageMediaItem} item
+ */
+function activateImageItem(item) {
+  const idx = _imageFlatList.indexOf(item);
+  if (idx >= 0) onItemActivate(_imageFlatList, idx);
+}
+
+/**
+ * @returns {HTMLElement}
+ */
+function buildPosterSectionShell() {
+  const section = document.createElement('section');
+  section.className = 'kpv2-page-media-size-group';
+  section.dataset.sizeGroup = 'video-posters';
+
+  const heading = document.createElement('h3');
+  heading.className = 'kpv2-page-media-size-heading';
+  const title = document.createElement('span');
+  title.textContent = getMessage('page_media_video_posters');
+  const count = document.createElement('span');
+  count.className = 'kpv2-page-media-size-count';
+  heading.appendChild(title);
+  heading.appendChild(count);
+  section.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'kpv2-page-media-size-grid';
+  section.appendChild(grid);
+  return section;
+}
+
+/**
+ * @param {HTMLElement} grid
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} items
+ */
+function syncGridChildren(grid, items) {
+  const cards = items.map((item) => {
+    let card = _cardByItem.get(item);
+    if (!card) {
+      card = buildImageCard(item, () => activateImageItem(item));
+      _cardByItem.set(item, card);
+    } else {
+      updateImageCardMeta(card, item);
+    }
+    return card;
+  });
+  const keep = new Set(cards);
+  for (const child of [...grid.children]) {
+    if (!keep.has(child)) child.remove();
+  }
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i];
+    const current = grid.children[i];
+    if (current !== card) grid.insertBefore(card, current || null);
+  }
+}
+
+/**
+ * @param {HTMLElement} content
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} photoItems
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} posterItems
+ */
+function syncImageGrid(content, photoItems, posterItems) {
+  content.querySelectorAll('.kpv2-page-media-empty').forEach((n) => n.remove());
+
+  let photoGrid = content.querySelector(':scope > .kpv2-page-media-size-grid');
+  if (photoItems.length) {
+    if (!photoGrid) {
+      photoGrid = document.createElement('div');
+      photoGrid.className = 'kpv2-page-media-size-grid';
+      const posterSec = content.querySelector(':scope > .kpv2-page-media-size-group');
+      content.insertBefore(photoGrid, posterSec);
+    }
+    syncGridChildren(photoGrid, photoItems);
+  } else if (photoGrid) {
+    photoGrid.remove();
+  }
+
+  let posterSection = content.querySelector(':scope > .kpv2-page-media-size-group');
+  if (posterItems.length) {
+    if (!posterSection) {
+      posterSection = buildPosterSectionShell();
+      content.appendChild(posterSection);
+    }
+    const countEl = posterSection.querySelector('.kpv2-page-media-size-count');
+    if (countEl) countEl.textContent = String(posterItems.length);
+    const posterGrid = posterSection.querySelector('.kpv2-page-media-size-grid');
+    if (posterGrid) syncGridChildren(posterGrid, posterItems);
+  } else if (posterSection) {
+    posterSection.remove();
+  }
+}
+
+/**
+ * @param {HTMLElement} content
+ */
+function appendImageGridEmpty(content) {
+  const empty = document.createElement('div');
+  empty.className = 'kpv2-page-media-empty';
+  empty.textContent = getMessage('page_media_empty');
+  content.appendChild(empty);
+}
+
+/**
  * @param {{ preserveScroll?: boolean }} [opts]
  */
 function renderImageGrid(opts = {}) {
@@ -980,79 +1151,65 @@ function renderImageGrid(opts = {}) {
   if (!content) return;
 
   const scrollTop = opts.preserveScroll ? content.scrollTop : 0;
-  while (content.firstChild) content.removeChild(content.firstChild);
   content.classList.add('is-image-tab');
-  _cardByItem = new WeakMap();
 
   const images = groupPageMediaByCategory(_items).image;
   if (!images.length) {
+    while (content.firstChild) content.removeChild(content.firstChild);
+    _cardByItem = new WeakMap();
     _imageFlatList = [];
-    const empty = document.createElement('div');
-    empty.className = 'kpv2-page-media-empty';
-    empty.textContent = getMessage('page_media_empty');
-    content.appendChild(empty);
+    appendImageGridEmpty(content);
     return;
   }
 
   const { photos, posters } = partitionImageItems(images);
-  /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
-  const flat = [];
-
-  // One continuous grid (no size-band headings). Default is pixel-area descending.
   const photoItems = sortImageItems(photos, _imageSortMode, {
     prioritizeLandmarks: _imagePrioritizeLandmarks
   });
   const posterItems = sortImageItems(posters, _imageSortMode, {
     prioritizeLandmarks: _imagePrioritizeLandmarks
   });
-  if (photoItems.length) {
-    const grid = document.createElement('div');
-    grid.className = 'kpv2-page-media-size-grid';
-    for (const item of photoItems) {
-      const flatIndex = flat.length;
-      flat.push(item);
-      const card = buildImageCard(item, () => onItemActivate(flat, flatIndex));
-      _cardByItem.set(item, card);
-      grid.appendChild(card);
-    }
-    content.appendChild(grid);
-  }
-
-  // Video posters stay in their own section below.
-  if (posterItems.length) {
-    const section = document.createElement('section');
-    section.className = 'kpv2-page-media-size-group';
-    section.dataset.sizeGroup = 'video-posters';
-
-    const heading = document.createElement('h3');
-    heading.className = 'kpv2-page-media-size-heading';
-    const title = document.createElement('span');
-    title.textContent = getMessage('page_media_video_posters');
-    const count = document.createElement('span');
-    count.className = 'kpv2-page-media-size-count';
-    count.textContent = String(posterItems.length);
-    heading.appendChild(title);
-    heading.appendChild(count);
-    section.appendChild(heading);
-
-    const grid = document.createElement('div');
-    grid.className = 'kpv2-page-media-size-grid';
-    for (const item of posterItems) {
-      const flatIndex = flat.length;
-      flat.push(item);
-      const card = buildImageCard(item, () => onItemActivate(flat, flatIndex));
-      _cardByItem.set(item, card);
-      grid.appendChild(card);
-    }
-    section.appendChild(grid);
-    content.appendChild(section);
-  }
+  /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
+  const flat = photoItems.concat(posterItems);
 
   if (!flat.length) {
-    const empty = document.createElement('div');
-    empty.className = 'kpv2-page-media-empty';
-    empty.textContent = getMessage('page_media_empty');
-    content.appendChild(empty);
+    while (content.firstChild) content.removeChild(content.firstChild);
+    _cardByItem = new WeakMap();
+    _imageFlatList = [];
+    appendImageGridEmpty(content);
+    return;
+  }
+
+  const canReuse = Boolean(content.querySelector('.kpv2-page-media-card-image'));
+  if (canReuse) {
+    syncImageGrid(content, photoItems, posterItems);
+  } else {
+    while (content.firstChild) content.removeChild(content.firstChild);
+    _cardByItem = new WeakMap();
+    if (photoItems.length) {
+      const grid = document.createElement('div');
+      grid.className = 'kpv2-page-media-size-grid';
+      for (const item of photoItems) {
+        const card = buildImageCard(item, () => activateImageItem(item));
+        _cardByItem.set(item, card);
+        grid.appendChild(card);
+      }
+      content.appendChild(grid);
+    }
+    if (posterItems.length) {
+      const section = buildPosterSectionShell();
+      const countEl = section.querySelector('.kpv2-page-media-size-count');
+      if (countEl) countEl.textContent = String(posterItems.length);
+      const grid = section.querySelector('.kpv2-page-media-size-grid');
+      if (grid) {
+        for (const item of posterItems) {
+          const card = buildImageCard(item, () => activateImageItem(item));
+          _cardByItem.set(item, card);
+          grid.appendChild(card);
+        }
+      }
+      content.appendChild(section);
+    }
   }
 
   _imageFlatList = flat;
@@ -1122,7 +1279,8 @@ function buildImageCard(item, onActivate) {
         item.width = w;
         item.height = h;
         updateImageCardMeta(card, item);
-        if (!had && _activeTab === 'image') {
+        if (!had && _activeTab === 'image'
+            && (_imageSortMode === 'size-desc' || _imageSortMode === 'size-asc')) {
           scheduleImageRegroup();
         }
       }
@@ -1767,6 +1925,25 @@ function buildFileCard(item, onActivate) {
 }
 
 /**
+ * Pack a hover-action caption onto up to three lines (word-aware).
+ * @param {string} text
+ * @returns {string}
+ */
+function wrapHoverActionLabel(text) {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return words[0] || '';
+  if (words.length === 2) return `${words[0]}\n${words[1]}`;
+  if (words.length === 3) return words.join('\n');
+  const first = Math.ceil(words.length / 3);
+  const second = Math.ceil((words.length - first) / 2);
+  return [
+    words.slice(0, first).join(' '),
+    words.slice(first, first + second).join(' '),
+    words.slice(first + second).join(' ')
+  ].filter(Boolean).join('\n');
+}
+
+/**
  * Hover toolbar: Copy · Media Library · Download
  * @param {import('../utils/page-media-utils.js').PageMediaItem} item
  * @returns {HTMLElement}
@@ -1781,8 +1958,12 @@ function buildHoverActions(item) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'kpv2-page-media-action';
-    btn.textContent = label;
+    const caption = document.createElement('span');
+    caption.className = 'kpv2-page-media-action-label';
+    caption.textContent = wrapHoverActionLabel(title || label);
+    btn.appendChild(caption);
     btn.title = title;
+    btn.setAttribute('aria-label', title || label);
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -2047,15 +2228,50 @@ function safeDownloadFilename(item) {
   return name;
 }
 
-/** @type {number|null} */
-let _regroupTimer = null;
-function scheduleImageRegroup() {
-  if (_regroupTimer != null) return;
-  _regroupTimer = window.setTimeout(() => {
+function isImageCardPointerActive() {
+  const root = getOverlayRoot();
+  if (!root) return false;
+  try {
+    return Boolean(root.querySelector(
+      '.kpv2-page-media-card-image:hover, .kpv2-page-media-card-image:focus-within'
+    ));
+  } catch {
+    return false;
+  }
+}
+
+function flushImageRegroupIfPending() {
+  if (!_regroupPending) return;
+  if (isImageCardPointerActive()) return;
+  if (_regroupTimer != null) {
+    try { clearTimeout(_regroupTimer); } catch { /* ignore */ }
     _regroupTimer = null;
-    if (!isPageMediaOverlayOpen() || _activeTab !== 'image') return;
+  }
+  if (!isPageMediaOverlayOpen() || _activeTab !== 'image') {
+    _regroupPending = false;
+    return;
+  }
+  _regroupPending = false;
+  renderImageGrid({ preserveScroll: true });
+}
+
+function scheduleImageRegroup() {
+  _regroupPending = true;
+  if (_regroupTimer != null) return;
+  const run = () => {
+    _regroupTimer = null;
+    if (!isPageMediaOverlayOpen() || _activeTab !== 'image') {
+      _regroupPending = false;
+      return;
+    }
+    if (isImageCardPointerActive()) {
+      _regroupTimer = window.setTimeout(run, 250);
+      return;
+    }
+    _regroupPending = false;
     renderImageGrid({ preserveScroll: true });
-  }, 250);
+  };
+  _regroupTimer = window.setTimeout(run, 250);
 }
 
 /**
@@ -2548,6 +2764,17 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   font-size: 12px;
   cursor: pointer;
 }
+.kpv2-page-media-tab-icon {
+  flex-shrink: 0;
+  display: block;
+  width: 13px;
+  height: 13px;
+  color: inherit;
+  opacity: 0.92;
+}
+.kpv2-page-media-tab-label {
+  min-width: 0;
+}
 .kpv2-page-media-tab:disabled {
   opacity: 0.35;
   cursor: default;
@@ -2623,8 +2850,9 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content .kpv2-page-media-action {
-  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
-  padding: calc(5px * var(--kpv2-pm-image-scale, 1.5)) calc(4px * var(--kpv2-pm-image-scale, 1.5));
+  font-size: 8px;
+  font-weight: 400;
+  padding: calc(4px * var(--kpv2-pm-image-scale, 1.5)) calc(3px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content .kpv2-page-media-glyph {
   font-size: calc(18px * var(--kpv2-pm-image-scale, 1.5));
@@ -3166,20 +3394,32 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
 .kpv2-page-media-action {
   flex: 1;
   min-width: 0;
-  padding: 5px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 3px;
   border: ${NCT_DARK_UI_BTN_BORDER};
   border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   background: ${NCT_DARK_UI_BTN_GRADIENT};
   color: ${c.fg};
   font: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.2;
+  font-size: 8px;
+  font-weight: 400;
+  line-height: 1.15;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.45);
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: center;
+}
+.kpv2-page-media-action-label {
+  display: block;
+  overflow: hidden;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-weight: 400;
+  line-height: 1.15;
+  height: calc(1.15em * 3);
 }
 .kpv2-page-media-action:hover {
   background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
