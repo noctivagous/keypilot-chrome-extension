@@ -7,12 +7,11 @@ const CONTEXT_MENU_KEYS = [
   'context_menu_toggle_keypilot',
   'context_menu_group_windows',
   'context_menu_toggle_keyboard_reference',
+  'context_menu_control_strip',
   'context_menu_onboarding_tutorial',
   'context_menu_docs_help',
   'context_menu_settings',
   'context_menu_group_keyboard_reference',
-  'context_menu_show_keyboard_reference',
-  'context_menu_hide_keyboard_reference',
   'context_menu_group_builtin_layouts',
   'context_menu_group_custom_layouts',
   'context_menu_no_custom_layouts',
@@ -37,8 +36,14 @@ describe('context-menu localization', () => {
       assert.match(source, new RegExp(`getMessage\\('${key}'`));
     }
 
+    assert.match(source, /formatAltShortcut\('K'/);
+    assert.match(source, /formatAltShortcut\('J'/);
     assert.match(source, /formatAltShortcut\('I'/);
     assert.match(source, /formatAltShortcut\('H'/);
+    assert.match(source, /formatAltShortcut\('C'/);
+    assert.match(source, /__toggle_control_strip__/);
+    assert.doesNotMatch(source, /__show_keyboard_reference__/);
+    assert.doesNotMatch(source, /__hide_keyboard_reference__/);
     assert.doesNotMatch(source, /createGroup\('KeyPilot Windows'\)/);
     assert.doesNotMatch(source, /title: 'None'/);
   });

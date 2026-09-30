@@ -368,10 +368,11 @@
     const locale = document.body?.getAttribute('data-locale') || 'en';
     const page = chromePageMenuCopy(locale);
     const name = i18nMessage('extension_name') || 'KeyPilot';
-    const toggle = i18nMessage('context_menu_toggle_keypilot') || 'Toggle KeyPilot';
+    const toggle = i18nMessage('context_menu_toggle_keypilot', ['⌥K']) || 'Toggle KeyPilot (⌥K)';
     const windows = i18nMessage('context_menu_group_windows') || 'KeyPilot Windows';
     const keyboard = i18nMessage('context_menu_group_keyboard_reference') || 'Keyboard Reference';
-    const toggleKb = i18nMessage('context_menu_toggle_keyboard_reference') || 'Toggle Keyboard Reference';
+    const toggleKb = i18nMessage('context_menu_toggle_keyboard_reference', ['K']) || 'Toggle Keyboard Ref window (K)';
+    const controlStrip = i18nMessage('context_menu_control_strip', ['⌥J']) || 'Control Strip (⌥J)';
     const tutorial = i18nMessage('context_menu_onboarding_tutorial', ['⌥I']) || 'Onboarding Tutorial (⌥I)';
     const docs = i18nMessage('context_menu_docs_help', ['⌥H']) || 'KeyPilot Documentation (⌥H)';
     const settings = i18nMessage('context_menu_settings', ["'"]) || "KeyPilot Settings (')";
@@ -405,6 +406,7 @@
         `, 'margin-left:2px')}
         ${contextMenuPanel(`
           ${contextMenuItem(toggleKb)}
+          ${contextMenuItem(controlStrip)}
           ${contextMenuItem(tutorial)}
           ${contextMenuItem(docs, { selected: true, attr: 'data-kp-store-ctx-docs="true"' })}
           ${contextMenuItem(settings, { attr: 'data-kp-store-ctx-settings="true"' })}

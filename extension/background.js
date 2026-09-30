@@ -176,14 +176,19 @@ async function rebuildKeyboardReferenceContextMenu() {
     await createAction(
       KEYPILOT_CONTEXT_MENU_ID,
       '__toggle_keypilot__',
-      getMessage('context_menu_toggle_keypilot')
+      getMessage('context_menu_toggle_keypilot', formatAltShortcut('K', { joiner: ' + ' }))
     );
 
     const keyPilotGroup = await createGroup(getMessage('context_menu_group_windows'));
     await createAction(
       keyPilotGroup,
       '__toggle_keyboard_reference__',
-      getMessage('context_menu_toggle_keyboard_reference')
+      getMessage('context_menu_toggle_keyboard_reference', 'K')
+    );
+    await createAction(
+      keyPilotGroup,
+      '__toggle_control_strip__',
+      getMessage('context_menu_control_strip', formatAltShortcut('J', { joiner: ' + ' }))
     );
     await createAction(
       keyPilotGroup,
@@ -202,16 +207,6 @@ async function rebuildKeyboardReferenceContextMenu() {
     );
 
     const keyboardReferenceGroup = await createGroup(getMessage('context_menu_group_keyboard_reference'));
-    await createAction(
-      keyboardReferenceGroup,
-      '__show_keyboard_reference__',
-      getMessage('context_menu_show_keyboard_reference')
-    );
-    await createAction(
-      keyboardReferenceGroup,
-      '__hide_keyboard_reference__',
-      getMessage('context_menu_hide_keyboard_reference')
-    );
 
     const builtInGroup = await createGroup(
       getMessage('context_menu_group_builtin_layouts'),
@@ -249,7 +244,11 @@ async function rebuildKeyboardReferenceContextMenu() {
       getMessage('context_menu_group_layout_editor'),
       keyboardReferenceGroup
     );
-    await createAction(editorGroup, '__edit_layouts__', getMessage('context_menu_edit_layouts'));
+    await createAction(
+      editorGroup,
+      '__edit_layouts__',
+      getMessage('context_menu_edit_layouts', formatAltShortcut('C', { joiner: ' + ' }))
+    );
     await createAction(editorGroup, '__new_layout__', getMessage('context_menu_new_layout'));
     await createAction(
       editorGroup,

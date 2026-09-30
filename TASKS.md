@@ -1,12 +1,12 @@
 
 
-[ ] some graphical indicator on the KB Ref. that the key action has settings, such as a rectangle that looks like a form in the lower right corner.
+[x] some graphical indicator on the KB Ref. that the key action has settings, such as a rectangle that looks like a form in the lower right corner.
 
-[ ] optional flag for testing, set it to on: key cap shapes. it will indicate to the user what the key actions do by their shape. the actions on the page have corner clipped.  
-UI launchers like Top Sites, Keyboard, etc. have corner radius of 0.  scroll keys have small entasis of edges.
+[ ] optional flag for testing, set it to on: key cap shapes. it will indicate to the user what the key actions do by their shape. the key actions that act on
+the page have top left corner truncated.  scroll keys will not. UI launchers like Top Sites, Keyboard, etc. have corner radius of 0.  scroll keys have small entasis of edges.
 
-[ ] Contextual Menu updates 
-  - Ensure kb shortcuts are on every list item
+[x] Contextual Menu updates 
+  - Ensure kb shortcuts are included on every list item
  - Add "Control Strip (Alt/Opt + J)"
  - "Toggle Keyboard Ref window" K instead of separate for turning on and off
  

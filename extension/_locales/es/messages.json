@@ -1724,16 +1724,28 @@
     "description": "Titlebar hint suffix after Esc / shortcut keys on Link Preview and Open Popover."
   },
   "context_menu_toggle_keypilot": {
-    "message": "Alternar piloto clave",
-    "description": "Context-menu item that enables or disables KeyPilot."
+    "message": "Alternar piloto clave ($1)",
+    "description": "Context-menu item that enables or disables KeyPilot. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + J"
+      }
+    }
   },
   "context_menu_group_windows": {
     "message": "Ventanas piloto clave",
     "description": "Context-menu group for KeyPilot window and overlay actions."
   },
   "context_menu_toggle_keyboard_reference": {
-    "message": "Alternar referencia del teclado",
-    "description": "Context-menu item that shows or hides the keyboard reference."
+    "message": "Alternar ventana de referencia del teclado ($1)",
+    "description": "Context-menu item that shows or hides the keyboard reference. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + J"
+      }
+    }
   },
   "context_menu_onboarding_tutorial": {
     "message": "Tutorial de incorporación ($1)",
@@ -1964,8 +1976,14 @@
     "description": "Fallback name for a user-created keyboard layout."
   },
   "context_menu_edit_layouts": {
-    "message": "Editar distribución del teclado…",
-    "description": "Context-menu item that opens the keyboard layout editor."
+    "message": "Editar distribución del teclado… ($1)",
+    "description": "Context-menu item that opens the keyboard layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + J"
+      }
+    }
   },
   "context_menu_new_layout": {
     "message": "Nueva distribución de teclado en blanco",
@@ -6456,5 +6474,15 @@
   "media_library_empty_or": {
     "message": "o",
     "description": "Conjunction joining Media Library and Both in empty-tab destination copy."
+  },
+  "context_menu_control_strip": {
+    "message": "Tira de control ($1)",
+    "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + J"
+      }
+    }
   }
 }

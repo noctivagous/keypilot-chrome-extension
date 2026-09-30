@@ -697,7 +697,8 @@ ${fontFaceCss}
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
   --kp-key-glow: transparent;
-  /* Letter tint of the key face. Action names use a stronger mix (--kp-key-main-ink). */
+  /* Letter tint of the key face. --kp-key-main-ink is the stored hue-cast for
+     action names (54% face + white); .key-main currently paints #cecece instead. */
   --kp-key-ink: color-mix(in srgb, var(--kp-key-face) 36%, white);
   --kp-key-main-ink: color-mix(in srgb, var(--kp-key-face) 54%, white);
 
@@ -839,11 +840,12 @@ ${fontFaceCss}
   padding: 0 1px;
   font-size: 11px;
   font-family: "TitilliumText", ui-sans-serif, system-ui, sans-serif;
-  font-weight: bold !important;
+  font-weight: normal !important;
   letter-spacing: 0.02em;
   line-height: 1.1;
   text-transform: uppercase;
-  color: var(--kp-key-main-ink);
+  /* Stored mix: color: var(--kp-key-main-ink); */
+  color: #cecece;
   text-shadow: 1px 2px black;
   overflow: hidden;
   display: -webkit-box;

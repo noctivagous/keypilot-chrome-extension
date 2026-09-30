@@ -2725,6 +2725,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
             this.applyKeyboardHelpVisibility(!visible, { persist: true });
             return;
           }
+          if (value === '__toggle_control_strip__') {
+            void this.toggleControlStripFromHotkey();
+            return;
+          }
           if (value === '__show_keyboard_reference__') {
             this.applyKeyboardHelpVisibility(true, { persist: true });
             return;

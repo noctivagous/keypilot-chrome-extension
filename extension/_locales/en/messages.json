@@ -1724,16 +1724,38 @@
     "description": "Titlebar hint suffix after Esc / shortcut keys on Link Preview and Open Popover."
   },
   "context_menu_toggle_keypilot": {
-    "message": "Toggle KeyPilot",
-    "description": "Context-menu item that enables or disables KeyPilot."
+    "message": "Toggle KeyPilot ($1)",
+    "description": "Context-menu item that enables or disables KeyPilot. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + K"
+      }
+    }
   },
   "context_menu_group_windows": {
     "message": "KeyPilot Windows",
     "description": "Context-menu group for KeyPilot window and overlay actions."
   },
   "context_menu_toggle_keyboard_reference": {
-    "message": "Toggle Keyboard Reference",
-    "description": "Context-menu item that shows or hides the keyboard reference."
+    "message": "Toggle Keyboard Ref window ($1)",
+    "description": "Context-menu item that shows or hides the keyboard reference. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "context_menu_control_strip": {
+    "message": "Control Strip ($1)",
+    "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + J"
+      }
+    }
   },
   "context_menu_onboarding_tutorial": {
     "message": "Onboarding Tutorial ($1)",
@@ -1964,8 +1986,14 @@
     "description": "Fallback name for a user-created keyboard layout."
   },
   "context_menu_edit_layouts": {
-    "message": "Edit Keyboard Layout…",
-    "description": "Context-menu item that opens the keyboard layout editor."
+    "message": "Edit Keyboard Layout… ($1)",
+    "description": "Context-menu item that opens the keyboard layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + C"
+      }
+    }
   },
   "context_menu_new_layout": {
     "message": "New Blank Keyboard Layout",
