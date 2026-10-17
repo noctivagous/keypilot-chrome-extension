@@ -6475,5 +6475,6 @@
   "settings_static_265": { "message": "Retrasar Clic en elemento" },
   "settings_static_266": { "message": "Alt+Mayús con la tecla Clic en elemento programa el enlace bajo el cursor." },
   "settings_static_267": { "message": "Clic en elemento mínimo (minutos)" },
-  "settings_static_268": { "message": "Clic en elemento máximo (minutos)" }
+  "settings_static_268": { "message": "Clic en elemento máximo (minutos)" },
+  "deferred_open_dialog_title_click_element": { "message": "Programar este enlace" }
 }

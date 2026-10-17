@@ -6520,5 +6520,6 @@
   "settings_static_265": { "message": "एलिमेंट क्लिक में देरी" },
   "settings_static_266": { "message": "कर्सर के नीचे के लिंक को शेड्यूल करने के लिए एलिमेंट क्लिक कुंजी के साथ Alt+Shift।" },
   "settings_static_267": { "message": "एलिमेंट क्लिक न्यूनतम (मिनट)" },
-  "settings_static_268": { "message": "एलिमेंट क्लिक अधिकतम (मिनट)" }
+  "settings_static_268": { "message": "एलिमेंट क्लिक अधिकतम (मिनट)" },
+  "deferred_open_dialog_title_click_element": { "message": "इस लिंक को शेड्यूल करें" }
 }

@@ -1505,9 +1505,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   /**
-   * Resolve the Open URLs / Random Bookmark binding under a key event into the
+   * Resolve an Open URLs, Random Bookmark, or Click Element binding into the
    * scheduling request shared by Alt+Shift (random delay) and Ctrl+Alt+Shift
    * (exact time). Returns null when the key is not an enabled, usable binding.
+   * Click Element captures the link under the cursor at chord time.
    * @param {KeyboardEvent} e
    * @returns {{ action: string, payload: object, minMinutes: number, maxMinutes: number, target: string }|null}
    */
@@ -1523,8 +1524,6 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     const target = this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target;
     if (binding.functionId === 'ACTIVATE') {
-      // Exact-time dialog is not offered for Click Element yet.
-      if (e?.ctrlKey) return null;
       const config = this._settings?.deferredOpen?.clickElement
         || DEFAULT_SETTINGS.deferredOpen.clickElement;
       if (config.enabled === false) return null;
@@ -1532,11 +1531,11 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       if (!urls.length) return null;
       return {
         action: 'OPEN_URLS',
+        dialogAction: 'ACTIVATE',
         payload: { urls },
         minMinutes: config.minMinutes,
         maxMinutes: config.maxMinutes,
-        target,
-        allowExactTime: false
+        target
       };
     }
 
@@ -1581,7 +1580,6 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     if (!request) return false;
 
     const manual = !!e.ctrlKey;
-    if (manual && request.allowExactTime === false) return false;
     if (manual && !this.scheduleOpenDialog) return false;
 
     e.preventDefault();
@@ -1590,7 +1588,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     if (manual) {
       this.scheduleOpenDialog.show({
-        action: request.action,
+        action: request.dialogAction || request.action,
         onSubmit: (fireAt) => this._submitDeferredOpen(request, { fireAt })
       });
       return true;

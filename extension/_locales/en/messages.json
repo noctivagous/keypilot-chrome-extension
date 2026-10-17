@@ -6601,5 +6601,6 @@
   "settings_static_265": { "message": "Delay Click Element" },
   "settings_static_266": { "message": "Alt+Shift with the Click Element key schedules the link under the cursor." },
   "settings_static_267": { "message": "Click Element minimum (minutes)" },
-  "settings_static_268": { "message": "Click Element maximum (minutes)" }
+  "settings_static_268": { "message": "Click Element maximum (minutes)" },
+  "deferred_open_dialog_title_click_element": { "message": "Schedule this link" }
 }

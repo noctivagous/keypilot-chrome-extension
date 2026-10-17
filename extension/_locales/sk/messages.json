@@ -6515,5 +6515,6 @@
   "settings_static_265": { "message": "Odložiť kliknutie na prvok" },
   "settings_static_266": { "message": "Alt+Shift s klávesom Kliknúť na prvok naplánuje odkaz pod kurzorom." },
   "settings_static_267": { "message": "Kliknutie na prvok minimum (minúty)" },
-  "settings_static_268": { "message": "Kliknutie na prvok maximum (minúty)" }
+  "settings_static_268": { "message": "Kliknutie na prvok maximum (minúty)" },
+  "deferred_open_dialog_title_click_element": { "message": "Naplánovať tento odkaz" }
 }

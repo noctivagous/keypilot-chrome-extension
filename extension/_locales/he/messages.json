@@ -6520,5 +6520,6 @@
   "settings_static_265": { "message": "השהה לחיצה על רכיב" },
   "settings_static_266": { "message": "Alt+Shift עם מקש הלחיצה על רכיב מתזמן את הקישור שמתחת לסמן." },
   "settings_static_267": { "message": "לחיצה על רכיב, מינימום (דקות)" },
-  "settings_static_268": { "message": "לחיצה על רכיב, מקסימום (דקות)" }
+  "settings_static_268": { "message": "לחיצה על רכיב, מקסימום (דקות)" },
+  "deferred_open_dialog_title_click_element": { "message": "תזמון הקישור הזה" }
 }

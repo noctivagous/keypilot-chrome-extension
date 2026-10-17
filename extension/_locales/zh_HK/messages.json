@@ -6515,5 +6515,6 @@
   "settings_static_265": { "message": "延後點選元素" },
   "settings_static_266": { "message": "按住 Alt+Shift 再按點選元素鍵，安排開啟游標下的連結。" },
   "settings_static_267": { "message": "點選元素最短（分鐘）" },
-  "settings_static_268": { "message": "點選元素最長（分鐘）" }
+  "settings_static_268": { "message": "點選元素最長（分鐘）" },
+  "deferred_open_dialog_title_click_element": { "message": "安排開啟此連結" }
 }

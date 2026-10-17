@@ -168,6 +168,7 @@ const CSS = `
  * @returns {string}
  */
 function titleForAction(action) {
+  if (action === 'ACTIVATE') return getMessage('deferred_open_dialog_title_click_element');
   return getMessage(
     action === 'OPEN_URLS'
       ? 'deferred_open_dialog_title_open_urls'
