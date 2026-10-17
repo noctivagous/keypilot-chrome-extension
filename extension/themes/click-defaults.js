@@ -11,7 +11,7 @@ export const DARK_PRO_CLICK_DEFAULTS = Object.freeze({
       gap: 6
     }),
     focusColor: 'blue',
-    overlayFillEnabled: false,
+    overlayFillEnabled: true,
     overlayShadowEnabled: false,
     rectangleThickness: 3,
     clickEffect: 'flash',
@@ -32,7 +32,7 @@ export const GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
       gap: 6
     }),
     focusColor: 'blue',
-    overlayFillEnabled: false,
+    overlayFillEnabled: true,
     overlayShadowEnabled: false,
     rectangleThickness: 4,
     clickEffect: 'flash',

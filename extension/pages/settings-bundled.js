@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T22:31:06.818Z
+ * Generated on 2026-10-17T23:39:13.478Z
  */
 
 
@@ -2912,7 +2912,7 @@ var DEFAULT_SETTINGS = Object.freeze({
     // Hover focus ring color (DOM-hover mode default is blue).
     focusColor: "blue",
     // When true, the focus rectangle can include a translucent fill (where applicable).
-    overlayFillEnabled: false,
+    overlayFillEnabled: true,
     // When true, draw a soft outer glow/shadow on the focus rectangle.
     overlayShadowEnabled: false,
     // Focus rectangle border thickness in px.
@@ -3758,7 +3758,7 @@ var DARK_PRO_CLICK_DEFAULTS = Object.freeze({
       gap: 6
     }),
     focusColor: "blue",
-    overlayFillEnabled: false,
+    overlayFillEnabled: true,
     overlayShadowEnabled: false,
     rectangleThickness: 3,
     clickEffect: "flash",
@@ -3778,7 +3778,7 @@ var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
       gap: 6
     }),
     focusColor: "blue",
-    overlayFillEnabled: false,
+    overlayFillEnabled: true,
     overlayShadowEnabled: false,
     rectangleThickness: 4,
     clickEffect: "flash",

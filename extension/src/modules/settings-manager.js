@@ -254,7 +254,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // Hover focus ring color (DOM-hover mode default is blue).
     focusColor: 'blue',
     // When true, the focus rectangle can include a translucent fill (where applicable).
-    overlayFillEnabled: false,
+    overlayFillEnabled: true,
     // When true, draw a soft outer glow/shadow on the focus rectangle.
     overlayShadowEnabled: false,
     // Focus rectangle border thickness in px.
