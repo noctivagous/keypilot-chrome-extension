@@ -3785,6 +3785,18 @@
     "message": "[GB] Closes the active tab. Behavior matches the browser’s close-tab action for the current window.",
     "description": "Built-in Function CLOSE_TAB inspector details."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "[GB] Close Window",
+    "description": "Built-in Function CLOSE_WINDOW label."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "[GB] Close the current window",
+    "description": "Built-in Function CLOSE_WINDOW short description."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "[GB] Closes the browser window that contains the current tab, including its other tabs.",
+    "description": "Built-in Function CLOSE_WINDOW inspector details."
+  },
   "fn_CANCEL_label": {
     "message": "[GB] Exit Focus",
     "description": "Built-in Function CANCEL label."
@@ -6555,5 +6567,15 @@
   "settings_static_266": { "message": "[GB] Alt+Shift with the Click Element key schedules the link under the cursor." },
   "settings_static_267": { "message": "[GB] Click Element minimum (minutes)" },
   "settings_static_268": { "message": "[GB] Click Element maximum (minutes)" },
-  "deferred_open_dialog_title_click_element": { "message": "[GB] Schedule this link" }
+  "deferred_open_dialog_title_click_element": { "message": "[GB] Schedule this link" },
+  "settings_static_269": { "message": "[GB] Delay Close Tab" },
+  "settings_static_270": { "message": "[GB] Alt+Shift with Close Tab schedules closing the tab that is current when you press the chord." },
+  "settings_static_271": { "message": "[GB] Close Tab minimum (minutes)" },
+  "settings_static_272": { "message": "[GB] Close Tab maximum (minutes)" },
+  "settings_static_273": { "message": "[GB] Delay Close Window" },
+  "settings_static_274": { "message": "[GB] Alt+Shift with Close Window schedules closing the window that is current when you press the chord." },
+  "settings_static_275": { "message": "[GB] Close Window minimum (minutes)" },
+  "settings_static_276": { "message": "[GB] Close Window maximum (minutes)" },
+  "deferred_open_dialog_title_close_tab": { "message": "[GB] Schedule closing this tab" },
+  "deferred_open_dialog_title_close_window": { "message": "[GB] Schedule closing this window" }
 }

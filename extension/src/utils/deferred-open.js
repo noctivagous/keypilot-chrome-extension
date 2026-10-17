@@ -94,6 +94,38 @@ export function isValidManualFireAt(fireAt, now = Date.now()) {
 }
 
 /**
+ * Close the tab or window stored on the job. A missing target is already gone,
+ * so the job finishes without closing anything else.
+ * @param {{ action?: string, payload?: { tabId?: number, windowId?: number } }} job
+ * @returns {Promise<boolean>}
+ */
+export async function closeDeferredTarget(job) {
+  if (job?.action === 'CLOSE_TAB') {
+    const tabId = job.payload?.tabId;
+    if (!Number.isInteger(tabId)) return true;
+    try {
+      await chrome.tabs.get(tabId);
+    } catch {
+      return true;
+    }
+    await chrome.tabs.remove(tabId);
+    return true;
+  }
+  if (job?.action === 'CLOSE_WINDOW') {
+    const windowId = job.payload?.windowId;
+    if (!Number.isInteger(windowId)) return true;
+    try {
+      await chrome.windows.get(windowId);
+    } catch {
+      return true;
+    }
+    await chrome.windows.remove(windowId);
+    return true;
+  }
+  return false;
+}
+
+/**
  * Random Alt+Shift scheduling stays quiet when the shared setting is on.
  * An exact `fireAt` from the dialog always confirms out loud. A missing
  * setting is silent, matching the default.

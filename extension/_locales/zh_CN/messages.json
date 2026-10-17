@@ -3725,6 +3725,18 @@
     "message": "关闭当前标签页。行为与浏览器在当前窗口中关闭标签页的操作一致。",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "关闭窗口",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "关闭当前窗口",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "关闭包含当前标签页的浏览器窗口，包括其中的其他标签页。",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "退出聚焦",
     "description": "Function Library label for CANCEL."
@@ -6516,5 +6528,15 @@
   "settings_static_266": { "message": "按住 Alt+Shift 再按点击元素键，安排打开光标下的链接。" },
   "settings_static_267": { "message": "点击元素最短（分钟）" },
   "settings_static_268": { "message": "点击元素最长（分钟）" },
-  "deferred_open_dialog_title_click_element": { "message": "安排打开此链接" }
+  "deferred_open_dialog_title_click_element": { "message": "安排打开此链接" },
+  "settings_static_269": { "message": "延迟关闭标签页" },
+  "settings_static_270": { "message": "Alt+Shift 加关闭标签页会安排关闭按下组合键时的当前标签页。" },
+  "settings_static_271": { "message": "关闭标签页最短（分钟）" },
+  "settings_static_272": { "message": "关闭标签页最长（分钟）" },
+  "settings_static_273": { "message": "延迟关闭窗口" },
+  "settings_static_274": { "message": "Alt+Shift 加关闭窗口会安排关闭按下组合键时的当前窗口。" },
+  "settings_static_275": { "message": "关闭窗口最短（分钟）" },
+  "settings_static_276": { "message": "关闭窗口最长（分钟）" },
+  "deferred_open_dialog_title_close_tab": { "message": "安排关闭此标签页" },
+  "deferred_open_dialog_title_close_window": { "message": "安排关闭此窗口" }
 }

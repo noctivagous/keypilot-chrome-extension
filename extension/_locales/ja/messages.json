@@ -3725,6 +3725,18 @@
     "message": "アクティブなタブを閉じます。現在のウィンドウでのブラウザのタブを閉じる操作と同じです。",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "ウィンドウを閉じる",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "現在のウィンドウを閉じる",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "現在のタブを含むブラウザーウィンドウを、その他のタブごと閉じます。",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "フォーカスを終了",
     "description": "Function Library label for CANCEL."
@@ -6516,5 +6528,15 @@
   "settings_static_266": { "message": "要素クリックのキーと Alt+Shift で、カーソル下のリンクを予約する。" },
   "settings_static_267": { "message": "要素クリックの最短（分）" },
   "settings_static_268": { "message": "要素クリックの最長（分）" },
-  "deferred_open_dialog_title_click_element": { "message": "このリンクを予約" }
+  "deferred_open_dialog_title_click_element": { "message": "このリンクを予約" },
+  "settings_static_269": { "message": "タブを閉じるを遅延" },
+  "settings_static_270": { "message": "Alt+Shift とタブを閉じるで、キーを押したときのタブを閉じる予定を入れます。" },
+  "settings_static_271": { "message": "タブを閉じる最短（分）" },
+  "settings_static_272": { "message": "タブを閉じる最長（分）" },
+  "settings_static_273": { "message": "ウィンドウを閉じるを遅延" },
+  "settings_static_274": { "message": "Alt+Shift とウィンドウを閉じるで、キーを押したときのウィンドウを閉じる予定を入れます。" },
+  "settings_static_275": { "message": "ウィンドウを閉じる最短（分）" },
+  "settings_static_276": { "message": "ウィンドウを閉じる最長（分）" },
+  "deferred_open_dialog_title_close_tab": { "message": "このタブを閉じる予定" },
+  "deferred_open_dialog_title_close_window": { "message": "このウィンドウを閉じる予定" }
 }

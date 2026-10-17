@@ -3867,6 +3867,18 @@
     "message": "Closes the active tab. Behavior matches the browser’s close-tab action for the current window.",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "Close Window",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "Close the current window",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "Closes the browser window that contains the current tab, including its other tabs.",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "Exit Focus",
     "description": "Function Library label for CANCEL."
@@ -6602,5 +6614,15 @@
   "settings_static_266": { "message": "Alt+Shift with the Click Element key schedules the link under the cursor." },
   "settings_static_267": { "message": "Click Element minimum (minutes)" },
   "settings_static_268": { "message": "Click Element maximum (minutes)" },
-  "deferred_open_dialog_title_click_element": { "message": "Schedule this link" }
+  "deferred_open_dialog_title_click_element": { "message": "Schedule this link" },
+  "settings_static_269": { "message": "Delay Close Tab" },
+  "settings_static_270": { "message": "Alt+Shift with Close Tab schedules closing the tab that is current when you press the chord." },
+  "settings_static_271": { "message": "Close Tab minimum (minutes)" },
+  "settings_static_272": { "message": "Close Tab maximum (minutes)" },
+  "settings_static_273": { "message": "Delay Close Window" },
+  "settings_static_274": { "message": "Alt+Shift with Close Window schedules closing the window that is current when you press the chord." },
+  "settings_static_275": { "message": "Close Window minimum (minutes)" },
+  "settings_static_276": { "message": "Close Window maximum (minutes)" },
+  "deferred_open_dialog_title_close_tab": { "message": "Schedule closing this tab" },
+  "deferred_open_dialog_title_close_window": { "message": "Schedule closing this window" }
 }

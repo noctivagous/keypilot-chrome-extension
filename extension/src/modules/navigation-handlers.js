@@ -1628,6 +1628,26 @@ export function withNavigationHandlers(Base) {
     }
   }
 
+  handleCloseWindowKey(e) {
+    if (!this._allowActionKey('handleCloseWindowKey', e)) return;
+    try {
+      if (!this._sendRuntimeMessage({ type: MSG.CLOSE_WINDOW })) {
+        if (!this._extensionContextInvalidatedHandled) {
+          this.showFlashNotification('Failed to Close Window', COLORS.NOTIFICATION_ERROR);
+        }
+        return;
+      }
+      this.showFlashNotification('Closing Window...', COLORS.NOTIFICATION_INFO);
+    } catch (error) {
+      if (noteExtensionContextError(error)) {
+        this._handleExtensionContextInvalidated();
+        return;
+      }
+      console.error('[KeyPilot] Failed to close window:', error);
+      this.showFlashNotification('Failed to Close Window', COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
   handleNewTabKey(e) {
     if (!this._allowActionKey('handleNewTabKey', e)) return;
     console.log('[KeyPilot] New tab key pressed!');

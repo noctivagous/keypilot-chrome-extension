@@ -3867,6 +3867,18 @@
     "message": "סוגר את הכרטיסייה הפעילה. ההתנהגות תואמת את פעולת סגירת הכרטיסייה של הדפדפן בחלון הנוכחי.",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "סגור חלון",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "סגור את החלון הנוכחי",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "סוגר את חלון הדפדפן שמכיל את הכרטיסייה הנוכחית, כולל שאר הכרטיסיות שבו.",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "יציאה ממיקוד",
     "description": "Function Library label for CANCEL."
@@ -6521,5 +6533,15 @@
   "settings_static_266": { "message": "Alt+Shift עם מקש הלחיצה על רכיב מתזמן את הקישור שמתחת לסמן." },
   "settings_static_267": { "message": "לחיצה על רכיב, מינימום (דקות)" },
   "settings_static_268": { "message": "לחיצה על רכיב, מקסימום (דקות)" },
-  "deferred_open_dialog_title_click_element": { "message": "תזמון הקישור הזה" }
+  "deferred_open_dialog_title_click_element": { "message": "תזמון הקישור הזה" },
+  "settings_static_269": { "message": "השהה סגירת כרטיסייה" },
+  "settings_static_270": { "message": "Alt+Shift עם סגירת כרטיסייה מתזמן את סגירת הכרטיסייה שהייתה נוכחית בעת לחיצת הצירוף." },
+  "settings_static_271": { "message": "סגירת כרטיסייה מינימום (דקות)" },
+  "settings_static_272": { "message": "סגירת כרטיסייה מקסימום (דקות)" },
+  "settings_static_273": { "message": "השהה סגירת חלון" },
+  "settings_static_274": { "message": "Alt+Shift עם סגירת חלון מתזמן את סגירת החלון שהיה נוכחי בעת לחיצת הצירוף." },
+  "settings_static_275": { "message": "סגירת חלון מינימום (דקות)" },
+  "settings_static_276": { "message": "סגירת חלון מקסימום (דקות)" },
+  "deferred_open_dialog_title_close_tab": { "message": "תזמן סגירת כרטיסייה זו" },
+  "deferred_open_dialog_title_close_window": { "message": "תזמן סגירת חלון זה" }
 }

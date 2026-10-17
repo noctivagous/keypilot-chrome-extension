@@ -169,6 +169,8 @@ const CSS = `
  */
 function titleForAction(action) {
   if (action === 'ACTIVATE') return getMessage('deferred_open_dialog_title_click_element');
+  if (action === 'CLOSE_TAB') return getMessage('deferred_open_dialog_title_close_tab');
+  if (action === 'CLOSE_WINDOW') return getMessage('deferred_open_dialog_title_close_window');
   return getMessage(
     action === 'OPEN_URLS'
       ? 'deferred_open_dialog_title_open_urls'

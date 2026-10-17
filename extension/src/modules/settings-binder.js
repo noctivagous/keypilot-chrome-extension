@@ -39,6 +39,12 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'toggle', id: 'deferred-click-element-enabled', path: 'deferredOpen.clickElement.enabled' },
   { type: 'rangePair', baseId: 'deferred-click-element-min', path: 'deferredOpen.clickElement.minMinutes', min: 1, max: 2880 },
   { type: 'rangePair', baseId: 'deferred-click-element-max', path: 'deferredOpen.clickElement.maxMinutes', min: 1, max: 2880 },
+  { type: 'toggle', id: 'deferred-close-tab-enabled', path: 'deferredOpen.closeTab.enabled' },
+  { type: 'rangePair', baseId: 'deferred-close-tab-min', path: 'deferredOpen.closeTab.minMinutes', min: 1, max: 2880 },
+  { type: 'rangePair', baseId: 'deferred-close-tab-max', path: 'deferredOpen.closeTab.maxMinutes', min: 1, max: 2880 },
+  { type: 'toggle', id: 'deferred-close-window-enabled', path: 'deferredOpen.closeWindow.enabled' },
+  { type: 'rangePair', baseId: 'deferred-close-window-min', path: 'deferredOpen.closeWindow.minMinutes', min: 1, max: 2880 },
+  { type: 'rangePair', baseId: 'deferred-close-window-max', path: 'deferredOpen.closeWindow.maxMinutes', min: 1, max: 2880 },
   {
     type: 'select',
     id: 'deferred-open-target',

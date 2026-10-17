@@ -173,6 +173,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *     openUrls: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     randomBookmarks: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     clickElement: { enabled: boolean, minMinutes: number, maxMinutes: number },
+ *     closeTab: { enabled: boolean, minMinutes: number, maxMinutes: number },
+ *     closeWindow: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     target: DeferredOpenTarget,
  *     silentRandomScheduling: boolean
  *   },
@@ -310,6 +312,16 @@ export const DEFAULT_SETTINGS = Object.freeze({
       maxMinutes: 60
     }),
     clickElement: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    closeTab: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    closeWindow: Object.freeze({
       enabled: true,
       minMinutes: 1,
       maxMinutes: 60
@@ -618,6 +630,14 @@ export function normalizeDeferredOpen(raw) {
     clickElement: normalizeDeferredOpenRange(
       stored.clickElement,
       DEFAULT_SETTINGS.deferredOpen.clickElement
+    ),
+    closeTab: normalizeDeferredOpenRange(
+      stored.closeTab,
+      DEFAULT_SETTINGS.deferredOpen.closeTab
+    ),
+    closeWindow: normalizeDeferredOpenRange(
+      stored.closeWindow,
+      DEFAULT_SETTINGS.deferredOpen.closeWindow
     ),
     target: stored.target === 'originalWindow' ? 'originalWindow' : 'activeWindow',
     silentRandomScheduling: normalizeBoolean(
@@ -965,6 +985,18 @@ export async function setSettings(partial) {
         ...(current.deferredOpen.clickElement || {}),
         ...(p.deferredOpen?.clickElement && typeof p.deferredOpen.clickElement === 'object'
           ? p.deferredOpen.clickElement
+          : {})
+      },
+      closeTab: {
+        ...(current.deferredOpen.closeTab || {}),
+        ...(p.deferredOpen?.closeTab && typeof p.deferredOpen.closeTab === 'object'
+          ? p.deferredOpen.closeTab
+          : {})
+      },
+      closeWindow: {
+        ...(current.deferredOpen.closeWindow || {}),
+        ...(p.deferredOpen?.closeWindow && typeof p.deferredOpen.closeWindow === 'object'
+          ? p.deferredOpen.closeWindow
           : {})
       }
     },

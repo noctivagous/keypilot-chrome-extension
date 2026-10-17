@@ -1518,11 +1518,26 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       binding.functionId !== 'OPEN_URLS'
       && binding.functionId !== 'RANDOM_BOOKMARK'
       && binding.functionId !== 'ACTIVATE'
+      && binding.functionId !== 'CLOSE_TAB'
+      && binding.functionId !== 'CLOSE_WINDOW'
     )) {
       return null;
     }
 
     const target = this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target;
+    if (binding.functionId === 'CLOSE_TAB' || binding.functionId === 'CLOSE_WINDOW') {
+      const key = binding.functionId === 'CLOSE_TAB' ? 'closeTab' : 'closeWindow';
+      const config = this._settings?.deferredOpen?.[key] || DEFAULT_SETTINGS.deferredOpen[key];
+      if (config.enabled === false) return null;
+      return {
+        action: binding.functionId,
+        dialogAction: binding.functionId,
+        payload: {},
+        minMinutes: config.minMinutes,
+        maxMinutes: config.maxMinutes,
+        target
+      };
+    }
     if (binding.functionId === 'ACTIVATE') {
       const config = this._settings?.deferredOpen?.clickElement
         || DEFAULT_SETTINGS.deferredOpen.clickElement;

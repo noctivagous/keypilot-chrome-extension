@@ -39,7 +39,7 @@ describe('built-in keyboard layout physical bindings', () => {
       for (const [actionId, binding] of Object.entries(bindings)) {
         assert.equal(binding.bindingType, 'physical', `${handedness}:${actionId}`);
         assert.deepEqual(binding.matchOn, ['code'], `${handedness}:${actionId}`);
-        assert.match(binding.keys[0], /^(Escape|Key[A-Z]|Quote)$/, `${handedness}:${actionId}`);
+        assert.match(binding.keys[0], /^(Escape|Key[A-Z]|Quote|Backslash)$/, `${handedness}:${actionId}`);
       }
     }
   });
@@ -124,7 +124,7 @@ describe('built-in keyboard layout physical bindings', () => {
     );
     assert.match(
       keyPilotSource,
-      /binding\.functionId !== 'OPEN_URLS'[\s\S]*binding\.functionId !== 'RANDOM_BOOKMARK'[\s\S]*binding\.functionId !== 'ACTIVATE'/
+      /binding\.functionId !== 'OPEN_URLS'[\s\S]*binding\.functionId !== 'RANDOM_BOOKMARK'[\s\S]*binding\.functionId !== 'ACTIVATE'[\s\S]*binding\.functionId !== 'CLOSE_TAB'[\s\S]*binding\.functionId !== 'CLOSE_WINDOW'/
     );
     assert.match(
       keyPilotSource,

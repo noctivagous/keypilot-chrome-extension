@@ -35,7 +35,7 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 **Request/response** (await `sendResponse` / Promise):
 
 - State: `GET_STATE` → `STATE_RESPONSE`; `SET_STATE` → `STATE_CHANGED` / `ERROR`; `TOGGLE_STATE` (no enabled) → `STATE_CHANGED`
-- Navigation / tabs: `TAB_*`, `NEW_TAB`, `CLOSE_TAB`, `GO_*`, `OPEN_URL_*`, `OPEN_URLS`, `OPEN_BOOKMARK_FOLDER`, `OPEN_RANDOM_BOOKMARK`, `SCHEDULE_DEFERRED_OPEN`, `LIST_BOOKMARK_FOLDERS`, `NAVIGATE_SAME_TAB`, `ZOOM_STEP` → `SUCCESS` / `ERROR`
+- Navigation / tabs: `TAB_*`, `NEW_TAB`, `CLOSE_TAB`, `CLOSE_WINDOW`, `GO_*`, `OPEN_URL_*`, `OPEN_URLS`, `OPEN_BOOKMARK_FOLDER`, `OPEN_RANDOM_BOOKMARK`, `SCHEDULE_DEFERRED_OPEN`, `LIST_BOOKMARK_FOLDERS`, `NAVIGATE_SAME_TAB`, `ZOOM_STEP` → `SUCCESS` / `ERROR`
 - Data APIs: omnibox, bookmarks, history, top sites, video thumb, dictionary, media library, navgraph → typed `*_RESPONSE` / `*_RESULT` / `NAVGRAPH_GRAPH` or echo type
 - UI forward: `OPEN_*` / `LAUNCH_WALKTHROUGH` → SW forwards to tab → `SUCCESS` / `ERROR`
 - Popover window: `OPEN_POPOVER_WINDOW`, `CLOSE_POPOVER_WINDOW`, `AM_I_POPOVER_WINDOW`
@@ -51,7 +51,8 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 | `LIST_BOOKMARK_FOLDERS` | — | `BOOKMARK_FOLDERS` (`folders: { id, path }[]`) / `ERROR` |
 | `OPEN_BOOKMARK_FOLDER` | `folderId: string` | `SUCCESS` (`opened`) / `ERROR` |
 | `OPEN_RANDOM_BOOKMARK` | `folderId?: string`, `count: integer 1–30` | `SUCCESS` (`opened`) / `ERROR`. Empty `folderId` samples every bookmark. The first new tab is activated. |
-| `SCHEDULE_DEFERRED_OPEN` | `action: OPEN_URLS \| RANDOM_BOOKMARK`, matching `payload`, either `minMinutes`/`maxMinutes` (1–2880, random delay) or an exact future `fireAt` epoch ms (never both), `target: activeWindow \| originalWindow` | `SUCCESS` (`scheduledAt`, `jobId`) / `ERROR`. The service worker persists the job locally and executes it through `chrome.alarms`. |
+| `CLOSE_WINDOW` | — | Closes `sender.tab.windowId`. |
+| `SCHEDULE_DEFERRED_OPEN` | `action: OPEN_URLS \| RANDOM_BOOKMARK \| CLOSE_TAB \| CLOSE_WINDOW`, matching `payload` for opens, either `minMinutes`/`maxMinutes` (1–2880, random delay) or an exact future `fireAt` epoch ms (never both), `target: activeWindow \| originalWindow` | `SUCCESS` (`scheduledAt`, `jobId`) / `ERROR`. The service worker persists the job locally and executes it through `chrome.alarms`. Close jobs store the sender tab and window ids and close only those. |
 | `ZOOM_STEP` | `direction: 1 \| -1` (optional `apply: false` to preview) or `zoomFactor` | `SUCCESS` (`oldZoom`, `newZoom`, `changed`) / `ERROR` |
 | `OPEN_POPOVER_WINDOW` | `url: string` | `SUCCESS` (+ window ids) / `ERROR` |
 | `OPEN_SETTINGS_POPOVER` | optional `panelId` | `SUCCESS` after forward |

@@ -153,6 +153,28 @@ describe('messaging validate', () => {
       }) || '',
       /delay range/
     );
+    assert.equal(
+      validateRuntimeMessage({
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: 'CLOSE_TAB',
+        payload: {},
+        minMinutes: 1,
+        maxMinutes: 60,
+        target: 'activeWindow'
+      }),
+      null
+    );
+    assert.equal(
+      validateRuntimeMessage({
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: 'CLOSE_WINDOW',
+        minMinutes: 1,
+        maxMinutes: 60,
+        target: 'originalWindow'
+      }),
+      null
+    );
+    assert.equal(validateRuntimeMessage({ type: MSG.CLOSE_WINDOW }), null);
   });
 
   it('validates exact-time deferred scheduling', () => {

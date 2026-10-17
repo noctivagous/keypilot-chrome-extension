@@ -12,7 +12,7 @@ A **layout** is the map of keys → actions. KeyPilot ships built-in families; y
 4. Cycle families anytime with <kbd>Alt</kbd>+<kbd>[</kbd> (previous) and <kbd>Alt</kbd>+<kbd>]</kbd> (next) without changing handedness.
 5. To deeply customize keys, press <kbd>Alt</kbd>+<kbd>C</kbd> for Keyboard Layout Editor (see that topic).
 
-Open <kbd>K</kbd> (Keyboard Reference) after switching — the drawn keyboard always matches the active layout.
+Open <kbd>\</kbd> (Keyboard Reference) after switching — the drawn keyboard always matches the active layout.
 
 ## Reference
 

@@ -3725,6 +3725,18 @@
     "message": "Cierra la pestaña activa. El comportamiento coincide con la acción de cerrar pestaña del navegador para la ventana actual.",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "Cerrar ventana",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "Cerrar la ventana actual",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "Cierra la ventana del navegador que contiene la pestaña actual, incluidas sus otras pestañas.",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "Salir del foco",
     "description": "Function Library label for CANCEL."
@@ -6516,5 +6528,15 @@
   "settings_static_266": { "message": "Alt+Mayús con la tecla Clic en elemento programa el enlace bajo el cursor." },
   "settings_static_267": { "message": "Clic en elemento mínimo (minutos)" },
   "settings_static_268": { "message": "Clic en elemento máximo (minutos)" },
-  "deferred_open_dialog_title_click_element": { "message": "Programar este enlace" }
+  "deferred_open_dialog_title_click_element": { "message": "Programar este enlace" },
+  "settings_static_269": { "message": "Retrasar Cerrar pestaña" },
+  "settings_static_270": { "message": "Alt+Mayús con Cerrar pestaña programa el cierre de la pestaña que está activa al pulsar el acorde." },
+  "settings_static_271": { "message": "Cerrar pestaña mínimo (minutos)" },
+  "settings_static_272": { "message": "Cerrar pestaña máximo (minutos)" },
+  "settings_static_273": { "message": "Retrasar Cerrar ventana" },
+  "settings_static_274": { "message": "Alt+Mayús con Cerrar ventana programa el cierre de la ventana que está activa al pulsar el acorde." },
+  "settings_static_275": { "message": "Cerrar ventana mínimo (minutos)" },
+  "settings_static_276": { "message": "Cerrar ventana máximo (minutos)" },
+  "deferred_open_dialog_title_close_tab": { "message": "Programar el cierre de esta pestaña" },
+  "deferred_open_dialog_title_close_window": { "message": "Programar el cierre de esta ventana" }
 }

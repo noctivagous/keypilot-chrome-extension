@@ -3867,6 +3867,18 @@
     "message": "सक्रिय टैब बंद करता है। व्यवहार वर्तमान विंडो की ब्राउज़र टैब-बंद क्रिया से मेल खाता है।",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "विंडो बंद करें",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "वर्तमान विंडो बंद करें",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "वर्तमान टैब वाली ब्राउज़र विंडो को उसके अन्य टैब सहित बंद करता है।",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "फ़ोकस छोड़ें",
     "description": "Function Library label for CANCEL."
@@ -6521,5 +6533,15 @@
   "settings_static_266": { "message": "कर्सर के नीचे के लिंक को शेड्यूल करने के लिए एलिमेंट क्लिक कुंजी के साथ Alt+Shift।" },
   "settings_static_267": { "message": "एलिमेंट क्लिक न्यूनतम (मिनट)" },
   "settings_static_268": { "message": "एलिमेंट क्लिक अधिकतम (मिनट)" },
-  "deferred_open_dialog_title_click_element": { "message": "इस लिंक को शेड्यूल करें" }
+  "deferred_open_dialog_title_click_element": { "message": "इस लिंक को शेड्यूल करें" },
+  "settings_static_269": { "message": "टैब बंद करने में देरी" },
+  "settings_static_270": { "message": "Alt+Shift के साथ टैब बंद करें उस टैब को बंद करने का समय तय करता है जो कॉर्ड दबाने पर वर्तमान हो।" },
+  "settings_static_271": { "message": "टैब बंद करें न्यूनतम (मिनट)" },
+  "settings_static_272": { "message": "टैब बंद करें अधिकतम (मिनट)" },
+  "settings_static_273": { "message": "विंडो बंद करने में देरी" },
+  "settings_static_274": { "message": "Alt+Shift के साथ विंडो बंद करें उस विंडो को बंद करने का समय तय करता है जो कॉर्ड दबाने पर वर्तमान हो।" },
+  "settings_static_275": { "message": "विंडो बंद करें न्यूनतम (मिनट)" },
+  "settings_static_276": { "message": "विंडो बंद करें अधिकतम (मिनट)" },
+  "deferred_open_dialog_title_close_tab": { "message": "इस टैब को बंद करने का समय तय करें" },
+  "deferred_open_dialog_title_close_window": { "message": "इस विंडो को बंद करने का समय तय करें" }
 }

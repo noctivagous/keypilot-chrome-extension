@@ -637,6 +637,16 @@ async function render() {
   const deferredClickElementMinNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-click-element-min-number'));
   const deferredClickElementMaxRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-click-element-max-range'));
   const deferredClickElementMaxNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-click-element-max-number'));
+  const deferredCloseTabEnabled = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-tab-enabled'));
+  const deferredCloseTabMinRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-tab-min-range'));
+  const deferredCloseTabMinNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-tab-min-number'));
+  const deferredCloseTabMaxRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-tab-max-range'));
+  const deferredCloseTabMaxNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-tab-max-number'));
+  const deferredCloseWindowEnabled = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-window-enabled'));
+  const deferredCloseWindowMinRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-window-min-range'));
+  const deferredCloseWindowMinNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-window-min-number'));
+  const deferredCloseWindowMaxRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-window-max-range'));
+  const deferredCloseWindowMaxNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-close-window-max-number'));
   const deferredOpenTarget = /** @type {HTMLSelectElement|null} */ (settingsEl('deferred-open-target'));
   const deferredSilentRandom = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-silent-random'));
 
@@ -920,6 +930,8 @@ async function render() {
     const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
     const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
     const clickElement = value.clickElement || DEFAULT_SETTINGS.deferredOpen.clickElement;
+    const closeTab = value.closeTab || DEFAULT_SETTINGS.deferredOpen.closeTab;
+    const closeWindow = value.closeWindow || DEFAULT_SETTINGS.deferredOpen.closeWindow;
     if (deferredOpenUrlsEnabled) deferredOpenUrlsEnabled.checked = openUrls.enabled !== false;
     setInputValue(deferredOpenUrlsMinRange, openUrls.minMinutes);
     setInputValue(deferredOpenUrlsMinNumber, openUrls.minMinutes);
@@ -935,6 +947,16 @@ async function render() {
     setInputValue(deferredClickElementMinNumber, clickElement.minMinutes);
     setInputValue(deferredClickElementMaxRange, clickElement.maxMinutes);
     setInputValue(deferredClickElementMaxNumber, clickElement.maxMinutes);
+    if (deferredCloseTabEnabled) deferredCloseTabEnabled.checked = closeTab.enabled !== false;
+    setInputValue(deferredCloseTabMinRange, closeTab.minMinutes);
+    setInputValue(deferredCloseTabMinNumber, closeTab.minMinutes);
+    setInputValue(deferredCloseTabMaxRange, closeTab.maxMinutes);
+    setInputValue(deferredCloseTabMaxNumber, closeTab.maxMinutes);
+    if (deferredCloseWindowEnabled) deferredCloseWindowEnabled.checked = closeWindow.enabled !== false;
+    setInputValue(deferredCloseWindowMinRange, closeWindow.minMinutes);
+    setInputValue(deferredCloseWindowMinNumber, closeWindow.minMinutes);
+    setInputValue(deferredCloseWindowMaxRange, closeWindow.maxMinutes);
+    setInputValue(deferredCloseWindowMaxNumber, closeWindow.maxMinutes);
     setInputValue(deferredOpenTarget, value.target === 'originalWindow' ? 'originalWindow' : 'activeWindow');
     if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
   };

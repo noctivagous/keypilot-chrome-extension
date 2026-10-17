@@ -405,6 +405,7 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   BACK2: docsUrl('browsing-tabs'),
   ROOT: docsUrl('browsing-tabs'),
   CLOSE_TAB: docsUrl('browsing-tabs'),
+  CLOSE_WINDOW: docsUrl('browsing-tabs'),
   TAB_LEFT: docsUrl('browsing-tabs'),
   TAB_RIGHT: docsUrl('browsing-tabs'),
   NEW_TAB: docsUrl('browsing-tabs'),
@@ -1073,6 +1074,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   ROOT: 90,
   // Tab Control
   CLOSE_TAB: 110,
+  CLOSE_WINDOW: 112,
   TAB_LEFT: 120,
   TAB_RIGHT: 130,
   NEW_TAB: 140,

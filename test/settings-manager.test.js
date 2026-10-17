@@ -67,6 +67,12 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.deferredOpen.clickElement.enabled, true);
     assert.equal(settings.deferredOpen.clickElement.minMinutes, 1);
     assert.equal(settings.deferredOpen.clickElement.maxMinutes, 60);
+    assert.equal(settings.deferredOpen.closeTab.enabled, true);
+    assert.equal(settings.deferredOpen.closeTab.minMinutes, 1);
+    assert.equal(settings.deferredOpen.closeTab.maxMinutes, 60);
+    assert.equal(settings.deferredOpen.closeWindow.enabled, true);
+    assert.equal(settings.deferredOpen.closeWindow.minMinutes, 1);
+    assert.equal(settings.deferredOpen.closeWindow.maxMinutes, 60);
     assert.ok(!mock.syncStore.has(SETTINGS_STORAGE_KEY));
   });
 
@@ -175,6 +181,10 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(updated.deferredOpen.silentRandomScheduling, false);
     assert.equal(updated.deferredOpen.clickElement.enabled, true);
     assert.equal(updated.deferredOpen.clickElement.maxMinutes, 60);
+    assert.equal(updated.deferredOpen.closeTab.enabled, true);
+    assert.equal(updated.deferredOpen.closeTab.maxMinutes, 60);
+    assert.equal(updated.deferredOpen.closeWindow.enabled, true);
+    assert.equal(updated.deferredOpen.closeWindow.maxMinutes, 60);
 
     const silenced = await setSettings({
       deferredOpen: { silentRandomScheduling: true }

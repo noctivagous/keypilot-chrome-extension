@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T20:38:27.613Z
+ * Generated on 2026-10-17T20:57:43.359Z
  */
 
 
@@ -928,6 +928,14 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: "key-close-tab",
     row: 3
   }),
+  CLOSE_WINDOW: Object.freeze({
+    handler: "handleCloseWindowKey",
+    label: "Close Window",
+    description: "Close the current window",
+    details: "Closes the browser window that contains the current tab, including its other tabs.",
+    keyboardClass: "key-close-tab",
+    row: 3
+  }),
   CANCEL: Object.freeze({
     handler: "cancelModes",
     label: "Exit Focus",
@@ -1261,6 +1269,7 @@ var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   ROOT: "Navigation",
   // Tab Control
   CLOSE_TAB: "Tab Control",
+  CLOSE_WINDOW: "Tab Control",
   TAB_LEFT: "Tab Control",
   TAB_RIGHT: "Tab Control",
   NEW_TAB: "Tab Control",
@@ -1427,6 +1436,7 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   FORWARD: physicalAssignment("KeyR", "R"),
   NEW_TAB: physicalAssignment("KeyT", "T"),
   CLOSE_TAB: physicalAssignment("KeyA", "A"),
+  CLOSE_WINDOW: physicalAssignment("KeyK", "K"),
   ROOT: physicalAssignment("KeyS", "S"),
   BACK: physicalAssignment("KeyD", "D"),
   ACTIVATE: physicalAssignment("KeyF", "F"),
@@ -1471,6 +1481,7 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   ZOOM_IN: physicalAssignment("BracketRight", "]"),
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: physicalAssignment("Semicolon", ";"),
+  CLOSE_WINDOW: physicalAssignment("KeyD", "D"),
   ROOT: physicalAssignment("KeyL", "L"),
   BACK: physicalAssignment("KeyK", "K"),
   ACTIVATE: physicalAssignment("KeyJ", "J"),
@@ -1481,7 +1492,7 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   LOOKUP_WORD: physicalAssignment("KeyR", "R"),
   RECTANGLE_HIGHLIGHT: physicalAssignment("KeyQ", "Q"),
   // Utility actions on the left avoid colliding with J/K/L cluster.
-  // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
+  // (Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: physicalAssignment("KeyF", "F"),
   OMNIBOX: physicalAssignment("KeyS", "S"),
   TOP_SITES: physicalAssignment("KeyA", "A"),
@@ -1509,12 +1520,12 @@ var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
 ]);
 var SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
   CANCEL: physicalAssignment("Escape", "Esc"),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyK", "K"),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment("Backslash", "\\"),
   OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
 });
 var SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
   CANCEL: physicalAssignment("Escape", "Esc"),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyD", "D"),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment("Backslash", "\\"),
   OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
 });
 function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
@@ -1683,7 +1694,7 @@ var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
     { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
     { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
-    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
+    { type: "action", id: "CLOSE_WINDOW", fallbackText: "Close Window" },
     { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
     { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
     { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
@@ -1737,7 +1748,7 @@ var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     // Utility keys on the left (to avoid colliding with right-hand cluster)
     { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
     // S
-    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
+    { type: "action", id: "CLOSE_WINDOW", fallbackText: "Close Window" },
     // D
     { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
     // F
@@ -2965,6 +2976,16 @@ var DEFAULT_SETTINGS = Object.freeze({
       minMinutes: 1,
       maxMinutes: 60
     }),
+    closeTab: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    closeWindow: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
     target: "activeWindow",
     silentRandomScheduling: true
   })
@@ -3168,6 +3189,14 @@ function normalizeDeferredOpen(raw) {
     clickElement: normalizeDeferredOpenRange(
       stored.clickElement,
       DEFAULT_SETTINGS.deferredOpen.clickElement
+    ),
+    closeTab: normalizeDeferredOpenRange(
+      stored.closeTab,
+      DEFAULT_SETTINGS.deferredOpen.closeTab
+    ),
+    closeWindow: normalizeDeferredOpenRange(
+      stored.closeWindow,
+      DEFAULT_SETTINGS.deferredOpen.closeWindow
     ),
     target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow",
     silentRandomScheduling: normalizeBoolean(
@@ -3428,6 +3457,14 @@ async function setSettings(partial) {
       clickElement: {
         ...current.deferredOpen.clickElement || {},
         ...p.deferredOpen?.clickElement && typeof p.deferredOpen.clickElement === "object" ? p.deferredOpen.clickElement : {}
+      },
+      closeTab: {
+        ...current.deferredOpen.closeTab || {},
+        ...p.deferredOpen?.closeTab && typeof p.deferredOpen.closeTab === "object" ? p.deferredOpen.closeTab : {}
+      },
+      closeWindow: {
+        ...current.deferredOpen.closeWindow || {},
+        ...p.deferredOpen?.closeWindow && typeof p.deferredOpen.closeWindow === "object" ? p.deferredOpen.closeWindow : {}
       }
     },
     actionSettings: (() => {
@@ -4475,6 +4512,12 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "toggle", id: "deferred-click-element-enabled", path: "deferredOpen.clickElement.enabled" },
   { type: "rangePair", baseId: "deferred-click-element-min", path: "deferredOpen.clickElement.minMinutes", min: 1, max: 2880 },
   { type: "rangePair", baseId: "deferred-click-element-max", path: "deferredOpen.clickElement.maxMinutes", min: 1, max: 2880 },
+  { type: "toggle", id: "deferred-close-tab-enabled", path: "deferredOpen.closeTab.enabled" },
+  { type: "rangePair", baseId: "deferred-close-tab-min", path: "deferredOpen.closeTab.minMinutes", min: 1, max: 2880 },
+  { type: "rangePair", baseId: "deferred-close-tab-max", path: "deferredOpen.closeTab.maxMinutes", min: 1, max: 2880 },
+  { type: "toggle", id: "deferred-close-window-enabled", path: "deferredOpen.closeWindow.enabled" },
+  { type: "rangePair", baseId: "deferred-close-window-min", path: "deferredOpen.closeWindow.minMinutes", min: 1, max: 2880 },
+  { type: "rangePair", baseId: "deferred-close-window-max", path: "deferredOpen.closeWindow.maxMinutes", min: 1, max: 2880 },
   {
     type: "select",
     id: "deferred-open-target",
@@ -5645,6 +5688,46 @@ async function render() {
     /** @type {HTMLInputElement|null} */
     settingsEl("deferred-click-element-max-number")
   );
+  const deferredCloseTabEnabled = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-tab-enabled")
+  );
+  const deferredCloseTabMinRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-tab-min-range")
+  );
+  const deferredCloseTabMinNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-tab-min-number")
+  );
+  const deferredCloseTabMaxRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-tab-max-range")
+  );
+  const deferredCloseTabMaxNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-tab-max-number")
+  );
+  const deferredCloseWindowEnabled = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-window-enabled")
+  );
+  const deferredCloseWindowMinRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-window-min-range")
+  );
+  const deferredCloseWindowMinNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-window-min-number")
+  );
+  const deferredCloseWindowMaxRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-window-max-range")
+  );
+  const deferredCloseWindowMaxNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-close-window-max-number")
+  );
   const deferredOpenTarget = (
     /** @type {HTMLSelectElement|null} */
     settingsEl("deferred-open-target")
@@ -5942,6 +6025,8 @@ async function render() {
     const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
     const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
     const clickElement = value.clickElement || DEFAULT_SETTINGS.deferredOpen.clickElement;
+    const closeTab = value.closeTab || DEFAULT_SETTINGS.deferredOpen.closeTab;
+    const closeWindow = value.closeWindow || DEFAULT_SETTINGS.deferredOpen.closeWindow;
     if (deferredOpenUrlsEnabled) deferredOpenUrlsEnabled.checked = openUrls.enabled !== false;
     setInputValue(deferredOpenUrlsMinRange, openUrls.minMinutes);
     setInputValue(deferredOpenUrlsMinNumber, openUrls.minMinutes);
@@ -5957,6 +6042,16 @@ async function render() {
     setInputValue(deferredClickElementMinNumber, clickElement.minMinutes);
     setInputValue(deferredClickElementMaxRange, clickElement.maxMinutes);
     setInputValue(deferredClickElementMaxNumber, clickElement.maxMinutes);
+    if (deferredCloseTabEnabled) deferredCloseTabEnabled.checked = closeTab.enabled !== false;
+    setInputValue(deferredCloseTabMinRange, closeTab.minMinutes);
+    setInputValue(deferredCloseTabMinNumber, closeTab.minMinutes);
+    setInputValue(deferredCloseTabMaxRange, closeTab.maxMinutes);
+    setInputValue(deferredCloseTabMaxNumber, closeTab.maxMinutes);
+    if (deferredCloseWindowEnabled) deferredCloseWindowEnabled.checked = closeWindow.enabled !== false;
+    setInputValue(deferredCloseWindowMinRange, closeWindow.minMinutes);
+    setInputValue(deferredCloseWindowMinNumber, closeWindow.minMinutes);
+    setInputValue(deferredCloseWindowMaxRange, closeWindow.maxMinutes);
+    setInputValue(deferredCloseWindowMaxNumber, closeWindow.maxMinutes);
     setInputValue(deferredOpenTarget, value.target === "originalWindow" ? "originalWindow" : "activeWindow");
     if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
   };

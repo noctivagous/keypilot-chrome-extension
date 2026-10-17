@@ -49,6 +49,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.SET_STATE,
   MSG.TOGGLE_STATE,
   MSG.CLOSE_TAB,
+  MSG.CLOSE_WINDOW,
   MSG.GO_BACK,
   MSG.GO_FORWARD,
   MSG.TAB_LEFT,
@@ -169,7 +170,8 @@ export function validateRuntimeMessage(message, opts = {}) {
       break;
     }
     case MSG.SCHEDULE_DEFERRED_OPEN: {
-      if (message.action !== 'OPEN_URLS' && message.action !== 'RANDOM_BOOKMARK') {
+      if (message.action !== 'OPEN_URLS' && message.action !== 'RANDOM_BOOKMARK'
+        && message.action !== 'CLOSE_TAB' && message.action !== 'CLOSE_WINDOW') {
         return 'SCHEDULE_DEFERRED_OPEN requires a supported action';
       }
       // Exactly one schedule form: an exact future `fireAt` (Ctrl+Alt+Shift dialog)
@@ -199,7 +201,7 @@ export function validateRuntimeMessage(message, opts = {}) {
           || message.payload.urls.some((url) => typeof url !== 'string' || !url.trim())) {
           return 'SCHEDULE_DEFERRED_OPEN OPEN_URLS requires urls';
         }
-      } else {
+      } else if (message.action === 'RANDOM_BOOKMARK') {
         const count = Number(message.payload?.count);
         if (!Number.isInteger(count) || count < 1 || count > 30) {
           return 'SCHEDULE_DEFERRED_OPEN RANDOM_BOOKMARK requires count 1-30';

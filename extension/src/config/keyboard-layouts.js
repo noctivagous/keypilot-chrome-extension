@@ -454,6 +454,14 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-close-tab',
     row: 3
   }),
+  CLOSE_WINDOW: Object.freeze({
+    handler: 'handleCloseWindowKey',
+    label: 'Close Window',
+    description: 'Close the current window',
+    details: 'Closes the browser window that contains the current tab, including its other tabs.',
+    keyboardClass: 'key-close-tab',
+    row: 3
+  }),
   CANCEL: Object.freeze({
     handler: 'cancelModes',
     label: 'Exit Focus',
@@ -788,6 +796,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   ROOT: 'Navigation',
   // Tab Control
   CLOSE_TAB: 'Tab Control',
+  CLOSE_WINDOW: 'Tab Control',
   TAB_LEFT: 'Tab Control',
   TAB_RIGHT: 'Tab Control',
   NEW_TAB: 'Tab Control',
@@ -1161,6 +1170,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   NEW_TAB: physicalAssignment('KeyT', 'T'),
 
   CLOSE_TAB: physicalAssignment('KeyA', 'A'),
+  CLOSE_WINDOW: physicalAssignment('KeyK', 'K'),
   ROOT: physicalAssignment('KeyS', 'S'),
   BACK: physicalAssignment('KeyD', 'D'),
   ACTIVATE: physicalAssignment('KeyF', 'F'),
@@ -1214,6 +1224,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
 
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: physicalAssignment('Semicolon', ';'),
+  CLOSE_WINDOW: physicalAssignment('KeyD', 'D'),
   ROOT: physicalAssignment('KeyL', 'L'),
   BACK: physicalAssignment('KeyK', 'K'),
   ACTIVATE: physicalAssignment('KeyJ', 'J'),
@@ -1225,7 +1236,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   RECTANGLE_HIGHLIGHT: physicalAssignment('KeyQ', 'Q'),
 
   // Utility actions on the left avoid colliding with J/K/L cluster.
-  // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
+  // (Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: physicalAssignment('KeyF', 'F'),
   OMNIBOX: physicalAssignment('KeyS', 'S'),
   TOP_SITES: physicalAssignment('KeyA', 'A'),
@@ -1268,17 +1279,17 @@ export const SYSTEM_LAYER_ACTION_IDS = Object.freeze([
 /** @deprecated Use SYSTEM_LAYER_ACTION_IDS */
 export const SYSTEM_LAYOUT_ACTION_IDS = SYSTEM_LAYER_ACTION_IDS;
 
-/** Right-handed system-layer physical keys. */
+/** Right-handed system-layer physical keys. Keyboard Reference uses Backslash so Close Window can take K. */
 const SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
   CANCEL: physicalAssignment('Escape', 'Esc'),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment('KeyK', 'K'),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment('Backslash', '\\'),
   OPEN_SETTINGS_POPOVER: physicalAssignment('Quote', "'")
 });
 
-/** Left-handed system-layer physical keys (KB Reference mirrored off the home cluster). */
+/** Left-handed system-layer physical keys. Keyboard Reference stays on Backslash so Close Window can take D. */
 const SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
   CANCEL: physicalAssignment('Escape', 'Esc'),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment('KeyD', 'D'),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment('Backslash', '\\'),
   OPEN_SETTINGS_POPOVER: physicalAssignment('Quote', "'")
 });
 
@@ -1509,7 +1520,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' },
     { type: 'action', id: 'HIGHLIGHT', fallbackText: 'Text Select' },
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' },
-    { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' },
+    { type: 'action', id: 'CLOSE_WINDOW', fallbackText: 'Close Window' },
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' },
     { type: 'action', id: 'TOP_SITES', fallbackText: 'Top Sites' },
     { type: 'action', id: 'OPEN_SETTINGS_POPOVER', fallbackText: 'Settings' },
@@ -1554,7 +1565,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'TOP_SITES', fallbackText: 'Top Sites' },
     // Utility keys on the left (to avoid colliding with right-hand cluster)
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' }, // S
-    { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' }, // D
+    { type: 'action', id: 'CLOSE_WINDOW', fallbackText: 'Close Window' }, // D
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' }, // F
     { type: 'action', id: 'HIGHLIGHT', fallbackText: 'Text Select' }, // G
     { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' }, // H

@@ -349,8 +349,8 @@
         "type": "action",
         "code": "KeyK",
         "legend": "K",
-        "id": "TOGGLE_KEYBOARD_HELP",
-        "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        "id": "CLOSE_WINDOW",
+        "fallbackText": "CLOSE_WINDOW"
       },
       {
         "type": "action",
@@ -591,8 +591,8 @@
         "type": "action",
         "code": "KeyD",
         "legend": "D",
-        "id": "TOGGLE_KEYBOARD_HELP",
-        "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        "id": "CLOSE_WINDOW",
+        "fallbackText": "CLOSE_WINDOW"
       },
       {
         "type": "action",
@@ -868,11 +868,9 @@
         "text": "J"
       },
       {
-        "type": "action",
+        "type": "key",
         "code": "KeyK",
-        "legend": "K",
-        "id": "TOGGLE_KEYBOARD_HELP",
-        "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        "text": "K"
       },
       {
         "type": "key",
@@ -1070,11 +1068,9 @@
         "text": "S"
       },
       {
-        "type": "action",
+        "type": "key",
         "code": "KeyD",
-        "legend": "D",
-        "id": "TOGGLE_KEYBOARD_HELP",
-        "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        "text": "D"
       },
       {
         "type": "key",
@@ -1330,11 +1326,9 @@
         "text": "J"
       },
       {
-        "type": "action",
+        "type": "key",
         "code": "KeyK",
-        "legend": "K",
-        "id": "TOGGLE_KEYBOARD_HELP",
-        "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        "text": "K"
       },
       {
         "type": "key",
@@ -1520,11 +1514,9 @@
         "text": "S"
       },
       {
-        "type": "action",
+        "type": "key",
         "code": "KeyD",
-        "legend": "D",
-        "id": "TOGGLE_KEYBOARD_HELP",
-        "fallbackText": "TOGGLE_KEYBOARD_HELP"
+        "text": "D"
       },
       {
         "type": "key",
@@ -1810,8 +1802,8 @@
           "type": "action",
           "code": "KeyK",
           "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -2052,8 +2044,8 @@
           "type": "action",
           "code": "KeyD",
           "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -2329,11 +2321,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -2531,11 +2521,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -2791,11 +2779,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -2981,11 +2967,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -3270,8 +3254,8 @@
           "type": "action",
           "code": "KeyK",
           "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -3517,8 +3501,8 @@
           "type": "action",
           "code": "KeyD",
           "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -3799,11 +3783,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -4006,11 +3988,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -4271,11 +4251,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -4466,11 +4444,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -4760,8 +4736,8 @@
           "type": "action",
           "code": "KeyK",
           "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -5007,8 +4983,8 @@
           "type": "action",
           "code": "KeyD",
           "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -5289,11 +5265,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -5496,11 +5470,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -5761,11 +5733,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -5956,11 +5926,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -6250,8 +6218,8 @@
           "type": "action",
           "code": "KeyK",
           "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -6497,8 +6465,8 @@
           "type": "action",
           "code": "KeyD",
           "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -6779,11 +6747,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -6986,11 +6952,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -7251,11 +7215,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -7446,11 +7408,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -7740,8 +7700,8 @@
           "type": "action",
           "code": "KeyK",
           "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -7987,8 +7947,8 @@
           "type": "action",
           "code": "KeyD",
           "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "id": "CLOSE_WINDOW",
+          "fallbackText": "CLOSE_WINDOW"
         },
         {
           "type": "action",
@@ -8269,11 +8229,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -8476,11 +8434,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -8741,11 +8697,9 @@
           "text": "J"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyK",
-          "legend": "K",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "K"
         },
         {
           "type": "key",
@@ -8936,11 +8890,9 @@
           "text": "S"
         },
         {
-          "type": "action",
+          "type": "key",
           "code": "KeyD",
-          "legend": "D",
-          "id": "TOGGLE_KEYBOARD_HELP",
-          "fallbackText": "TOGGLE_KEYBOARD_HELP"
+          "text": "D"
         },
         {
           "type": "key",
@@ -9211,12 +9163,12 @@
       "displayKey": "J",
       "keyboardClass": "key-kp-ui"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show or hide the keyboard map",
+    "CLOSE_WINDOW": {
+      "label": "Close Window",
+      "description": "Close the current window",
       "keyLabel": "K",
       "displayKey": "K",
-      "keyboardClass": "key-kp-ui"
+      "keyboardClass": "key-close-tab"
     },
     "OMNIBOX": {
       "label": "Omnibox",
@@ -9315,6 +9267,13 @@
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": "key-gray"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show or hide the keyboard map",
+      "keyLabel": "\\",
+      "displayKey": "\\",
+      "keyboardClass": "key-kp-ui"
     }
   },
   "browsing-left": {
@@ -9451,12 +9410,12 @@
       "displayKey": "F",
       "keyboardClass": "key-kp-ui"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show or hide the keyboard map",
+    "CLOSE_WINDOW": {
+      "label": "Close Window",
+      "description": "Close the current window",
       "keyLabel": "D",
       "displayKey": "D",
-      "keyboardClass": "key-kp-ui"
+      "keyboardClass": "key-close-tab"
     },
     "OMNIBOX": {
       "label": "Omnibox",
@@ -9548,6 +9507,13 @@
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": "key-gray"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show or hide the keyboard map",
+      "keyLabel": "\\",
+      "displayKey": "\\",
+      "keyboardClass": "key-kp-ui"
     }
   },
   "basic-navigation-right": {
@@ -9593,13 +9559,6 @@
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show or hide the keyboard map",
-      "keyLabel": "K",
-      "displayKey": "K",
-      "keyboardClass": "key-kp-ui"
-    },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
@@ -9641,6 +9600,13 @@
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": "key-gray"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show or hide the keyboard map",
+      "keyLabel": "\\",
+      "displayKey": "\\",
+      "keyboardClass": "key-kp-ui"
     }
   },
   "basic-navigation-left": {
@@ -9686,13 +9652,6 @@
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show or hide the keyboard map",
-      "keyLabel": "D",
-      "displayKey": "D",
-      "keyboardClass": "key-kp-ui"
-    },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
@@ -9734,6 +9693,13 @@
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": "key-gray"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show or hide the keyboard map",
+      "keyLabel": "\\",
+      "displayKey": "\\",
+      "keyboardClass": "key-kp-ui"
     }
   },
   "click-history-right": {
@@ -9765,13 +9731,6 @@
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show or hide the keyboard map",
-      "keyLabel": "K",
-      "displayKey": "K",
-      "keyboardClass": "key-kp-ui"
-    },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
@@ -9785,6 +9744,13 @@
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": "key-gray"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show or hide the keyboard map",
+      "keyLabel": "\\",
+      "displayKey": "\\",
+      "keyboardClass": "key-kp-ui"
     }
   },
   "click-history-left": {
@@ -9816,13 +9782,6 @@
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show or hide the keyboard map",
-      "keyLabel": "D",
-      "displayKey": "D",
-      "keyboardClass": "key-kp-ui"
-    },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
@@ -9836,6 +9795,13 @@
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": "key-gray"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show or hide the keyboard map",
+      "keyLabel": "\\",
+      "displayKey": "\\",
+      "keyboardClass": "key-kp-ui"
     }
   }
 };
@@ -10000,8 +9966,8 @@
       "type": "action",
       "code": "KeyK",
       "legend": "K",
-      "id": "TOGGLE_KEYBOARD_HELP",
-      "fallbackText": "TOGGLE_KEYBOARD_HELP"
+      "id": "CLOSE_WINDOW",
+      "fallbackText": "CLOSE_WINDOW"
     },
     {
       "type": "action",
@@ -10257,12 +10223,12 @@
     "displayKey": "J",
     "keyboardClass": "key-kp-ui"
   },
-  "TOGGLE_KEYBOARD_HELP": {
-    "label": "KB Reference",
-    "description": "Show or hide the keyboard map",
+  "CLOSE_WINDOW": {
+    "label": "Close Window",
+    "description": "Close the current window",
     "keyLabel": "K",
     "displayKey": "K",
-    "keyboardClass": "key-kp-ui"
+    "keyboardClass": "key-close-tab"
   },
   "OMNIBOX": {
     "label": "Omnibox",
@@ -10361,6 +10327,13 @@
     "keyLabel": "Esc",
     "displayKey": "Esc",
     "keyboardClass": "key-gray"
+  },
+  "TOGGLE_KEYBOARD_HELP": {
+    "label": "KB Reference",
+    "description": "Show or hide the keyboard map",
+    "keyLabel": "\\",
+    "displayKey": "\\",
+    "keyboardClass": "key-kp-ui"
   }
 };
   const EARLY_FUNCTION_PAINT = {
@@ -10414,6 +10387,10 @@
   },
   "CLOSE_TAB": {
     "labelKey": "fn_CLOSE_TAB_label",
+    "keyboardClass": "key-close-tab"
+  },
+  "CLOSE_WINDOW": {
+    "labelKey": "fn_CLOSE_WINDOW_label",
     "keyboardClass": "key-close-tab"
   },
   "CANCEL": {

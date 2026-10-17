@@ -187,4 +187,40 @@ describe('deferred opening queue', () => {
     assert.equal(queued[0].id, retry.id);
     assert.ok(queued[0].fireAt > Date.now());
   });
+
+  it('closes the stored tab or window and finishes quietly when it is already gone', async () => {
+    const { closeDeferredTarget } = await import('../extension/src/utils/deferred-open.js');
+    const removed = [];
+    const originalTabs = globalThis.chrome.tabs;
+    const originalWindows = globalThis.chrome.windows;
+    globalThis.chrome.tabs = {
+      async get(id) {
+        if (id === 7) return { id };
+        throw new Error('No tab with id');
+      },
+      async remove(id) {
+        removed.push(['tab', id]);
+      }
+    };
+    globalThis.chrome.windows = {
+      async get(id) {
+        if (id === 3) return { id };
+        throw new Error('No window with id');
+      },
+      async remove(id) {
+        removed.push(['window', id]);
+      }
+    };
+    try {
+      assert.equal(await closeDeferredTarget({ action: 'CLOSE_TAB', payload: { tabId: 7 } }), true);
+      assert.equal(await closeDeferredTarget({ action: 'CLOSE_TAB', payload: { tabId: 99 } }), true);
+      assert.equal(await closeDeferredTarget({ action: 'CLOSE_WINDOW', payload: { windowId: 3 } }), true);
+      assert.equal(await closeDeferredTarget({ action: 'CLOSE_WINDOW', payload: { windowId: 44 } }), true);
+      assert.equal(await closeDeferredTarget({ action: 'CLOSE_TAB', payload: {} }), true);
+      assert.deepEqual(removed, [['tab', 7], ['window', 3]]);
+    } finally {
+      globalThis.chrome.tabs = originalTabs;
+      globalThis.chrome.windows = originalWindows;
+    }
+  });
 });

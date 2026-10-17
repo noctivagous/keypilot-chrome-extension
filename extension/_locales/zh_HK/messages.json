@@ -3725,6 +3725,18 @@
     "message": "關閉作用中的分頁。行為與瀏覽器目前視窗的關閉分頁操作相同。",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "關閉視窗",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "關閉目前視窗",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "關閉包含目前分頁的瀏覽器視窗，包括其中的其他分頁。",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "離開聚焦",
     "description": "Function Library label for CANCEL."
@@ -6516,5 +6528,15 @@
   "settings_static_266": { "message": "按住 Alt+Shift 再按點選元素鍵，安排開啟游標下的連結。" },
   "settings_static_267": { "message": "點選元素最短（分鐘）" },
   "settings_static_268": { "message": "點選元素最長（分鐘）" },
-  "deferred_open_dialog_title_click_element": { "message": "安排開啟此連結" }
+  "deferred_open_dialog_title_click_element": { "message": "安排開啟此連結" },
+  "settings_static_269": { "message": "延遲關閉分頁" },
+  "settings_static_270": { "message": "Alt+Shift 加關閉分頁會安排關閉按下組合鍵時的目前分頁。" },
+  "settings_static_271": { "message": "關閉分頁最短（分鐘）" },
+  "settings_static_272": { "message": "關閉分頁最長（分鐘）" },
+  "settings_static_273": { "message": "延遲關閉視窗" },
+  "settings_static_274": { "message": "Alt+Shift 加關閉視窗會安排關閉按下組合鍵時的目前視窗。" },
+  "settings_static_275": { "message": "關閉視窗最短（分鐘）" },
+  "settings_static_276": { "message": "關閉視窗最長（分鐘）" },
+  "deferred_open_dialog_title_close_tab": { "message": "安排關閉此分頁" },
+  "deferred_open_dialog_title_close_window": { "message": "安排關閉此視窗" }
 }

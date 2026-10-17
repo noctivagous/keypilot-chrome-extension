@@ -39,6 +39,7 @@ import {
 } from './src/utils/bookmark-folder.js';
 import { stepZoomFactor } from './src/utils/page-zoom.js';
 import {
+  closeDeferredTarget,
   createDeferredOpenJob,
   handleDeferredOpenAlarm,
   persistDeferredOpenJob,
@@ -1261,6 +1262,9 @@ async function resolveDeferredTabContext(job) {
 }
 
 async function executeDeferredOpenJob(job) {
+  if (job?.action === 'CLOSE_TAB' || job?.action === 'CLOSE_WINDOW') {
+    return closeDeferredTarget(job);
+  }
   const context = await resolveDeferredTabContext(job);
   if (!context || context.windowId == null) return false;
   if (job.action === 'OPEN_URLS') {
@@ -2840,6 +2844,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
           break;
 
+        case MSG.CLOSE_WINDOW:
+          if (Number.isInteger(sender.tab?.windowId)) {
+            try {
+              await chrome.windows.remove(sender.tab.windowId);
+            } catch (error) {
+              console.error('Failed to close window:', error);
+              sendResponse({
+                type: MSG.ERROR,
+                error: 'Failed to close window: ' + error.message
+              });
+            }
+          } else {
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'No valid window ID'
+            });
+          }
+          break;
+
         case MSG.GO_BACK:
         case MSG.GO_FORWARD: {
           // Browser history navigation for the sender tab.
@@ -3294,12 +3317,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case MSG.SCHEDULE_DEFERRED_OPEN: {
           const action = message.action;
-          const payload = action === 'OPEN_URLS'
-            ? { urls: normalizeOpenUrlList(message.payload?.urls) }
-            : {
-                folderId: normalizeBookmarkFolderId(message.payload?.folderId),
-                count: normalizeRandomBookmarkCount(message.payload?.count)
-              };
+          let payload;
+          if (action === 'OPEN_URLS') {
+            payload = { urls: normalizeOpenUrlList(message.payload?.urls) };
+          } else if (action === 'RANDOM_BOOKMARK') {
+            payload = {
+              folderId: normalizeBookmarkFolderId(message.payload?.folderId),
+              count: normalizeRandomBookmarkCount(message.payload?.count)
+            };
+          } else {
+            const tabId = Number.isInteger(sender.tab?.id) ? sender.tab.id : null;
+            const windowId = Number.isInteger(sender.tab?.windowId) ? sender.tab.windowId : null;
+            if (action === 'CLOSE_TAB' && tabId == null) {
+              sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
+              break;
+            }
+            if (action === 'CLOSE_WINDOW' && windowId == null) {
+              sendResponse({ type: MSG.ERROR, error: 'No sender window id' });
+              break;
+            }
+            payload = { tabId, windowId };
+          }
           try {
             const job = createDeferredOpenJob({
               action,

@@ -3725,6 +3725,18 @@
     "message": "Zavrie aktívnu kartu. Správanie zodpovedá natívnej akcii zavretia karty v aktuálnom okne prehliadača.",
     "description": "Function Library details for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "Zavrieť okno",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "Zavrieť aktuálne okno",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_details": {
+    "message": "Zavrie okno prehliadača, ktoré obsahuje aktuálnu kartu, vrátane jej ostatných kariet.",
+    "description": "Function Library details for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "Opustiť zameranie",
     "description": "Function Library label for CANCEL."
@@ -6516,5 +6528,15 @@
   "settings_static_266": { "message": "Alt+Shift s klávesom Kliknúť na prvok naplánuje odkaz pod kurzorom." },
   "settings_static_267": { "message": "Kliknutie na prvok minimum (minúty)" },
   "settings_static_268": { "message": "Kliknutie na prvok maximum (minúty)" },
-  "deferred_open_dialog_title_click_element": { "message": "Naplánovať tento odkaz" }
+  "deferred_open_dialog_title_click_element": { "message": "Naplánovať tento odkaz" },
+  "settings_static_269": { "message": "Odložiť zatvorenie karty" },
+  "settings_static_270": { "message": "Alt+Shift so Zavrieť kartu naplánuje zatvorenie karty, ktorá je aktuálna pri stlačení skratky." },
+  "settings_static_271": { "message": "Zavrieť kartu minimum (minúty)" },
+  "settings_static_272": { "message": "Zavrieť kartu maximum (minúty)" },
+  "settings_static_273": { "message": "Odložiť zatvorenie okna" },
+  "settings_static_274": { "message": "Alt+Shift so Zavrieť okno naplánuje zatvorenie okna, ktoré je aktuálne pri stlačení skratky." },
+  "settings_static_275": { "message": "Zavrieť okno minimum (minúty)" },
+  "settings_static_276": { "message": "Zavrieť okno maximum (minúty)" },
+  "deferred_open_dialog_title_close_tab": { "message": "Naplánovať zatvorenie tejto karty" },
+  "deferred_open_dialog_title_close_window": { "message": "Naplánovať zatvorenie tohto okna" }
 }
