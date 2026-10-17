@@ -6511,5 +6511,9 @@
   "deferred_open_dialog_earlier": { "message": "更早" },
   "deferred_open_dialog_later": { "message": "更晚" },
   "settings_static_263": { "message": "靜默隨機排程" },
-  "settings_static_264": { "message": "隱藏「開啟網址」和「隨機書籤」的 Alt+Shift 排程時間提示。排程失敗時只顯示一個小紅點。" }
+  "settings_static_264": { "message": "隱藏「開啟網址」和「隨機書籤」的 Alt+Shift 排程時間提示。排程失敗時只顯示一個小紅點。" },
+  "settings_static_265": { "message": "延後點選元素" },
+  "settings_static_266": { "message": "按住 Alt+Shift 再按點選元素鍵，安排開啟游標下的連結。" },
+  "settings_static_267": { "message": "點選元素最短（分鐘）" },
+  "settings_static_268": { "message": "點選元素最長（分鐘）" }
 }

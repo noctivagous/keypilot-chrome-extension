@@ -6516,5 +6516,9 @@
   "deferred_open_dialog_earlier": { "message": "מוקדם יותר" },
   "deferred_open_dialog_later": { "message": "מאוחר יותר" },
   "settings_static_263": { "message": "תזמון אקראי שקט" },
-  "settings_static_264": { "message": "מסתיר את התראת הזמן של Alt+Shift עבור פתיחת כתובות וסימניות אקראיות. אם התזמון נכשל, מופיע סימן אדום קטן." }
+  "settings_static_264": { "message": "מסתיר את התראת הזמן של Alt+Shift עבור פתיחת כתובות וסימניות אקראיות. אם התזמון נכשל, מופיע סימן אדום קטן." },
+  "settings_static_265": { "message": "השהה לחיצה על רכיב" },
+  "settings_static_266": { "message": "Alt+Shift עם מקש הלחיצה על רכיב מתזמן את הקישור שמתחת לסמן." },
+  "settings_static_267": { "message": "לחיצה על רכיב, מינימום (דקות)" },
+  "settings_static_268": { "message": "לחיצה על רכיב, מקסימום (דקות)" }
 }

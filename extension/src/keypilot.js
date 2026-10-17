@@ -1513,8 +1513,31 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    */
   _resolveDeferredOpenRequest(e) {
     const binding = this._deferredOpenBindingForEvent(e);
-    if (!binding || (binding.functionId !== 'OPEN_URLS' && binding.functionId !== 'RANDOM_BOOKMARK')) {
+    if (!binding || (
+      binding.functionId !== 'OPEN_URLS'
+      && binding.functionId !== 'RANDOM_BOOKMARK'
+      && binding.functionId !== 'ACTIVATE'
+    )) {
       return null;
+    }
+
+    const target = this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target;
+    if (binding.functionId === 'ACTIVATE') {
+      // Exact-time dialog is not offered for Click Element yet.
+      if (e?.ctrlKey) return null;
+      const config = this._settings?.deferredOpen?.clickElement
+        || DEFAULT_SETTINGS.deferredOpen.clickElement;
+      if (config.enabled === false) return null;
+      const urls = normalizeOpenUrlList([this._getHoveredHyperlinkUrl()]);
+      if (!urls.length) return null;
+      return {
+        action: 'OPEN_URLS',
+        payload: { urls },
+        minMinutes: config.minMinutes,
+        maxMinutes: config.maxMinutes,
+        target,
+        allowExactTime: false
+      };
     }
 
     const config = binding.functionId === 'OPEN_URLS'
@@ -1539,7 +1562,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       payload,
       minMinutes: resolved.minMinutes,
       maxMinutes: resolved.maxMinutes,
-      target: this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target
+      target
     };
   }
 
@@ -1558,6 +1581,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     if (!request) return false;
 
     const manual = !!e.ctrlKey;
+    if (manual && request.allowExactTime === false) return false;
     if (manual && !this.scheduleOpenDialog) return false;
 
     e.preventDefault();

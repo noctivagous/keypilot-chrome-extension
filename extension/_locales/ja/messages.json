@@ -6511,5 +6511,9 @@
   "deferred_open_dialog_earlier": { "message": "前へ" },
   "deferred_open_dialog_later": { "message": "後へ" },
   "settings_static_263": { "message": "サイレントなランダム予約" },
-  "settings_static_264": { "message": "URLを開くとランダムなブックマークの Alt+Shift で、予約時刻の通知を出さない。予約に失敗したときは小さな赤い印だけを表示する。" }
+  "settings_static_264": { "message": "URLを開くとランダムなブックマークの Alt+Shift で、予約時刻の通知を出さない。予約に失敗したときは小さな赤い印だけを表示する。" },
+  "settings_static_265": { "message": "要素クリックを遅延" },
+  "settings_static_266": { "message": "要素クリックのキーと Alt+Shift で、カーソル下のリンクを予約する。" },
+  "settings_static_267": { "message": "要素クリックの最短（分）" },
+  "settings_static_268": { "message": "要素クリックの最長（分）" }
 }

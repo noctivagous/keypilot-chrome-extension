@@ -6516,5 +6516,9 @@
   "deferred_open_dialog_earlier": { "message": "Früher" },
   "deferred_open_dialog_later": { "message": "Später" },
   "settings_static_263": { "message": "Stilles zufälliges Planen" },
-  "settings_static_264": { "message": "Blendet die Zeit-Meldung für Alt+Umschalt bei URLs öffnen und Zufällige Lesezeichen aus. Schlägt das Planen fehl, erscheint stattdessen eine kleine rote Markierung." }
+  "settings_static_264": { "message": "Blendet die Zeit-Meldung für Alt+Umschalt bei URLs öffnen und Zufällige Lesezeichen aus. Schlägt das Planen fehl, erscheint stattdessen eine kleine rote Markierung." },
+  "settings_static_265": { "message": "Element klicken verzögern" },
+  "settings_static_266": { "message": "Alt+Umschalt mit der Taste Element klicken plant den Link unter dem Zeiger." },
+  "settings_static_267": { "message": "Element klicken Minimum (Minuten)" },
+  "settings_static_268": { "message": "Element klicken Maximum (Minuten)" }
 }

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T20:18:37.083Z
+ * Generated on 2026-10-17T20:35:33.988Z
  */
 
 (() => {
@@ -2831,6 +2831,11 @@
         minMinutes: 1,
         maxMinutes: 60
       }),
+      clickElement: Object.freeze({
+        enabled: true,
+        minMinutes: 1,
+        maxMinutes: 60
+      }),
       target: "activeWindow",
       silentRandomScheduling: true
     })
@@ -3030,6 +3035,10 @@
       randomBookmarks: normalizeDeferredOpenRange(
         stored.randomBookmarks,
         DEFAULT_SETTINGS.deferredOpen.randomBookmarks
+      ),
+      clickElement: normalizeDeferredOpenRange(
+        stored.clickElement,
+        DEFAULT_SETTINGS.deferredOpen.clickElement
       ),
       target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow",
       silentRandomScheduling: normalizeBoolean(

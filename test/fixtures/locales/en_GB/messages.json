@@ -6550,5 +6550,9 @@
     "message": "[GB] Later"
   },
   "settings_static_263": { "message": "[GB] Silent random scheduling" },
-  "settings_static_264": { "message": "[GB] Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." }
+  "settings_static_264": { "message": "[GB] Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." },
+  "settings_static_265": { "message": "[GB] Delay Click Element" },
+  "settings_static_266": { "message": "[GB] Alt+Shift with the Click Element key schedules the link under the cursor." },
+  "settings_static_267": { "message": "[GB] Click Element minimum (minutes)" },
+  "settings_static_268": { "message": "[GB] Click Element maximum (minutes)" }
 }

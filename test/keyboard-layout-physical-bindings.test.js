@@ -124,7 +124,7 @@ describe('built-in keyboard layout physical bindings', () => {
     );
     assert.match(
       keyPilotSource,
-      /binding\.functionId !== 'OPEN_URLS'[\s\S]*binding\.functionId !== 'RANDOM_BOOKMARK'/
+      /binding\.functionId !== 'OPEN_URLS'[\s\S]*binding\.functionId !== 'RANDOM_BOOKMARK'[\s\S]*binding\.functionId !== 'ACTIVATE'/
     );
     assert.match(
       keyPilotSource,

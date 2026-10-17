@@ -6597,5 +6597,9 @@
     "description": "Accessible name prefix for the button that moves the schedule time later."
   },
   "settings_static_263": { "message": "Silent random scheduling" },
-  "settings_static_264": { "message": "Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." }
+  "settings_static_264": { "message": "Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." },
+  "settings_static_265": { "message": "Delay Click Element" },
+  "settings_static_266": { "message": "Alt+Shift with the Click Element key schedules the link under the cursor." },
+  "settings_static_267": { "message": "Click Element minimum (minutes)" },
+  "settings_static_268": { "message": "Click Element maximum (minutes)" }
 }

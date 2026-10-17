@@ -45,7 +45,7 @@ Browsing includes a bundled **Random Bookmark** instance on <kbd>,</kbd> (right-
 
 ### Open later at a random time
 
-Press <kbd>Alt</kbd>+<kbd>Shift</kbd> with any **Open URLs** or **Random Bookmark** key to schedule that action for a random time. The action remains scheduled if you navigate away from or close the current tab, and runs while the browser is open.
+Press <kbd>Alt</kbd>+<kbd>Shift</kbd> with any **Open URLs** or **Random Bookmark** key to schedule that action for a random time. <kbd>Alt</kbd>+<kbd>Shift</kbd> with **Click Element** (usually <kbd>F</kbd>) schedules the link under the cursor the same way. The action remains scheduled if you navigate away from or close the current tab, and runs while the browser is open.
 
 To pick an exact time instead, press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd> with the same key. A dialog asks for a date and time (pre-filled one hour ahead). The date field's calendar sets the day. Hour and minute controls, with − and + buttons, set the time of day. **+1 hour** and **+1 day** move the time already shown; **Tomorrow, 9:00 AM** jumps to that morning. **Schedule** is available only for a future time; <kbd>Esc</kbd>, **Cancel**, or clicking outside the dialog schedules nothing.
 

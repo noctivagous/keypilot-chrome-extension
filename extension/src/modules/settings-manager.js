@@ -172,6 +172,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   deferredOpen: {
  *     openUrls: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     randomBookmarks: { enabled: boolean, minMinutes: number, maxMinutes: number },
+ *     clickElement: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     target: DeferredOpenTarget,
  *     silentRandomScheduling: boolean
  *   },
@@ -304,6 +305,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
       maxMinutes: 60
     }),
     randomBookmarks: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    clickElement: Object.freeze({
       enabled: true,
       minMinutes: 1,
       maxMinutes: 60
@@ -608,6 +614,10 @@ export function normalizeDeferredOpen(raw) {
     randomBookmarks: normalizeDeferredOpenRange(
       stored.randomBookmarks,
       DEFAULT_SETTINGS.deferredOpen.randomBookmarks
+    ),
+    clickElement: normalizeDeferredOpenRange(
+      stored.clickElement,
+      DEFAULT_SETTINGS.deferredOpen.clickElement
     ),
     target: stored.target === 'originalWindow' ? 'originalWindow' : 'activeWindow',
     silentRandomScheduling: normalizeBoolean(
@@ -949,6 +959,12 @@ export async function setSettings(partial) {
         ...current.deferredOpen.randomBookmarks,
         ...(p.deferredOpen?.randomBookmarks && typeof p.deferredOpen.randomBookmarks === 'object'
           ? p.deferredOpen.randomBookmarks
+          : {})
+      },
+      clickElement: {
+        ...(current.deferredOpen.clickElement || {}),
+        ...(p.deferredOpen?.clickElement && typeof p.deferredOpen.clickElement === 'object'
+          ? p.deferredOpen.clickElement
           : {})
       }
     },

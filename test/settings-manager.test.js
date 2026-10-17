@@ -64,6 +64,9 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.deferredOpen.randomBookmarks.enabled, true);
     assert.equal(settings.deferredOpen.target, 'activeWindow');
     assert.equal(settings.deferredOpen.silentRandomScheduling, true);
+    assert.equal(settings.deferredOpen.clickElement.enabled, true);
+    assert.equal(settings.deferredOpen.clickElement.minMinutes, 1);
+    assert.equal(settings.deferredOpen.clickElement.maxMinutes, 60);
     assert.ok(!mock.syncStore.has(SETTINGS_STORAGE_KEY));
   });
 
@@ -170,6 +173,8 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(updated.deferredOpen.randomBookmarks.enabled, true);
     assert.equal(updated.deferredOpen.target, 'originalWindow');
     assert.equal(updated.deferredOpen.silentRandomScheduling, false);
+    assert.equal(updated.deferredOpen.clickElement.enabled, true);
+    assert.equal(updated.deferredOpen.clickElement.maxMinutes, 60);
 
     const silenced = await setSettings({
       deferredOpen: { silentRandomScheduling: true }

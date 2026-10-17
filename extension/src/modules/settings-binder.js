@@ -36,6 +36,9 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'toggle', id: 'deferred-random-bookmarks-enabled', path: 'deferredOpen.randomBookmarks.enabled' },
   { type: 'rangePair', baseId: 'deferred-random-bookmarks-min', path: 'deferredOpen.randomBookmarks.minMinutes', min: 1, max: 2880 },
   { type: 'rangePair', baseId: 'deferred-random-bookmarks-max', path: 'deferredOpen.randomBookmarks.maxMinutes', min: 1, max: 2880 },
+  { type: 'toggle', id: 'deferred-click-element-enabled', path: 'deferredOpen.clickElement.enabled' },
+  { type: 'rangePair', baseId: 'deferred-click-element-min', path: 'deferredOpen.clickElement.minMinutes', min: 1, max: 2880 },
+  { type: 'rangePair', baseId: 'deferred-click-element-max', path: 'deferredOpen.clickElement.maxMinutes', min: 1, max: 2880 },
   {
     type: 'select',
     id: 'deferred-open-target',

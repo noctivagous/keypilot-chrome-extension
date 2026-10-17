@@ -6511,5 +6511,9 @@
   "deferred_open_dialog_earlier": { "message": "更早" },
   "deferred_open_dialog_later": { "message": "更晚" },
   "settings_static_263": { "message": "静默随机安排" },
-  "settings_static_264": { "message": "隐藏“打开网址”和“随机书签”的 Alt+Shift 安排时间提示。安排失败时只显示一个小红点。" }
+  "settings_static_264": { "message": "隐藏“打开网址”和“随机书签”的 Alt+Shift 安排时间提示。安排失败时只显示一个小红点。" },
+  "settings_static_265": { "message": "延迟点击元素" },
+  "settings_static_266": { "message": "按住 Alt+Shift 再按点击元素键，安排打开光标下的链接。" },
+  "settings_static_267": { "message": "点击元素最短（分钟）" },
+  "settings_static_268": { "message": "点击元素最长（分钟）" }
 }

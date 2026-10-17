@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T20:18:37.083Z
+ * Generated on 2026-10-17T20:35:33.988Z
  */
 
 
@@ -2960,6 +2960,11 @@ var DEFAULT_SETTINGS = Object.freeze({
       minMinutes: 1,
       maxMinutes: 60
     }),
+    clickElement: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
     target: "activeWindow",
     silentRandomScheduling: true
   })
@@ -3159,6 +3164,10 @@ function normalizeDeferredOpen(raw) {
     randomBookmarks: normalizeDeferredOpenRange(
       stored.randomBookmarks,
       DEFAULT_SETTINGS.deferredOpen.randomBookmarks
+    ),
+    clickElement: normalizeDeferredOpenRange(
+      stored.clickElement,
+      DEFAULT_SETTINGS.deferredOpen.clickElement
     ),
     target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow",
     silentRandomScheduling: normalizeBoolean(
@@ -3415,6 +3424,10 @@ async function setSettings(partial) {
       randomBookmarks: {
         ...current.deferredOpen.randomBookmarks,
         ...p.deferredOpen?.randomBookmarks && typeof p.deferredOpen.randomBookmarks === "object" ? p.deferredOpen.randomBookmarks : {}
+      },
+      clickElement: {
+        ...current.deferredOpen.clickElement || {},
+        ...p.deferredOpen?.clickElement && typeof p.deferredOpen.clickElement === "object" ? p.deferredOpen.clickElement : {}
       }
     },
     actionSettings: (() => {
@@ -4459,6 +4472,9 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "toggle", id: "deferred-random-bookmarks-enabled", path: "deferredOpen.randomBookmarks.enabled" },
   { type: "rangePair", baseId: "deferred-random-bookmarks-min", path: "deferredOpen.randomBookmarks.minMinutes", min: 1, max: 2880 },
   { type: "rangePair", baseId: "deferred-random-bookmarks-max", path: "deferredOpen.randomBookmarks.maxMinutes", min: 1, max: 2880 },
+  { type: "toggle", id: "deferred-click-element-enabled", path: "deferredOpen.clickElement.enabled" },
+  { type: "rangePair", baseId: "deferred-click-element-min", path: "deferredOpen.clickElement.minMinutes", min: 1, max: 2880 },
+  { type: "rangePair", baseId: "deferred-click-element-max", path: "deferredOpen.clickElement.maxMinutes", min: 1, max: 2880 },
   {
     type: "select",
     id: "deferred-open-target",
@@ -5609,6 +5625,26 @@ async function render() {
     /** @type {HTMLInputElement|null} */
     settingsEl("deferred-random-bookmarks-max-number")
   );
+  const deferredClickElementEnabled = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-click-element-enabled")
+  );
+  const deferredClickElementMinRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-click-element-min-range")
+  );
+  const deferredClickElementMinNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-click-element-min-number")
+  );
+  const deferredClickElementMaxRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-click-element-max-range")
+  );
+  const deferredClickElementMaxNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-click-element-max-number")
+  );
   const deferredOpenTarget = (
     /** @type {HTMLSelectElement|null} */
     settingsEl("deferred-open-target")
@@ -5905,6 +5941,7 @@ async function render() {
     const value = deferredOpen || DEFAULT_SETTINGS.deferredOpen;
     const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
     const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
+    const clickElement = value.clickElement || DEFAULT_SETTINGS.deferredOpen.clickElement;
     if (deferredOpenUrlsEnabled) deferredOpenUrlsEnabled.checked = openUrls.enabled !== false;
     setInputValue(deferredOpenUrlsMinRange, openUrls.minMinutes);
     setInputValue(deferredOpenUrlsMinNumber, openUrls.minMinutes);
@@ -5915,6 +5952,11 @@ async function render() {
     setInputValue(deferredRandomBookmarksMinNumber, randomBookmarks.minMinutes);
     setInputValue(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
     setInputValue(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
+    if (deferredClickElementEnabled) deferredClickElementEnabled.checked = clickElement.enabled !== false;
+    setInputValue(deferredClickElementMinRange, clickElement.minMinutes);
+    setInputValue(deferredClickElementMinNumber, clickElement.minMinutes);
+    setInputValue(deferredClickElementMaxRange, clickElement.maxMinutes);
+    setInputValue(deferredClickElementMaxNumber, clickElement.maxMinutes);
     setInputValue(deferredOpenTarget, value.target === "originalWindow" ? "originalWindow" : "activeWindow");
     if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
   };
