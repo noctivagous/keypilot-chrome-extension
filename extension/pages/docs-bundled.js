@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T20:57:43.359Z
+ * Generated on 2026-10-17T22:31:06.818Z
  */
 
 var __defProp = Object.defineProperty;
@@ -6693,7 +6693,6 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   FORWARD: physicalAssignment("KeyR", "R"),
   NEW_TAB: physicalAssignment("KeyT", "T"),
   CLOSE_TAB: physicalAssignment("KeyA", "A"),
-  CLOSE_WINDOW: physicalAssignment("KeyK", "K"),
   ROOT: physicalAssignment("KeyS", "S"),
   BACK: physicalAssignment("KeyD", "D"),
   ACTIVATE: physicalAssignment("KeyF", "F"),
@@ -6738,7 +6737,6 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   ZOOM_IN: physicalAssignment("BracketRight", "]"),
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: physicalAssignment("Semicolon", ";"),
-  CLOSE_WINDOW: physicalAssignment("KeyD", "D"),
   ROOT: physicalAssignment("KeyL", "L"),
   BACK: physicalAssignment("KeyK", "K"),
   ACTIVATE: physicalAssignment("KeyJ", "J"),
@@ -6749,7 +6747,7 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   LOOKUP_WORD: physicalAssignment("KeyR", "R"),
   RECTANGLE_HIGHLIGHT: physicalAssignment("KeyQ", "Q"),
   // Utility actions on the left avoid colliding with J/K/L cluster.
-  // (Settings / Esc live in the system layer, not layout assignments.)
+  // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: physicalAssignment("KeyF", "F"),
   OMNIBOX: physicalAssignment("KeyS", "S"),
   TOP_SITES: physicalAssignment("KeyA", "A"),
@@ -6777,12 +6775,12 @@ var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
 ]);
 var SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
   CANCEL: physicalAssignment("Escape", "Esc"),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment("Backslash", "\\"),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyK", "K"),
   OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
 });
 var SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
   CANCEL: physicalAssignment("Escape", "Esc"),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment("Backslash", "\\"),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyD", "D"),
   OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
 });
 function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
@@ -6951,7 +6949,7 @@ var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
     { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
     { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
-    { type: "action", id: "CLOSE_WINDOW", fallbackText: "Close Window" },
+    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
     { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
     { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
     { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
@@ -7005,7 +7003,7 @@ var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     // Utility keys on the left (to avoid colliding with right-hand cluster)
     { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
     // S
-    { type: "action", id: "CLOSE_WINDOW", fallbackText: "Close Window" },
+    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
     // D
     { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
     // F

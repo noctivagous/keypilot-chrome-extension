@@ -10,7 +10,7 @@ KeyPilot adds keyboard shortcuts to regular web pages. Point at a link or button
 
 ### Essential keys
 1. Press <kbd>Alt</kbd>+<kbd>K</kbd> to toggle KeyPilot on or off.
-2. Press <kbd>\</kbd> to open the Keyboard Reference — a live map of every assigned key.
+2. Press <kbd>K</kbd> to open the Keyboard Reference — a live map of every assigned key.
 3. Press <kbd>Alt</kbd>+<kbd>H</kbd> to return to this documentation.
 
 Key names in these docs refer to the **default right-handed Browsing** layout unless noted. Left-handed layouts mirror the main clusters. Custom layouts can use any keys you assign.

@@ -22,7 +22,7 @@ The Control Strip is a small always-visible bar for toggling KeyPilot, opening t
 | Control | Role |
 | --- | --- |
 | On/Off | Equivalent to <kbd>Alt</kbd>+<kbd>K</kbd> |
-| Keyboard Reference | Equivalent to <kbd>\</kbd> |
+| Keyboard Reference | Equivalent to <kbd>K</kbd> / <kbd>D</kbd> |
 | Settings | Equivalent to <kbd>'</kbd> |
 | Collapse / Close | Hide the strip; restore with <kbd>Alt</kbd>+<kbd>J</kbd> |
 

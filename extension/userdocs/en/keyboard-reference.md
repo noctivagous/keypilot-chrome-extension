@@ -4,7 +4,7 @@ The floating Keyboard Reference is a live map of your current layout — the fas
 
 ## Use it
 
-1. Press <kbd>\</kbd>, or use the Control Strip / popup / New Tab toggle.
+1. Press <kbd>K</kbd> (right-handed) or <kbd>D</kbd> (left-handed), or use the Control Strip / popup / New Tab toggle.
 2. Hover a keycap to see the bound action.
 3. Use the **titlebar layout dropdown** to:
    - Switch built-in families or custom layouts

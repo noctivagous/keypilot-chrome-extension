@@ -9,7 +9,7 @@ Some keys always belong to KeyPilot chrome. They stay available across built-in 
 These character keys work even when your custom layout leaves them empty:
 
 1. Press <kbd>Esc</kbd> to cancel the current mode (Text Mode, selection, Scroll Line, many popovers).
-2. Press <kbd>\</kbd> to show or hide the **Keyboard Reference**.
+2. Press <kbd>K</kbd> (right-handed) or <kbd>D</kbd> (left-handed) to show or hide the **Keyboard Reference**.
 3. Press <kbd>'</kbd> (quote) to open **Settings**.
 
 ### Alt chrome hotkeys
@@ -27,7 +27,7 @@ Hold <kbd>Alt</kbd> and press:
 | <kbd>Alt</kbd>+<kbd>H</kbd> | Open this documentation |
 | <kbd>Alt</kbd>+<kbd>I</kbd> | Show/hide the onboarding walkthrough |
 
-Memorize <kbd>Alt</kbd>+<kbd>K</kbd>, <kbd>Esc</kbd>, <kbd>\</kbd>, <kbd>'</kbd>, and <kbd>Alt</kbd>+<kbd>H</kbd> first — they unlock everything else.
+Memorize <kbd>Alt</kbd>+<kbd>K</kbd>, <kbd>Esc</kbd>, <kbd>K</kbd>, <kbd>'</kbd>, and <kbd>Alt</kbd>+<kbd>H</kbd> first — they unlock everything else.
 
 ## Reference
 
@@ -39,7 +39,7 @@ Memorize <kbd>Alt</kbd>+<kbd>K</kbd>, <kbd>Esc</kbd>, <kbd>\</kbd>, <kbd>'</kbd>
 
 ### Handedness note
 
-Keyboard Reference is <kbd>\</kbd> for both hands, so Close Window can use <kbd>K</kbd> (right-handed) and <kbd>D</kbd> (left-handed). Settings remains <kbd>'</kbd>.
+On left-handed layouts, Keyboard Reference moves to <kbd>D</kbd> so it does not collide with the mirrored Activate cluster. Settings remains <kbd>'</kbd>.
 
 ### Not for everyday use
 

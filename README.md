@@ -54,7 +54,6 @@ on the keyboard in specific places to make web navigation quick.
 | `N` | Open link in a new foreground tab |
 | `S` | Navigate to the site origin |
 | `B` | Origin-based continuous scroll |
-| `K` | Close the current window |
 | `,` | Open one random bookmark |
 | `.` | Open several social media sites in new tabs |
 | `'` | Open KeyPilot Settings |
@@ -84,9 +83,9 @@ on the keyboard in specific places to make web navigation quick.
 | Keys | Action |
 | --- | --- |
 | `Y` | Rectangle or cumulative element pick |
-| `\` | Show or hide the keyboard map |
 | `Backspace` | Hide elements under the cursor |
 | `H` | Select text and copy rich text |
+| `K` | Show or hide the keyboard map |
 | `Esc` | Leave modes and overlays |
 
 <!-- KP_KEY_MAPPINGS_END -->
