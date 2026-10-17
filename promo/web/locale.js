@@ -4,6 +4,8 @@
         de: "de/",
         es: "es/",
         es_419: "es_419/",
+        he: "he/",
+        hi: "hi/",
         ja: "ja/",
         sk: "sk/",
         zh_CN: "zh_CN/",

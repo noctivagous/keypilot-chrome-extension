@@ -9,7 +9,7 @@
  * `early-locale-fonts.js` so those helpers stay in scope.
  */
 import { formatAltShortcut, altModifierLabel } from '../utils/platform.js';
-import { getUILocaleTag } from '../utils/i18n.js';
+import { getUILocaleTag, getUITextDirection } from '../utils/i18n.js';
 import { KP_CJK_SHADOW_CSS, cjkUiFallbackStack } from './locale-fonts.js';
 
 // ── Storage / progress ──────────────────────────────────────────────────────
@@ -501,6 +501,7 @@ export function createOnboardingShell(doc, opts = {}) {
   // locale-specific typography rules (`:lang()`) can apply inside.
   const shellLocaleTag = getUILocaleTag();
   try { root.setAttribute('lang', shellLocaleTag); } catch { /* ignore */ }
+  try { root.setAttribute('dir', getUITextDirection()); } catch { /* ignore */ }
   let shell = root;
   try { shell = root.shadowRoot || root.attachShadow({ mode: 'open' }); } catch { /* light fallback */ }
   try {

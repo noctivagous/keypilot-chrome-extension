@@ -622,6 +622,17 @@ async function render() {
   const settingsResetAllBtn = settingsEl('settings-reset-all');
   const settingsResetAppearanceBtn = settingsEl('settings-reset-appearance');
   const debugLoggingToggle = /** @type {HTMLInputElement|null} */ (settingsEl('debug-logging'));
+  const deferredOpenUrlsEnabled = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-open-urls-enabled'));
+  const deferredOpenUrlsMinRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-open-urls-min-range'));
+  const deferredOpenUrlsMinNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-open-urls-min-number'));
+  const deferredOpenUrlsMaxRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-open-urls-max-range'));
+  const deferredOpenUrlsMaxNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-open-urls-max-number'));
+  const deferredRandomBookmarksEnabled = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-enabled'));
+  const deferredRandomBookmarksMinRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-min-range'));
+  const deferredRandomBookmarksMinNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-min-number'));
+  const deferredRandomBookmarksMaxRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-max-range'));
+  const deferredRandomBookmarksMaxNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-max-number'));
+  const deferredOpenTarget = /** @type {HTMLSelectElement|null} */ (settingsEl('deferred-open-target'));
 
   const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
   const textCursorPreview = settingsEl('text-cursor-preview');
@@ -898,6 +909,23 @@ async function render() {
     applyDebugSetting(on);
   };
 
+  const applyDeferredOpen = (deferredOpen) => {
+    const value = deferredOpen || DEFAULT_SETTINGS.deferredOpen;
+    const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
+    const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
+    if (deferredOpenUrlsEnabled) deferredOpenUrlsEnabled.checked = openUrls.enabled !== false;
+    setInputValue(deferredOpenUrlsMinRange, openUrls.minMinutes);
+    setInputValue(deferredOpenUrlsMinNumber, openUrls.minMinutes);
+    setInputValue(deferredOpenUrlsMaxRange, openUrls.maxMinutes);
+    setInputValue(deferredOpenUrlsMaxNumber, openUrls.maxMinutes);
+    if (deferredRandomBookmarksEnabled) deferredRandomBookmarksEnabled.checked = randomBookmarks.enabled !== false;
+    setInputValue(deferredRandomBookmarksMinRange, randomBookmarks.minMinutes);
+    setInputValue(deferredRandomBookmarksMinNumber, randomBookmarks.minMinutes);
+    setInputValue(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
+    setInputValue(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
+    setInputValue(deferredOpenTarget, value.target === 'originalWindow' ? 'originalWindow' : 'activeWindow');
+  };
+
   const applyAllSettings = (settings) => {
     const s = settings || DEFAULT_SETTINGS;
     lastUiSettings = s;
@@ -914,6 +942,7 @@ async function render() {
     applyClickMode(s.clickMode);
     applyTextMode(s.textMode);
     applyScroll(s.scroll);
+    applyDeferredOpen(s.deferredOpen);
     applyDebugLogging(s.debugLogging);
   };
 

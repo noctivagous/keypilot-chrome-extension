@@ -72,6 +72,8 @@ export function installChromeMock(options = {}) {
   const localFlags = { throws: !!options.localThrows };
   /** @type {Set<(changes: any, areaName: string) => void>} */
   const changeListeners = new Set();
+  const alarmStore = new Map();
+  const alarmListeners = new Set();
 
   const sync = createArea(syncStore, syncFlags);
   const local = createArea(localStore, localFlags);
@@ -93,6 +95,25 @@ export function installChromeMock(options = {}) {
       getURL(path) {
         const p = String(path || '').replace(/^\//, '');
         return `${EXTENSION_ORIGIN}/${p}`;
+      }
+    },
+    alarms: {
+      async create(name, alarmInfo) {
+        alarmStore.set(String(name), { name: String(name), ...alarmInfo });
+      },
+      async clear(name) {
+        return alarmStore.delete(String(name));
+      },
+      async getAll() {
+        return [...alarmStore.values()];
+      },
+      onAlarm: {
+        addListener(fn) {
+          if (typeof fn === 'function') alarmListeners.add(fn);
+        },
+        removeListener(fn) {
+          alarmListeners.delete(fn);
+        }
       }
     },
     i18n: {
@@ -158,6 +179,7 @@ export function installChromeMock(options = {}) {
     chrome,
     syncStore,
     localStore,
+    alarmStore,
     i18nMessages,
     syncFlags,
     localFlags,
@@ -179,6 +201,7 @@ export function installChromeMock(options = {}) {
     clearStores() {
       syncStore.clear();
       localStore.clear();
+      alarmStore.clear();
     },
     /**
      * @param {Record<string, string|{ message?: string, placeholders?: Record<string, { content?: string }> }>} messages

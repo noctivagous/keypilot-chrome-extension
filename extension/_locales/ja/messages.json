@@ -6478,11 +6478,32 @@
   "context_menu_control_strip": {
     "message": "コントロールストリップ（$1）",
     "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
-    "placeholders": {
-      "shortcut": {
-        "content": "$1",
-        "example": "Alt + J"
-      }
-    }
-  }
+    "placeholders": { "shortcut": { "content": "$1", "example": "Alt + J" } }
+  },
+  "settings_static_249": { "message": "タブを遅延して開く" },
+  "settings_static_250": { "message": "「URLを開く」または「ランダムブックマーク」のキーとAlt+Shiftを押すと、ランダムな時刻に実行されます。" },
+  "settings_static_251": { "message": "「URLを開く」を遅延" },
+  "settings_static_252": { "message": "すべての「URLを開く」キーでAlt+Shiftによる予約を有効にします。" },
+  "settings_static_253": { "message": "URLを開く：最短（分）" },
+  "settings_static_254": { "message": "URLを開く：最長（分）" },
+  "settings_static_255": { "message": "ランダムブックマークを遅延" },
+  "settings_static_256": { "message": "すべてのランダムブックマークキーでAlt+Shiftによる予約を有効にします。" },
+  "settings_static_257": { "message": "ランダムブックマーク：最短（分）" },
+  "settings_static_258": { "message": "ランダムブックマーク：最長（分）" },
+  "settings_static_259": { "message": "遅延タブを開く場所" },
+  "settings_static_260": { "message": "アクティブなブラウザウィンドウ" },
+  "settings_static_261": { "message": "利用可能な場合は元のブラウザウィンドウ" },
+  "settings_static_262": { "message": "選択したウィンドウが利用できない場合、KeyPilotは待機して再試行します。" },
+  "deferred_open_scheduled": { "message": "$1に開くよう予約しました", "placeholders": { "time": { "content": "$1" } } },
+  "deferred_open_schedule_failed": { "message": "遅延オープンを予約できませんでした" },
+  "deferred_open_dialog_title_open_urls": { "message": "URLを開く日時を予約" },
+  "deferred_open_dialog_title_random_bookmarks": { "message": "ランダムなブックマークを開く日時を予約" },
+  "deferred_open_dialog_label": { "message": "開く日時" },
+  "deferred_open_dialog_schedule": { "message": "予約" },
+  "deferred_open_dialog_cancel": { "message": "キャンセル" },
+  "deferred_open_dialog_error_past": { "message": "未来の日時を選択してください。" },
+  "deferred_open_dialog_open_picker": { "message": "日付と時刻の選択ツールを開く" },
+  "deferred_open_dialog_preset_1h": { "message": "+1時間" },
+  "deferred_open_dialog_preset_1d": { "message": "+1日" },
+  "deferred_open_dialog_preset_tomorrow": { "message": "明日 午前9時" }
 }

@@ -116,6 +116,39 @@ describe('built-in keyboard layout physical bindings', () => {
     );
   });
 
+  it('reserves exclusive Alt+Shift layout bindings for deferred URL and bookmark opening', async () => {
+    const keyPilotSource = await readFile('extension/src/keypilot.js', 'utf8');
+    assert.match(
+      keyPilotSource,
+      /!e\?\.altKey \|\| !e\?\.shiftKey \|\| e\?\.metaKey/
+    );
+    assert.match(
+      keyPilotSource,
+      /binding\.functionId !== 'OPEN_URLS'[\s\S]*binding\.functionId !== 'RANDOM_BOOKMARK'/
+    );
+    assert.match(
+      keyPilotSource,
+      /if \(this\._maybeHandleDeferredOpen\(e\)\) return;[\s\S]*if \(this\.hasModifierKeys\(e\)\)/
+    );
+  });
+
+  it('routes Ctrl+Alt+Shift to the exact-time dialog and Alt+Shift to a random delay', async () => {
+    const keyPilotSource = await readFile('extension/src/keypilot.js', 'utf8');
+
+    // Both chords share one binding/enable/payload resolver.
+    assert.equal(
+      (keyPilotSource.match(/this\._resolveDeferredOpenRequest\(e\)/g) || []).length,
+      1
+    );
+    assert.match(
+      keyPilotSource,
+      /const manual = !!e\.ctrlKey;[\s\S]*if \(manual\) \{[\s\S]*this\.scheduleOpenDialog\.show\(\{[\s\S]*onSubmit: \(fireAt\) => this\._submitDeferredOpen\(request, \{ fireAt \}\)[\s\S]*\}\);\s*return true;\s*\}[\s\S]*this\._submitDeferredOpen\(request, \{ minMinutes, maxMinutes \}\)/
+    );
+    // The dialog is closed by the close-all path and is only built from PopupManager.
+    assert.match(keyPilotSource, /new ScheduleOpenDialog\(\{\s*popupManager: this\.overlayManager\?\.popupManager/);
+    assert.match(keyPilotSource, /this\.scheduleOpenDialog\?\.hide\?\.\(\)/);
+  });
+
   it('uses the physical Click Element binding during the Text Mode hover window', async () => {
     const keyPilotSource = await readFile('extension/src/keypilot.js', 'utf8');
 

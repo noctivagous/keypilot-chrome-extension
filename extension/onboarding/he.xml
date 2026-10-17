@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="ברוכים הבאים ל-KeyPilot">
+   <onEnter type="overlay"
+             title="ברוכים הבאים ל-KeyPilot"
+             message="נראה לכם איך להשתמש ב-KeyPilot צעד אחר צעד."
+             primaryText="אישור"
+             secondaryText="סגירה"
+             secondaryAction="close" />
+       <task id="click_link" label="רחפו מעל קישור ולחצו על המקש `F` כדי ללחוץ עליו.">
+      <when type="action" action="activate" target="link" />
+    </task>
+    <task id="go_back" label="כדי לחזור אחורה (היסטוריה), לחצו על המקש `D`.">
+      <when type="action" action="back" />
+    </task>
+    <task id="keyboard_key_info" label="שימו לב לחלון מקלדת הייחוס למטה. רחפו מעל אחד המקשים כדי לראות מה הוא עושה.">
+      <when type="action" action="hover" target="keyboardHelpKey" />
+    </task>
+    <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
+         ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
+         (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
+    <task id="toggle_extension_off" label="יש פס בקרה למעלה שכתוב עליו `ON`. לחצו עליו כדי לכבות את KeyPilot לגמרי.">
+      <when type="action" action="toggleExtension" change="off" />
+    </task>
+  </slide>
+
+  <slide id="text_box_mode" title="מצב תיבת טקסט">
+    <onEnter type="overlay"
+             title="KeyPilot חזר לפעולה"
+             message="השלב הבא: תיבות טקסט."
+             primaryText="אישור"
+             effect="marquee" />
+    <task id="enter_text_mode" label="לחצו עם `F` על שדה טקסט מימין והוא יקבל הקלדה.">
+      <when type="mode" mode="text_focus" change="enter" />
+    </task>
+    <task id="exit_text_mode" label="לחצו `Escape` כדי לצאת מתיבת הטקסט.">
+      <when type="mode" mode="text_focus" change="exit" />
+    </task>
+  </slide>
+
+  <slide id="scrolling" title="גלילת הדף">
+    <onEnter type="overlay"
+             title="זה כל מה שצריך כדי לגלוש באינטרנט עם KeyPilot."
+             message="רוצים לנסות עוד מקשים?"
+             primaryText="כן, להמשיך"
+             secondaryText="לא, אחר כך"
+             secondaryAction="later"
+             laterTitle="חזרו למדריך הזה עם `Alt`+`I`"
+             laterPrimaryText="אישור, סגירה" />
+    <task id="scroll_down" label="גללו למטה עם `V`.">
+      <when type="action" action="scrollDown" />
+    </task>
+    <task id="scroll_up" label="גללו למעלה עם `C`.">
+      <when type="action" action="scrollUp" />
+    </task>
+    <task id="scroll_bottom" label="עברו לתחתית הדף עם `X`.">
+      <when type="action" action="scrollBottom" />
+    </task>
+    <task id="scroll_top" label="עברו לראש הדף עם `Z`.">
+      <when type="action" action="scrollTop" />
+    </task>
+  </slide>
+
+  <slide id="tabs" title="כרטיסיות">
+    <task id="open_link_background_tab" label="לחצו על קישור לכרטיסייה חדשה בלי לפתוח אותה (`G`).">
+      <when type="action" action="activateNewTabBackground" target="link" />
+    </task>
+    <task id="open_new_tab" label="פתחו כרטיסייה חדשה (`T`).">
+      <when type="action" action="newTab" />
+    </task>
+    <task id="move_tabs" label="עברו בין כרטיסיות שמאלה (`Q`).">
+      <when type="action" action="tabLeft" />
+    </task>
+    
+    <task id="move_tabs_2" label="עברו בין כרטיסיות ימינה (`W`).">
+      <when type="action" action="tabRight" />
+    </task>
+  </slide>
+  
+  <slide id="completion" title="המדריך הושלם">
+    <body>
+סיימתם את המדריך ואתם מוכנים להשתמש ב-KeyPilot.
+    </body>
+  </slide>
+</onboarding>

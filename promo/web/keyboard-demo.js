@@ -55,6 +55,14 @@
     }
     return DEFAULT_LOCALE;
   }
+  function getUITextDirection() {
+    try {
+      const dir = globalThis.chrome?.i18n?.getMessage?.("@@bidi_dir");
+      return dir === "rtl" ? "rtl" : "ltr";
+    } catch {
+      return "ltr";
+    }
+  }
   function getMessage(key2, substitutions) {
     const messageKey = typeof key2 === "string" ? key2.trim() : "";
     if (!messageKey) return missingMessage(String(key2 || "(empty key)"));
@@ -538,6 +546,8 @@
         en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
         es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
         es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+        he: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.il/", "searchUrlPrefix": "https://www.google.co.il/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.il" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+        hi: { "stockSocialMedia": { "urls": ["youtube.com", "instagram.com", "facebook.com", "whatsapp.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.in/", "searchUrlPrefix": "https://www.google.co.in/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.in" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
         ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
         sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
         zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
@@ -3036,6 +3046,9 @@ ${root} ::-webkit-scrollbar-thumb:active {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" fill="${safeFill}"><path d="${pathD}"/></svg>`;
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   }
+  function keySettingsGearDataUri(fill = "black") {
+    return faIconDataUri(ACCURATE_GEAR_PATH_16, fill, "0 0 16 16");
+  }
   function getActionIconDataUri(actionId, opts = {}) {
     const iconName = KEYBOARD_ACTION_ICON_IDS[actionId];
     const pathD = iconName === "gear" ? ACCURATE_GEAR_PATH_16 : iconName ? FA_SOLID_PATHS[iconName] : null;
@@ -3162,6 +3175,39 @@ ${root} ::-webkit-scrollbar-thumb:active {
     icon.setAttribute("aria-hidden", "true");
     keyEl.insertBefore(icon, keyEl.firstChild);
   }
+  function createKeySettingsMark(doc) {
+    const mark = doc.createElement("span");
+    mark.className = "key-settings-mark";
+    mark.setAttribute("aria-hidden", "true");
+    return mark;
+  }
+  function syncKeySettingsMark(doc, keyEl, show) {
+    if (!doc || !keyEl) return;
+    let mark = null;
+    try {
+      mark = keyEl.querySelector(":scope > .key-settings-mark");
+    } catch {
+      mark = keyEl.querySelector(".key-settings-mark");
+    }
+    if (!show) {
+      if (mark) mark.remove();
+      return;
+    }
+    if (mark && mark.tagName !== "SPAN") {
+      mark.remove();
+      mark = null;
+    }
+    if (!mark) mark = createKeySettingsMark(doc);
+    let legend = null;
+    try {
+      legend = keyEl.querySelector(":scope > .key-main, :scope > .key-label, :scope > .key-text");
+    } catch {
+      legend = keyEl.querySelector(".key-main, .key-label, .key-text");
+    }
+    if (mark.parentNode !== keyEl || mark.nextSibling !== legend) {
+      keyEl.insertBefore(mark, legend);
+    }
+  }
   function ensureKeyPressOverlay(doc, keyEl) {
     if (!doc || !keyEl) return null;
     let overlay = null;
@@ -3267,8 +3313,11 @@ ${root} ::-webkit-scrollbar-thumb:active {
       }
     }
     try {
+      if (fontUrls.titilliumBold && !String(fontUrls.titilliumBold).includes("__KP_FONT_") && doc.fonts?.load) {
+        void doc.fonts.load('700 10px "TitilliumText"');
+      }
       if (fontUrls.dosis && !String(fontUrls.dosis).includes("__KP_FONT_") && doc.fonts?.load) {
-        void doc.fonts.load('10px "Dosis"');
+        void doc.fonts.load('700 10px "Dosis"');
       }
     } catch {
     }
@@ -3282,6 +3331,7 @@ ${root} ::-webkit-scrollbar-thumb:active {
     const urlCubellan = fontUrls && fontUrls.cubellan || KEYBINDINGS_UI_FONT_PLACEHOLDERS.CUBELLAN;
     const urlEzarion = fontUrls && fontUrls.ezarion || KEYBINDINGS_UI_FONT_PLACEHOLDERS.EZARION;
     const urlDosis = fontUrls && fontUrls.dosis || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
+    const settingsGearMaskUri = keySettingsGearDataUri("black");
     const keyIconCss = getKeyboardKeyIconCss();
     const scrollCss = [
       getNctDarkUiScrollbarCss({ className: "kp-bookmark-folder-scroll" }),
@@ -3349,6 +3399,10 @@ ${fontFaceCss}
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
   --kp-key-glow: transparent;
+  /* Letter tint of the key face. --kp-key-main-ink is the stored hue-cast for
+     action names (54% face + white); .key-main currently paints #cecece instead. */
+  --kp-key-ink: color-mix(in srgb, var(--kp-key-face) 36%, white);
+  --kp-key-main-ink: color-mix(in srgb, var(--kp-key-face) 54%, white);
 
   position: relative;
   /*
@@ -3487,13 +3541,14 @@ ${fontFaceCss}
   margin: 0;
   padding: 0 1px;
   font-size: 11px;
-  font-weight: 650;
+  font-family: "TitilliumText", ui-sans-serif, system-ui, sans-serif;
+  font-weight: normal !important;
   letter-spacing: 0.02em;
   line-height: 1.1;
-  opacity: 0.9;
   text-transform: uppercase;
-  color: rgba(248, 250, 252, 0.94);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  /* Stored mix: color: var(--kp-key-main-ink); */
+  color: #cecece;
+  text-shadow: 1px 2px black;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -3524,15 +3579,45 @@ ${fontFaceCss}
   white-space: nowrap;
   line-height: 1;
   text-align: center;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  font-family: "TitilliumText", ui-sans-serif, system-ui, sans-serif;
+  font-weight: bold !important;
+  text-shadow: 1px 1px black;
+  color: var(--kp-key-ink);
   pointer-events: none;
 }
 
 .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-label {
+  font-family: "Dosis", ui-sans-serif, system-ui, sans-serif;
   font-size: 12px;
-  font-weight: 700;
   letter-spacing: 0.03em;
-  color: var(--kp-accent, #5be2f1);
+}
+
+/*
+ * Settings gear: this action has settings. Same stack level as the action name
+ * (.key-main is z-index 1) but earlier in the tree, so the name and the letter
+ * (.key-label is z-index 2) paint over it. Background icon stays at z-index 0.
+ * Screen blend keeps the glyph bright on every key family.
+ */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-settings-mark {
+  position: absolute;
+  z-index: 1;
+  right: 1px;
+  bottom: 1px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 1);
+  background-image: none;
+  -webkit-mask-image: ${settingsGearMaskUri};
+  mask-image: ${settingsGearMaskUri};
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  mix-blend-mode: screen;
+  opacity: 0.5;
 }
 
 /* Edit-mode slot delete: fixed overlay on the keycap, independent of .key-main. */
@@ -3587,9 +3672,7 @@ ${fontFaceCss}
 /* Special chrome labels (Tab/Caps/\u2026) */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-text {
   font-size: 10px;
-  font-weight: 650;
   letter-spacing: 0.02em;
-  color: rgba(248, 250, 252, 0.92);
 }
 
 /* Unassigned letter-only keys: still bottom-centered (same letter layer) */
@@ -3598,8 +3681,6 @@ ${fontFaceCss}
   top: auto;
   transform: none;
   font-size: 12px;
-  font-weight: 700;
-  color: var(--kp-accent, #5be2f1);
 }
 
 /* Special keys: wider, same height */
@@ -3989,7 +4070,8 @@ ${fontFaceCss}
       var(--kp-key-deep) 100%);
 }
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-bg-icon,
-.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-main {
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-main,
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-settings-mark {
   display: none !important;
 }
 /* Pattern overlays (hatch / checkerboard / \u2026) \u2014 plain face only while typing. */
@@ -3998,8 +4080,8 @@ ${fontFaceCss}
 }
 /*
  * Center physical letters on every plain key. !important beats the higher-specificity
- * unassigned key-text rule (cyan / bottom-pinned) that would otherwise leave empty
- * keys like U O [ ] N , / looking different from assigned key-label keys.
+ * unassigned key-text rule that would otherwise leave empty keys like U O [ ]
+ * looking different from assigned key-label keys.
  */
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-label,
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-text {
@@ -4009,10 +4091,10 @@ ${fontFaceCss}
   right: 0 !important;
   transform: translateY(-50%) !important;
   font-size: 14px !important;
-  font-weight: 700 !important;
+  font-weight: bold !important;
   letter-spacing: 0.02em !important;
-  color: rgba(248, 250, 252, 0.94) !important;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+  color: var(--kp-key-ink) !important;
+  text-shadow: 1px 1px black !important;
 }
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key.kp-key-text-mode-disabled {
   pointer-events: none;
@@ -4205,6 +4287,8 @@ ${fontFaceCss}
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint {
+  position: relative;
+  isolation: isolate;
   flex: 0 1 auto;
   max-width: 11em;
   font-size: 10px;
@@ -4215,11 +4299,36 @@ ${fontFaceCss}
   overflow-wrap: break-word;
   text-align: center;
   line-height: 1.25;
-  padding: 2px 8px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+  padding: 4px 10px 4px 22px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.32);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.kp-keybindings-popover .kp-popover-settings-hint::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  width: 1.45em;
+  height: 1.45em;
+  transform: translateY(-50%);
+  z-index: 0;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 1);
+  -webkit-mask-image: ${settingsGearMaskUri};
+  mask-image: ${settingsGearMaskUri};
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  mix-blend-mode: screen;
+  opacity: 0.5;
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint[hidden] {
@@ -5964,6 +6073,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     }
     try {
       host.setAttribute("lang", getUILocaleTag());
+      host.setAttribute("dir", getUITextDirection());
     } catch {
     }
     if (opts.chromeWindow) markChromeWindow(host);
@@ -6280,6 +6390,8 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     OPEN_BOOKMARK_FOLDER: "KP_OPEN_BOOKMARK_FOLDER",
     /** Content → SW: open `count` random bookmarks. Empty folderId means every bookmark. */
     OPEN_RANDOM_BOOKMARK: "KP_OPEN_RANDOM_BOOKMARK",
+    /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
+    SCHEDULE_DEFERRED_OPEN: "KP_SCHEDULE_DEFERRED_OPEN",
     /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
     NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
     /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
@@ -7363,6 +7475,9 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   function functionWorksWhileTyping(functionId) {
     return !!getFunctionDef(functionId)?.worksWhileTyping;
   }
+
+  // extension/src/ui/key-action-settings.js
+  init_stock_actions();
 
   // extension/src/modules/keyboard-layout-store.js
   init_keyboard_layouts();
@@ -9301,6 +9416,11 @@ ${getSelectMenuCss()}`
   function actionHasDestination(actionId) {
     return !!getActionDestinationDef(actionId);
   }
+  function actionHasSettings(actionId) {
+    const stock = getStockActionById(actionId);
+    const id = stock?.functionId || actionId;
+    return actionHasModes(id) || actionHasDestination(id) || getActionInlineEnumDefs(id).length > 0 || actionHasParameters(id);
+  }
   function getActionMode(parameters, actionId) {
     const def = getActionSettingsDef(actionId);
     const fallback = def?.defaultMode || def?.modes?.[0]?.id || "element";
@@ -9823,10 +9943,6 @@ ${getSelectMenuCss()}`
     const stock = getStockActionById(actionId);
     return stock?.functionId || actionId;
   }
-  function actionHasSettings(actionId) {
-    const id = settingsFunctionId(actionId);
-    return actionHasModes(id) || actionHasDestination(id) || getActionInlineEnumDefs(id).length > 0 || actionHasParameters(id);
-  }
   function bindingFromFunctionId(id, keyEl) {
     if (!id || id.startsWith("action:") || id.startsWith("stock:")) return null;
     const fn = getFunctionDef(id);
@@ -9911,6 +10027,12 @@ ${getSelectMenuCss()}`
         } catch {
         }
       });
+      container.querySelectorAll(".key:not([data-kp-action-id]) > .key-settings-mark").forEach((el2) => {
+        try {
+          el2.remove();
+        } catch {
+        }
+      });
     } catch {
     }
     try {
@@ -9936,6 +10058,8 @@ ${getSelectMenuCss()}`
       }
       ensureKeyBackgroundIcon(doc, keyEl);
       ensureKeyPressOverlay(doc, keyEl);
+      const settingsId = getFunctionDef(actionId) ? actionId : instanceId || actionId;
+      syncKeySettingsMark(doc, keyEl, actionHasSettings(settingsId));
       const title = binding && (binding.description || binding.label) || actionId;
       try {
         keyEl.removeAttribute("title");
@@ -10041,6 +10165,7 @@ ${getSelectMenuCss()}`
           binding && (binding.description || binding.label) || item.fallbackText || item.id
         );
         ensureKeyBackgroundIcon(doc, keyEl);
+        syncKeySettingsMark(doc, keyEl, actionHasSettings(item.id));
         const main = el(
           doc,
           "div",

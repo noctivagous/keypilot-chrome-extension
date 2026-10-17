@@ -73,6 +73,19 @@ describe('CJK locale tags and document language', () => {
     const documentElement = fakeDocElement();
     applyDocumentLocale({ documentElement });
     assert.equal(documentElement.getAttribute('lang'), 'zh-TW');
+    assert.equal(documentElement.getAttribute('dir'), 'ltr');
+  });
+
+  it('sets dir from Chrome bidi on the document root', async () => {
+    const { applyDocumentLocale } = await import('../extension/src/utils/i18n.js');
+    mock.setI18nMessages({
+      locale_tag: { message: 'he' },
+      '@@bidi_dir': { message: 'rtl' }
+    });
+    const documentElement = fakeDocElement();
+    applyDocumentLocale({ documentElement });
+    assert.equal(documentElement.getAttribute('lang'), 'he');
+    assert.equal(documentElement.getAttribute('dir'), 'rtl');
   });
 
   it('sets lang when localizing a page, before visible UI is shown', async () => {

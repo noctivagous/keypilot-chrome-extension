@@ -11041,6 +11041,7 @@
     if (!host) return null;
     try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }
     try { host.setAttribute('lang', getUILocaleTag()); } catch { /* ignore */ }
+    try { host.setAttribute('dir', getUITextDirection()); } catch { /* ignore */ }
     try { host.classList.add('kp-chrome-window'); } catch { /* ignore */ }
     try {
       const themeId = document.documentElement.getAttribute('data-kp-theme') || peekCachedThemeId() || 'dark-pro';
@@ -11163,7 +11164,7 @@
   --kp-key-icon: #1a1e28;
   --kp-key-glow: transparent;
   /* Letter tint of the key face. --kp-key-main-ink is the stored hue-cast for
-     action names (54% face + white); .key-main currently paints white instead. */
+     action names (54% face + white); .key-main currently paints #cecece instead. */
   --kp-key-ink: color-mix(in srgb, var(--kp-key-face) 36%, white);
   --kp-key-main-ink: color-mix(in srgb, var(--kp-key-face) 54%, white);
 
@@ -13598,6 +13599,18 @@
     }
   }
 
+  /**
+   * `@@bidi_dir` from the loaded catalog. Hebrew is `rtl`.
+   * @returns {'ltr'|'rtl'}
+   */
+  function getUITextDirection() {
+    try {
+      return chrome?.i18n?.getMessage?.('@@bidi_dir') === 'rtl' ? 'rtl' : 'ltr';
+    } catch {
+      return 'ltr';
+    }
+  }
+
   const EARLY_CJK_SC =
     'system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", sans-serif';
   const EARLY_CJK_TC =
@@ -14128,6 +14141,7 @@
     // locale-specific typography rules (`:lang()`) can apply inside.
     const shellLocaleTag = getUILocaleTag();
     try { root.setAttribute('lang', shellLocaleTag); } catch { /* ignore */ }
+    try { root.setAttribute('dir', getUITextDirection()); } catch { /* ignore */ }
     let shell = root;
     try { shell = root.shadowRoot || root.attachShadow({ mode: 'open' }); } catch { /* light fallback */ }
     try {

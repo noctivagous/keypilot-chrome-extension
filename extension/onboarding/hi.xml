@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="KeyPilot में आपका स्वागत है">
+   <onEnter type="overlay"
+             title="KeyPilot में आपका स्वागत है"
+             message="हम आपको KeyPilot एक-एक कदम करके दिखाएँगे।"
+             primaryText="ठीक है"
+             secondaryText="बंद करें"
+             secondaryAction="close" />
+       <task id="click_link" label="किसी लिंक पर होवर करें और उसे क्लिक करने के लिए `F` कुंजी दबाएँ।">
+      <when type="action" action="activate" target="link" />
+    </task>
+    <task id="go_back" label="पीछे जाने के लिए (इतिहास), `D` कुंजी दबाएँ।">
+      <when type="action" action="back" />
+    </task>
+    <task id="keyboard_key_info" label="नीचे कीबोर्ड संदर्भ विंडो देखें। यह क्या करती है जानने के लिए उसकी किसी कुंजी पर होवर करें।">
+      <when type="action" action="hover" target="keyboardHelpKey" />
+    </task>
+    <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
+         ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
+         (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
+    <task id="toggle_extension_off" label="ऊपर एक नियंत्रण पट्टी है जिस पर `ON` लिखा है। KeyPilot पूरी तरह बंद करने के लिए उसे क्लिक करें।">
+      <when type="action" action="toggleExtension" change="off" />
+    </task>
+  </slide>
+
+  <slide id="text_box_mode" title="टेक्स्ट बॉक्स मोड">
+    <onEnter type="overlay"
+             title="KeyPilot फिर चालू है"
+             message="आगे: टेक्स्ट बॉक्स।"
+             primaryText="ठीक है"
+             effect="marquee" />
+    <task id="enter_text_mode" label="दाईं ओर किसी टेक्स्ट फ़ील्ड को `F` से क्लिक करें और उसमें टाइपिंग जाएगी।">
+      <when type="mode" mode="text_focus" change="enter" />
+    </task>
+    <task id="exit_text_mode" label="टेक्स्ट बॉक्स से बाहर निकलने के लिए `Escape` दबाएँ।">
+      <when type="mode" mode="text_focus" change="exit" />
+    </task>
+  </slide>
+
+  <slide id="scrolling" title="पेज स्क्रॉल करना">
+    <onEnter type="overlay"
+             title="वेब को KeyPilot से ब्राउज़ करने के लिए बस इतना ही चाहिए।"
+             message="क्या आप और कुंजियाँ आज़माना चाहते हैं?"
+             primaryText="हाँ, जारी रखें"
+             secondaryText="नहीं, बाद में"
+             secondaryAction="later"
+             laterTitle="इस ट्यूटोरियल पर `Alt`+`I` से लौटें"
+             laterPrimaryText="ठीक है, बंद करें" />
+    <task id="scroll_down" label="`V` से नीचे स्क्रॉल करें।">
+      <when type="action" action="scrollDown" />
+    </task>
+    <task id="scroll_up" label="`C` से ऊपर स्क्रॉल करें।">
+      <when type="action" action="scrollUp" />
+    </task>
+    <task id="scroll_bottom" label="`X` से पेज के नीचे जाएँ।">
+      <when type="action" action="scrollBottom" />
+    </task>
+    <task id="scroll_top" label="`Z` से पेज के शीर्ष पर जाएँ।">
+      <when type="action" action="scrollTop" />
+    </task>
+  </slide>
+
+  <slide id="tabs" title="टैब">
+    <task id="open_link_background_tab" label="हाइपरलिंक को नए टैब में क्लिक करें लेकिन उसे न खोलें (`G`)।">
+      <when type="action" action="activateNewTabBackground" target="link" />
+    </task>
+    <task id="open_new_tab" label="नया टैब खोलें (`T`)।">
+      <when type="action" action="newTab" />
+    </task>
+    <task id="move_tabs" label="टैब के बीच बाएँ जाएँ (`Q`)।">
+      <when type="action" action="tabLeft" />
+    </task>
+    
+    <task id="move_tabs_2" label="टैब के बीच दाएँ जाएँ (`W`)।">
+      <when type="action" action="tabRight" />
+    </task>
+  </slide>
+  
+  <slide id="completion" title="ट्यूटोरियल पूरा">
+    <body>
+आपने ट्यूटोरियल पूरा कर लिया है और KeyPilot उपयोग करने के लिए तैयार हैं।
+    </body>
+  </slide>
+</onboarding>

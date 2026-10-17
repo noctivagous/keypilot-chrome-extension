@@ -11,7 +11,7 @@ import {
   getActiveTheme,
   injectAllThemeMaps
 } from '../modules/theme-manager.js';
-import { getUILocaleTag } from '../utils/i18n.js';
+import { getUILocaleTag, getUITextDirection } from '../utils/i18n.js';
 import { KP_CJK_SHADOW_CSS } from './locale-fonts.js';
 
 /**
@@ -88,6 +88,7 @@ export function ensureOpenChromeShadow(host, opts = {}) {
   // locale-specific typography rules (`:lang()`) can apply inside.
   try {
     host.setAttribute('lang', getUILocaleTag());
+    host.setAttribute('dir', getUITextDirection());
   } catch { /* ignore */ }
   if (opts.chromeWindow) markChromeWindow(host);
   let shadow = null;

@@ -20,6 +20,8 @@ const traditionalChineseXml = join(root, 'extension/onboarding/zh_TW.xml');
 const hongKongChineseXml = join(root, 'extension/onboarding/zh_HK.xml');
 const japaneseXml = join(root, 'extension/onboarding/ja.xml');
 const slovakXml = join(root, 'extension/onboarding/sk.xml');
+const hebrewXml = join(root, 'extension/onboarding/he.xml');
+const hindiXml = join(root, 'extension/onboarding/hi.xml');
 const spanishFixture = join(root, 'test/fixtures/onboarding/es.xml');
 
 /** @type {ReturnType<typeof installChromeMock>} */
@@ -93,6 +95,20 @@ describe('onboarding locale models', () => {
     const slovak = parseOnboardingXml(readFileSync(slovakXml, 'utf8'));
     assert.deepEqual(structureOf(slovakXml), structureOf(englishXml));
     assert.notEqual(slovak.slides[0].title, english.slides[0].title);
+  });
+
+  it('ships the Hebrew model with English-compatible structure', () => {
+    const english = parseOnboardingXml(readFileSync(englishXml, 'utf8'));
+    const hebrew = parseOnboardingXml(readFileSync(hebrewXml, 'utf8'));
+    assert.deepEqual(structureOf(hebrewXml), structureOf(englishXml));
+    assert.notEqual(hebrew.slides[0].title, english.slides[0].title);
+  });
+
+  it('ships the Hindi model with English-compatible structure', () => {
+    const english = parseOnboardingXml(readFileSync(englishXml, 'utf8'));
+    const hindi = parseOnboardingXml(readFileSync(hindiXml, 'utf8'));
+    assert.deepEqual(structureOf(hindiXml), structureOf(englishXml));
+    assert.notEqual(hindi.slides[0].title, english.slides[0].title);
   });
 
   it('ships CJK models with English-compatible structure', () => {

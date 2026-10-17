@@ -1949,7 +1949,7 @@ h2 {
   font-size: 0.5rem;
   font-weight: 600;
   line-height: 1.15;
-  text-align: left;
+  text-align: start;
   color: var(--nt-fg-92);
   overflow: hidden;
   max-height: 2.4em; /* ~2 lines, then clip */

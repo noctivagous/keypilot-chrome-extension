@@ -43,6 +43,10 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 /** @typedef {typeof CURSOR_MODE[keyof typeof CURSOR_MODE]} CursorMode */
 /** @typedef {'smooth'|'instant'} ScrollSpeed */
 /** @typedef {'flash'|'dash'|'marquee'|'scale'|'none'} ClickEffect */
+/** @typedef {'activeWindow'|'originalWindow'} DeferredOpenTarget */
+
+export const DEFERRED_OPEN_MIN_MINUTES = 1;
+export const DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
 
 /** Valid text-mode focus field styles (order is settings UI preference). */
 export const TEXT_FOCUS_STYLE_IDS = Object.freeze(/** @type {const} */ ([
@@ -165,6 +169,11 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings,
  *   scroll: ScrollSettings,
+ *   deferredOpen: {
+ *     openUrls: { enabled: boolean, minMinutes: number, maxMinutes: number },
+ *     randomBookmarks: { enabled: boolean, minMinutes: number, maxMinutes: number },
+ *     target: DeferredOpenTarget
+ *   },
  *   actionSettings: Record<string, { mode?: string, parameters?: Record<string, any> }>
  * }} KeyPilotSettings
  */
@@ -286,6 +295,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
     middleClickScrollLine: isMacPlatform(),
     // Scroll Line: skip horizontal-only landscape overflow (carousels).
     linePreferPortraitTargets: true
+  }),
+  deferredOpen: Object.freeze({
+    openUrls: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    randomBookmarks: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    target: 'activeWindow'
   })
 });
 
@@ -556,6 +578,39 @@ function normalizeScroll(raw) {
   };
 }
 
+function normalizeDeferredOpenRange(raw, fallback) {
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  const minMinutes = normalizeNumber(
+    stored.minMinutes,
+    fallback.minMinutes,
+    DEFERRED_OPEN_MIN_MINUTES,
+    DEFERRED_OPEN_MAX_MINUTES
+  );
+  const maxMinutes = normalizeNumber(
+    stored.maxMinutes,
+    fallback.maxMinutes,
+    DEFERRED_OPEN_MIN_MINUTES,
+    DEFERRED_OPEN_MAX_MINUTES
+  );
+  return {
+    enabled: normalizeBoolean(stored.enabled, fallback.enabled),
+    minMinutes: Math.min(minMinutes, maxMinutes),
+    maxMinutes: Math.max(minMinutes, maxMinutes)
+  };
+}
+
+export function normalizeDeferredOpen(raw) {
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  return {
+    openUrls: normalizeDeferredOpenRange(stored.openUrls, DEFAULT_SETTINGS.deferredOpen.openUrls),
+    randomBookmarks: normalizeDeferredOpenRange(
+      stored.randomBookmarks,
+      DEFAULT_SETTINGS.deferredOpen.randomBookmarks
+    ),
+    target: stored.target === 'originalWindow' ? 'originalWindow' : 'activeWindow'
+  };
+}
+
 /**
  * @param {any} raw
  * @returns {ControlStripSettings}
@@ -785,7 +840,8 @@ export async function getSettings() {
       actionSettings: normalizeActionSettings(stored?.actionSettings),
       clickMode: normalizeClickMode(stored?.clickMode),
       textMode: normalizeTextMode(stored?.textMode),
-      scroll: normalizeScroll(stored?.scroll)
+      scroll: normalizeScroll(stored?.scroll),
+      deferredOpen: normalizeDeferredOpen(stored?.deferredOpen)
     };
   } catch (_e) {
     return {
@@ -801,6 +857,7 @@ export async function getSettings() {
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll },
+      deferredOpen: normalizeDeferredOpen(null),
       actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
       actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
       themeId: DEFAULT_THEME_ID,
@@ -872,6 +929,22 @@ export async function setSettings(partial) {
     scroll: {
       ...current.scroll,
       ...(p.scroll && typeof p.scroll === 'object' ? p.scroll : {})
+    },
+    deferredOpen: {
+      ...current.deferredOpen,
+      ...(p.deferredOpen && typeof p.deferredOpen === 'object' ? p.deferredOpen : {}),
+      openUrls: {
+        ...current.deferredOpen.openUrls,
+        ...(p.deferredOpen?.openUrls && typeof p.deferredOpen.openUrls === 'object'
+          ? p.deferredOpen.openUrls
+          : {})
+      },
+      randomBookmarks: {
+        ...current.deferredOpen.randomBookmarks,
+        ...(p.deferredOpen?.randomBookmarks && typeof p.deferredOpen.randomBookmarks === 'object'
+          ? p.deferredOpen.randomBookmarks
+          : {})
+      }
     },
     actionSettings: (() => {
       const merged = { ...(current.actionSettings || {}) };
@@ -952,6 +1025,7 @@ export async function setSettings(partial) {
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);
+  next.deferredOpen = normalizeDeferredOpen(next.deferredOpen);
   next._updatedAt = Date.now();
   await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
   return next;
@@ -979,6 +1053,7 @@ export async function resetAllSettings() {
     },
     textMode: { ...DEFAULT_SETTINGS.textMode },
     scroll: { ...DEFAULT_SETTINGS.scroll },
+    deferredOpen: normalizeDeferredOpen(null),
     actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
     actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
     _updatedAt: Date.now()

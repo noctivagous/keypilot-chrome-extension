@@ -6478,11 +6478,32 @@
   "context_menu_control_strip": {
     "message": "控制列（$1）",
     "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
-    "placeholders": {
-      "shortcut": {
-        "content": "$1",
-        "example": "Alt + J"
-      }
-    }
-  }
+    "placeholders": { "shortcut": { "content": "$1", "example": "Alt + J" } }
+  },
+  "settings_static_249": { "message": "延後開啟分頁" },
+  "settings_static_250": { "message": "按 Alt+Shift 及「開啟網址」或「隨機書籤」按鍵，即可安排在隨機時間執行。" },
+  "settings_static_251": { "message": "延後開啟網址" },
+  "settings_static_252": { "message": "為所有「開啟網址」按鍵啟用 Alt+Shift 排程。" },
+  "settings_static_253": { "message": "開啟網址最短時間（分鐘）" },
+  "settings_static_254": { "message": "開啟網址最長時間（分鐘）" },
+  "settings_static_255": { "message": "延後隨機書籤" },
+  "settings_static_256": { "message": "為所有「隨機書籤」按鍵啟用 Alt+Shift 排程。" },
+  "settings_static_257": { "message": "隨機書籤最短時間（分鐘）" },
+  "settings_static_258": { "message": "隨機書籤最長時間（分鐘）" },
+  "settings_static_259": { "message": "延後分頁開啟位置" },
+  "settings_static_260": { "message": "目前使用中的瀏覽器視窗" },
+  "settings_static_261": { "message": "原本的瀏覽器視窗（如可用）" },
+  "settings_static_262": { "message": "如果所選視窗無法使用，KeyPilot 將等待並重試。" },
+  "deferred_open_scheduled": { "message": "已安排於 $1 開啟", "placeholders": { "time": { "content": "$1" } } },
+  "deferred_open_schedule_failed": { "message": "無法安排延後開啟" },
+  "deferred_open_dialog_title_open_urls": { "message": "安排開啟網址" },
+  "deferred_open_dialog_title_random_bookmarks": { "message": "安排開啟隨機書籤" },
+  "deferred_open_dialog_label": { "message": "開啟時間" },
+  "deferred_open_dialog_schedule": { "message": "安排" },
+  "deferred_open_dialog_cancel": { "message": "取消" },
+  "deferred_open_dialog_error_past": { "message": "請選擇未來的日期和時間。" },
+  "deferred_open_dialog_open_picker": { "message": "開啟日期與時間選擇器" },
+  "deferred_open_dialog_preset_1h": { "message": "+1小時" },
+  "deferred_open_dialog_preset_1d": { "message": "+1天" },
+  "deferred_open_dialog_preset_tomorrow": { "message": "明天上午9點" }
 }

@@ -52,6 +52,8 @@ export const MSG = Object.freeze({
   OPEN_BOOKMARK_FOLDER: 'KP_OPEN_BOOKMARK_FOLDER',
   /** Content → SW: open `count` random bookmarks. Empty folderId means every bookmark. */
   OPEN_RANDOM_BOOKMARK: 'KP_OPEN_RANDOM_BOOKMARK',
+  /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
+  SCHEDULE_DEFERRED_OPEN: 'KP_SCHEDULE_DEFERRED_OPEN',
   /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
   NAVIGATE_SAME_TAB: 'KP_NAVIGATE_SAME_TAB',
   /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */

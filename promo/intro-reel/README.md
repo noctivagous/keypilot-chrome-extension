@@ -81,7 +81,7 @@ promo/intro-reel/
   README.md
   youtube.json            # titles, tags, published URLs
   youtube-description-*.txt
-  locales/key-click-intro/   # en de es es_419 sk zh_CN zh_TW zh_HK + batch.json
+  locales/key-click-intro/   # en de es es_419 sk he hi ja zh_CN zh_TW zh_HK + batch.json
                              # HTML: key-click-intro.html?lang=de
   renders/                  # generated MP4s; ignored by Git
 ```

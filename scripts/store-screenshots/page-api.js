@@ -311,6 +311,30 @@
         inspect: '検証'
       };
     }
+    if (lang.startsWith('he') || lang === 'iw') {
+      return {
+        back: 'חזרה',
+        forward: 'קדימה',
+        reload: 'טעינה מחדש',
+        saveAs: 'שמירה בשם…',
+        print: 'הדפסה…',
+        translate: 'תרגום לעברית',
+        viewSource: 'הצגת מקור הדף',
+        inspect: 'בדיקה'
+      };
+    }
+    if (lang.startsWith('hi')) {
+      return {
+        back: 'पीछे',
+        forward: 'आगे',
+        reload: 'फिर से लोड करें',
+        saveAs: 'इस रूप में सहेजें…',
+        print: 'प्रिंट करें…',
+        translate: 'हिन्दी में अनुवाद करें',
+        viewSource: 'पेज स्रोत देखें',
+        inspect: 'जाँच करें'
+      };
+    }
     if (lang.startsWith('sk')) {
       return {
         back: 'Späť',

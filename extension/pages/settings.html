@@ -647,6 +647,67 @@
                   <div class="toggle-sub" data-i18n="settings_static_120">Highlights keys in the floating keyboard reference panel on keydown/keyup.</div>
                 </div>
               </label>
+
+              <div class="divider"></div>
+              <h3 class="subhead" data-i18n="settings_static_249">Deferred tab opening</h3>
+              <p class="hint" data-i18n="settings_static_250">Press Alt+Shift with an Open URLs or Random Bookmarks key to schedule it at a random time.</p>
+
+              <label class="toggle" for="deferred-open-urls-enabled">
+                <input id="deferred-open-urls-enabled" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title" data-i18n="settings_static_251">Delay Open URLs</div>
+                  <div class="toggle-sub" data-i18n="settings_static_252">Enable Alt+Shift scheduling for every Open URLs key.</div>
+                </div>
+              </label>
+              <div class="grid-2">
+                <div class="field">
+                  <div class="field-label" data-i18n="settings_static_253">Open URLs minimum (minutes)</div>
+                  <div class="range-row">
+                    <input id="deferred-open-urls-min-range" type="range" min="1" max="2880" step="1" />
+                    <input id="deferred-open-urls-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label" data-i18n="settings_static_254">Open URLs maximum (minutes)</div>
+                  <div class="range-row">
+                    <input id="deferred-open-urls-max-range" type="range" min="1" max="2880" step="1" />
+                    <input id="deferred-open-urls-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                  </div>
+                </div>
+              </div>
+
+              <label class="toggle" for="deferred-random-bookmarks-enabled">
+                <input id="deferred-random-bookmarks-enabled" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title" data-i18n="settings_static_255">Delay Random Bookmarks</div>
+                  <div class="toggle-sub" data-i18n="settings_static_256">Enable Alt+Shift scheduling for every Random Bookmarks key.</div>
+                </div>
+              </label>
+              <div class="grid-2">
+                <div class="field">
+                  <div class="field-label" data-i18n="settings_static_257">Random Bookmarks minimum (minutes)</div>
+                  <div class="range-row">
+                    <input id="deferred-random-bookmarks-min-range" type="range" min="1" max="2880" step="1" />
+                    <input id="deferred-random-bookmarks-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label" data-i18n="settings_static_258">Random Bookmarks maximum (minutes)</div>
+                  <div class="range-row">
+                    <input id="deferred-random-bookmarks-max-range" type="range" min="1" max="2880" step="1" />
+                    <input id="deferred-random-bookmarks-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                  </div>
+                </div>
+              </div>
+
+              <label class="field">
+                <div class="field-label" data-i18n="settings_static_259">Open delayed tabs in</div>
+                <select id="deferred-open-target" class="select">
+                  <option value="activeWindow" data-i18n="settings_static_260">The active browser window</option>
+                  <option value="originalWindow" data-i18n="settings_static_261">The original browser window when available</option>
+                </select>
+                <div class="field-hint" data-i18n="settings_static_262">If the selected window is unavailable, KeyPilot waits and retries while the browser remains open.</div>
+              </label>
             </div>
           </section>
 

@@ -1,0 +1,16 @@
+KeyPilot — הקליק-מקש | גלישה מונעת מקלדת
+
+KeyPilot הוא תוסף Chrome חינמי מבית Noctivagous Software. העכבר מנווט. המקלדת מפעילה.
+
+הפתיח הזה מציג את הקליק-מקש: כוונו עם העכבר, לחצו F לפתיחה, D לחזרה. שני קלטים + שני תפקידים יוצרים ממשק טוב יותר.
+
+0:00 גלישה מונעת מקלדת
+0:06 כך זה עובד: הקליק-מקש
+0:10 ניווט + הפעלה
+0:18 צפו: F פותח ו-D חוזר
+0:26 שני קלטים, שני תפקידים
+0:29 כוונו עם העכבר. הפעילו עם מקש.
+
+Chrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+אתר: https://noctivagous.com/he/
+חינם · רישיון MIT

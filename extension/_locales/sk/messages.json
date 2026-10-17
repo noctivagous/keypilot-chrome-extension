@@ -6478,11 +6478,32 @@
   "context_menu_control_strip": {
     "message": "Ovládací pás ($1)",
     "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
-    "placeholders": {
-      "shortcut": {
-        "content": "$1",
-        "example": "Alt + J"
-      }
-    }
-  }
+    "placeholders": { "shortcut": { "content": "$1", "example": "Alt + J" } }
+  },
+  "settings_static_249": { "message": "Odložené otváranie kariet" },
+  "settings_static_250": { "message": "Stlačte Alt+Shift s klávesom Otvoriť URL alebo Náhodné záložky a naplánujte ho na náhodný čas." },
+  "settings_static_251": { "message": "Odložiť Otvoriť URL" },
+  "settings_static_252": { "message": "Povoliť plánovanie Alt+Shift pre každý kláves Otvoriť URL." },
+  "settings_static_253": { "message": "Otvoriť URL minimum (minúty)" },
+  "settings_static_254": { "message": "Otvoriť URL maximum (minúty)" },
+  "settings_static_255": { "message": "Odložiť Náhodné záložky" },
+  "settings_static_256": { "message": "Povoliť plánovanie Alt+Shift pre každý kláves Náhodné záložky." },
+  "settings_static_257": { "message": "Náhodné záložky minimum (minúty)" },
+  "settings_static_258": { "message": "Náhodné záložky maximum (minúty)" },
+  "settings_static_259": { "message": "Otvoriť odložené karty v" },
+  "settings_static_260": { "message": "Aktívnom okne prehliadača" },
+  "settings_static_261": { "message": "Pôvodnom okne prehliadača, ak je dostupné" },
+  "settings_static_262": { "message": "Ak vybrané okno nie je dostupné, KeyPilot počká a skúsi to znova." },
+  "deferred_open_scheduled": { "message": "Otvorenie naplánované na $1", "placeholders": { "time": { "content": "$1" } } },
+  "deferred_open_schedule_failed": { "message": "Odložené otvorenie sa nepodarilo naplánovať" },
+  "deferred_open_dialog_title_open_urls": { "message": "Naplánovať otvorenie URL" },
+  "deferred_open_dialog_title_random_bookmarks": { "message": "Naplánovať otvorenie náhodných záložiek" },
+  "deferred_open_dialog_label": { "message": "Otvoriť o" },
+  "deferred_open_dialog_schedule": { "message": "Naplánovať" },
+  "deferred_open_dialog_cancel": { "message": "Zrušiť" },
+  "deferred_open_dialog_error_past": { "message": "Vyberte dátum a čas v budúcnosti." },
+  "deferred_open_dialog_open_picker": { "message": "Otvoriť výber dátumu a času" },
+  "deferred_open_dialog_preset_1h": { "message": "+1 hodina" },
+  "deferred_open_dialog_preset_1d": { "message": "+1 deň" },
+  "deferred_open_dialog_preset_tomorrow": { "message": "Zajtra, 9:00" }
 }

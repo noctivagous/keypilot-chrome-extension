@@ -1,0 +1,938 @@
+{
+  "control_strip_collapse": {
+    "message": "כיווץ",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "הרחבה",
+    "description": "Control-strip expand action."
+  },
+  "keyboard_help_aria_label": {
+    "message": "מקלדת הייחוס של KeyPilot",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "מקלדת הייחוס",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "מקלדת הייחוס — הקלדה",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "הפעלה או כיבוי של מקלדת הייחוס",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "הפעלה או כיבוי של מקלדת הייחוס ($1)",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "סגירת מקלדת הייחוס",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "כיווץ מקלדת הייחוס",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "הרחבת מקלדת הייחוס",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "פריסת המקלדת הנוכחית",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "עריכת פריסה — $1 ליציאה",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "יציאה ממצב טקסט ($1)",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "יציאה",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "$1 ליציאה",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "סגירת עורך הפריסות ($1)",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "סגירת העורך",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "לשמאליים",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "כיבוי פריסה לשמאליים",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "לא ניתן להציג את מקלדת הייחוס בדף הזה.",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "לא ניתן להציג את פריסת המקלדת המותאמת.",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "הסרת הפעולה מ-$1",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "הסרה",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "layout_family_browsing_label": {
+    "message": "גלישה",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "בקרי גלישה מלאים (גלילה, כרטיסיות, לחיצה, היסטוריה, כלים).",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "מובנה: גלישה",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "key_info_key": {
+    "message": "מקש: $1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "לחצו להצגת ההגדרות",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_instance_title": {
+    "message": "$NAME$ : $TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
+  "key_info_config": {
+    "message": "תצורה",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "לחיצה על רכיב",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "לחיצה על הרכיב בריחוף",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "לחיצה בכרטיסייה חדשה",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "פתיחת קישור בכרטיסייה חדשה בחזית",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "לחיצה בכרטיסייה ברקע",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "פתיחת קישור בכרטיסייה חדשה ברקע",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "אחורה",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "אחורה בהיסטוריית הדפדפן",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "אחורה",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "אחורה בהיסטוריית הדפדפן",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "קדימה",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "קדימה בהיסטוריית הדפדפן",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "מצב מחיקה",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "הסתרת רכיבים שמתחת לסמן",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "כרטיסייה שמאלה",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "מעבר לכרטיסייה הקודמת",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "כרטיסייה ימינה",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "מעבר לכרטיסייה הבאה",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "מעבר לשורש האתר",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "ניווט למקור האתר",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "משגר",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "משגר אתרים לגישה מהירה",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "אתרים מובילים",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "סרגל כלים, ביקורים וסימניות",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "סגירת כרטיסייה",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "סגירת הכרטיסייה הנוכחית",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "יציאה ממיקוד",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "יציאה ממצבים ושכבות",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "Page Up",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "קפיצה של עמוד אחד למעלה מיד",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "Page Down",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "קפיצה של עמוד אחד למטה מיד",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "גלילה לראש",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "קפיצה לראש יעד הגלילה",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "גלילה לתחתית",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "קפיצה לתחתית יעד הגלילה",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "Scroll Line",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "גלילה רציפה מנקודת מוצא",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "כרטיסייה חדשה",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "פתיחת הכרטיסייה החדשה של KeyPilot",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "פתיחת חלון צף",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "פתיחת קישור בחלון קופץ",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "תצוגה מקדימה של קישור",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "תצוגה מקדימה של קישור בחלון קופץ",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "אתר של נקודת עניין",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "פתיחת אתר המקום במפה",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "כתובת נקודת עניין",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "העתקת כתובת המקום במפה",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "הגדרות",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "פתיחת הגדרות KeyPilot",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "תיבת החיפוש",
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "שכבת שורת הכתובת",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "היסטוריית כרטיסייה",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "עיון בהיסטוריה של הכרטיסייה הזו",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "סקירת כרטיסיות",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "הצגת כל החלונות והכרטיסיות",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "מקלדת הייחוס",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "הצגה או הסתרה של מפת המקלדת",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "בחירת טקסט",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "בחירת טקסט והעתקת טקסט עשיר",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "בחירת רכיב",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "מלבן או בחירה מצטברת של רכיבים",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "העתקת תמונה",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "העתקת התמונה בריחוף",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "העתקת כתובת",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "העתקת כתובת הקישור בריחוף",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "העתקת וידאו",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "העתקת הסרטון בריחוף",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "פרטי גופן",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "בדיקת הגופן שמתחת לסמן",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "מדיה בדף",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "עיון במדיה שנמצאה בדף הזה",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "ספריית מדיה",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "פתיחת ספריית המדיה השמורה",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "העתקה",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "העתקת הבחירה ללוח",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "גזירה",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "גזירת הבחירה ללוח",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "הדבקה",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "הדבקה בשדה שבמיקוד",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "בחירת הכול",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "בחירת הכול בשדה או בדף",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "בחירת מילה",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "בחירת המילה שמתחת לסמן",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "בחירת משפט",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "בחירת המשפט שמתחת לסמן",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "בחירת פסקה",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "בחירת הפסקה שמתחת לסמן",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "בחירת תמונה",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "בחירת התמונה שמתחת לסמן",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "חיפוש מילה",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "Wiktionary למילה שמתחת לסמן",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "הצגת חלון צף",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "הצגת תוצאת שלב המאקרו הקודם",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "הוספת כתובת לספריית המדיה",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "שמירת ה-href בריחוף (בלי הורדה)",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "הבאת כתובת לספריית המדיה",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "הורדת הקובץ המקושר לספרייה",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_cat_navigation_label": {
+    "message": "ניווט",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "בקרת כרטיסיות",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "התחלת כתובת",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "קבלת נתוני דף",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "מפות",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "גלילה",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "בחירה",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "לוח",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "הקלדה",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "הקשות",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "נתונים",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "חיפוש",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "תרגום",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "תצוגה",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "סקריפט",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "ספריית מדיה",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "בינה מלאכותית",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "כלים",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "מערכת",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "אחר",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "לחיצה על קישורים, תצוגה מקדימה, ומעבר בהיסטוריית הגלישה.",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "פתיחה, סגירה, מעבר וסקירה של כרטיסיות.",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "קפיצה לכתובת דרך המשגר, אתרים מובילים, או תיבת החיפוש.",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "בחירת טקסט או רכיבים, בדיקת גופנים, עיון במדיה בדף, ופתיחת מצב קריאה.",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "פתיחת אתר או כתובת של מקום מסיכה במפה שמתחת לסמן.",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "גלילת הדף לפי שורה, עמוד, או לראש/לתחתית.",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "מחיקה או הפעלה של עזרי בחירה מרובי עמודות.",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "העתקה, גזירה, הדבקה, בחירת הכול; העתקת תמונה, כתובת או סרטון בריחוף; ובחירת מילה, משפט, פסקה או תמונה שמתחת לסמן.",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "הקלדת טקסט שמור בשדה שבמיקוד.",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "שליחת הקשות, צירופים, מטחים, ומיפוי מחדש של העכבר.",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "קריאת טקסט או מדיה שמתחת לסמן, או מהדגשה.",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "חיפוש הגדרה למילה שמתחת לסמן.",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "תרגום טקסט מודגש או שמתחת לסמן.",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "הצגת תוצאת שלב מאקרו קודם בחלון צף.",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "הרצת קטע JavaScript מותאם מול מצב הדף.",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "שמירת קישורים או קבצים שהובאו בספריית המדיה.",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "שליחת טקסט שנבחר לבינה מלאכותית עם הנחיה ויעד לתוצאה.",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "פתיחת הממשק של KeyPilot — מקלדת הייחוס, הגדרות ומצבים.",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "שכבות עזר וכלי שירות.",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "ביטול המחווה או המצב הנוכחיים של KeyPilot.",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "פונקציות בלי קטגוריה.",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "רצפים מרובי שלבים שאפשר להניח על מקש. התאימו מאקרו מובנה כדי ליצור עותק ניתן לעריכה.",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "מופעי מקש מאקרו שמורים (קיצור, מטח, סבב, וסוגים קשורים) מוכנים להנחה.",
+    "description": "Actions Library macroKeys section description."
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "הקלדת תווים",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "הקלדת טקסט שמור בשדה",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "הרצת JS",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "הרצת קטע JS שהודבק",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "פתיחת כתובות",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "פתיחת כמה דפים בכרטיסיות חדשות",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "פתיחת סימניות",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "פתיחת הסימניות הראשונות בתיקייה",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "סימנייה אקראית",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "פתיחת סימניות אקראיות",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "סימנייה אקראית",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "פתיחת סימנייה אקראית אחת מכל הסימניות",
+    "description": "Bundled Random Bookmark instance description."
+  },
+  "fn_stock_social_media_label": {
+    "message": "רשתות חברתיות",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "פתיחת כמה אתרי רשתות חברתיות בכרטיסיות חדשות",
+    "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "שם",
+    "description": "Action instance name field on the key info popover."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "קבלת טקסט בסמן",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "העתקת הטקסט שמתחת לסמן",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "קבלת טווח טקסט",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "העברת הבחירה לשלב המאקרו הבא",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "קבלת מדיה בסמן",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "העתקת המדיה שמתחת לסמן",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "תרגום",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "תרגום הבחירה או הטקסט שמתחת לסמן",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "מתג עמודות",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "פריסה מרובת עמודות מתחת לסמן",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "שליחת טקסט לבינה מלאכותית",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "הרצת בינה מלאכותית על טקסט שנבחר",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "US ANSI QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "פריסת מקלדת US ANSI רגילה.",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "German ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "פריסת מקלדת German ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "Spanish (Spain) ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "פריסת מקלדת Spanish (Spain) ISO QWERTY.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "Slovak ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "פריסת מקלדת Slovak ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "Japanese JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "פריסת מקלדת Japanese JIS 106.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "הקטנת תצוגה",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "הקטנת הדף בנקודת הסמן",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "הגדלת תצוגה",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "הגדלת הדף בנקודת הסמן",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "מצב קריאה",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "קריאת הדף בלי עומס",
+    "description": "Function Library description for READER_MODE."
+  }
+}

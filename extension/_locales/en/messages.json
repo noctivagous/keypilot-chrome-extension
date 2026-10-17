@@ -6484,5 +6484,100 @@
   "reader_mode_outline_none_title": {
     "message": "Show the full article",
     "description": "Tooltip for the Reader Mode option that hides the outline."
+  },
+  "settings_static_249": {
+    "message": "Deferred tab opening"
+  },
+  "settings_static_250": {
+    "message": "Press Alt+Shift with an Open URLs or Random Bookmarks key to schedule it at a random time."
+  },
+  "settings_static_251": {
+    "message": "Delay Open URLs"
+  },
+  "settings_static_252": {
+    "message": "Enable Alt+Shift scheduling for every Open URLs key."
+  },
+  "settings_static_253": {
+    "message": "Open URLs minimum (minutes)"
+  },
+  "settings_static_254": {
+    "message": "Open URLs maximum (minutes)"
+  },
+  "settings_static_255": {
+    "message": "Delay Random Bookmarks"
+  },
+  "settings_static_256": {
+    "message": "Enable Alt+Shift scheduling for every Random Bookmarks key."
+  },
+  "settings_static_257": {
+    "message": "Random Bookmarks minimum (minutes)"
+  },
+  "settings_static_258": {
+    "message": "Random Bookmarks maximum (minutes)"
+  },
+  "settings_static_259": {
+    "message": "Open delayed tabs in"
+  },
+  "settings_static_260": {
+    "message": "The active browser window"
+  },
+  "settings_static_261": {
+    "message": "The original browser window when available"
+  },
+  "settings_static_262": {
+    "message": "If the selected window is unavailable, KeyPilot waits and retries while the browser remains open."
+  },
+  "deferred_open_scheduled": {
+    "message": "Scheduled to open at $1",
+    "description": "Shown after an Open URLs or Random Bookmarks action is scheduled.",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "deferred_open_schedule_failed": {
+    "message": "Could not schedule deferred opening",
+    "description": "Shown when a deferred tab-opening action cannot be saved."
+  },
+  "deferred_open_dialog_title_open_urls": {
+    "message": "Schedule URLs to open",
+    "description": "Title of the Ctrl+Alt+Shift dialog that schedules the Open URLs key at an exact date and time."
+  },
+  "deferred_open_dialog_title_random_bookmarks": {
+    "message": "Schedule random bookmarks to open",
+    "description": "Title of the Ctrl+Alt+Shift dialog that schedules the Random Bookmark key at an exact date and time."
+  },
+  "deferred_open_dialog_label": {
+    "message": "Open at",
+    "description": "Label for the date and time field in the schedule dialog."
+  },
+  "deferred_open_dialog_schedule": {
+    "message": "Schedule",
+    "description": "Confirm button in the schedule dialog."
+  },
+  "deferred_open_dialog_cancel": {
+    "message": "Cancel",
+    "description": "Cancel button in the schedule dialog."
+  },
+  "deferred_open_dialog_error_past": {
+    "message": "Choose a date and time in the future.",
+    "description": "Validation error when the chosen schedule time is not in the future."
+  },
+  "deferred_open_dialog_open_picker": {
+    "message": "Open date & time picker",
+    "description": "Accessible label/title for the button that opens the native date and time picker in the schedule dialog."
+  },
+  "deferred_open_dialog_preset_1h": {
+    "message": "+1 hour",
+    "description": "Quick-pick chip in the schedule dialog: schedules one hour from now."
+  },
+  "deferred_open_dialog_preset_1d": {
+    "message": "+1 day",
+    "description": "Quick-pick chip in the schedule dialog: schedules one day from now."
+  },
+  "deferred_open_dialog_preset_tomorrow": {
+    "message": "Tomorrow, 9:00 AM",
+    "description": "Quick-pick chip in the schedule dialog: schedules tomorrow at 9:00 AM local time."
   }
 }

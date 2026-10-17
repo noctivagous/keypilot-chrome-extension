@@ -29,6 +29,18 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'radio', name: 'engine', path: 'searchEngine' },
   { type: 'toggle', id: 'keyboard-reference-key-feedback', path: 'keyboardReferenceKeyFeedback' },
   { type: 'toggle', id: 'keyboard-reference-show-number-row', path: 'keyboardReferenceShowNumberRow' },
+  { type: 'toggle', id: 'deferred-open-urls-enabled', path: 'deferredOpen.openUrls.enabled' },
+  { type: 'rangePair', baseId: 'deferred-open-urls-min', path: 'deferredOpen.openUrls.minMinutes', min: 1, max: 2880 },
+  { type: 'rangePair', baseId: 'deferred-open-urls-max', path: 'deferredOpen.openUrls.maxMinutes', min: 1, max: 2880 },
+  { type: 'toggle', id: 'deferred-random-bookmarks-enabled', path: 'deferredOpen.randomBookmarks.enabled' },
+  { type: 'rangePair', baseId: 'deferred-random-bookmarks-min', path: 'deferredOpen.randomBookmarks.minMinutes', min: 1, max: 2880 },
+  { type: 'rangePair', baseId: 'deferred-random-bookmarks-max', path: 'deferredOpen.randomBookmarks.maxMinutes', min: 1, max: 2880 },
+  {
+    type: 'select',
+    id: 'deferred-open-target',
+    path: 'deferredOpen.target',
+    normalize: (v) => (v === 'originalWindow' ? 'originalWindow' : 'activeWindow')
+  },
   { type: 'toggle', id: 'control-strip-visible', path: 'controlStrip.visible' },
   { type: 'toggle', id: 'control-strip-collapsed', path: 'controlStrip.collapsed' },
   { type: 'select', id: 'keyboard-layout-family', path: 'keyboardLayoutFamilyId', viewTransition: true },

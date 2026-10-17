@@ -26,12 +26,14 @@ const CHECK = process.argv.includes("--check");
 
 const SITE = "https://noctivagous.com";
 const SOURCE_LOCALE = "en";
-const LOCALES = ["de", "es", "es_419", "ja", "sk", "zh_CN", "zh_TW"];
+const LOCALES = ["de", "es", "es_419", "he", "hi", "ja", "sk", "zh_CN", "zh_TW"];
 const HTML_LANG = {
   en: "en",
   de: "de",
   es: "es",
   es_419: "es-419",
+  he: "he",
+  hi: "hi",
   ja: "ja",
   sk: "sk",
   zh_CN: "zh-CN",
@@ -42,6 +44,8 @@ const LOCALE_META = {
   de: { native: "Deutsch", flag: "de" },
   es: { native: "Español", flag: "es" },
   es_419: { native: "Español (Latinoamérica)", flag: "mx" },
+  he: { native: "עברית", flag: "il" },
+  hi: { native: "हिन्दी", flag: "in" },
   ja: { native: "日本語", flag: "jp" },
   sk: { native: "Slovenčina", flag: "sk" },
   zh_CN: { native: "简体中文", flag: "cn" },
@@ -52,6 +56,8 @@ const HARDWARE_BY_LOCALE = {
   de: "de-de-qwertz-iso",
   es: "es-es-qwerty-iso",
   es_419: "us-ansi-qwerty",
+  he: "us-ansi-qwerty",
+  hi: "us-ansi-qwerty",
   ja: "ja-jis-106",
   sk: "sk-sk-qwertz-iso",
   zh_CN: "us-ansi-qwerty",
@@ -274,7 +280,7 @@ function applyDocumentMeta(html, locale) {
   const canonical = locale === SOURCE_LOCALE ? `${SITE}/` : `${SITE}/${locale}/`;
   let out = html.replace(
     /<html\b[^>]*>/,
-    `<html lang="${lang}" data-locale="${locale}">`
+    `<html lang="${lang}"${locale === "he" ? ' dir="rtl"' : ""} data-locale="${locale}">`
   );
   out = out.replace(
     /<link rel="canonical" href="[^"]*"/,

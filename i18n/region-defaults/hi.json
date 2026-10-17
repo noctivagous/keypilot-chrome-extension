@@ -1,0 +1,27 @@
+{
+  "stockSocialMedia": {
+    "urls": [
+      "youtube.com",
+      "instagram.com",
+      "facebook.com",
+      "whatsapp.com",
+      "x.com"
+    ]
+  },
+  "searchEngineUrls": {
+    "google": {
+      "homeUrl": "https://www.google.co.in/",
+      "searchUrlPrefix": "https://www.google.co.in/search?q="
+    }
+  },
+  "launcherSearchSites": [
+    { "title": "Google", "url": "https://www.google.co.in" },
+    { "title": "Bing", "url": "https://bing.com" },
+    { "title": "DuckDuckGo", "url": "https://duckduckgo.com" },
+    { "title": "Yahoo", "url": "https://yahoo.com" },
+    { "title": "Brave Search", "url": "https://search.brave.com" },
+    { "title": "Ecosia", "url": "https://ecosia.org" },
+    { "title": "Startpage", "url": "https://startpage.com" },
+    { "title": "Yandex", "url": "https://yandex.com" }
+  ]
+}

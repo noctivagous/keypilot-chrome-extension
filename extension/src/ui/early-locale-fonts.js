@@ -25,6 +25,18 @@ export function getUILocaleTag() {
   }
 }
 
+/**
+ * `@@bidi_dir` from the loaded catalog. Hebrew is `rtl`.
+ * @returns {'ltr'|'rtl'}
+ */
+export function getUITextDirection() {
+  try {
+    return chrome?.i18n?.getMessage?.('@@bidi_dir') === 'rtl' ? 'rtl' : 'ltr';
+  } catch {
+    return 'ltr';
+  }
+}
+
 const EARLY_CJK_SC =
   'system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", sans-serif';
 const EARLY_CJK_TC =

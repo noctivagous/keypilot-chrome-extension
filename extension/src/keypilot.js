@@ -50,6 +50,7 @@ import {
 } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
+import { ScheduleOpenDialog } from './ui/schedule-open-dialog.js';
 import {
   closestComposed,
   containsComposed,
@@ -276,6 +277,9 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       onStateChange: (open) => {
         this.state.setPopoverOpen(open, open ? 'tabs-overview' : null);
       }
+    });
+    this.scheduleOpenDialog = new ScheduleOpenDialog({
+      popupManager: this.overlayManager?.popupManager
     });
     this.launcherPopover = new LauncherPopover(this);
     this.topSitesPopover = new TopSitesPopover({
@@ -1461,6 +1465,151 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       // ignore
     }
     return false;
+  }
+
+  _deferredOpenBindingForEvent(e) {
+    const resolveFunction = (id, fallbackParameters) => {
+      if (isStockActionId(id)) {
+        const stock = getStockActionById(id);
+        return stock ? { functionId: stock.functionId, parameters: stock.parameters } : null;
+      }
+      if (String(id).startsWith('action:')) {
+        const instance = (this._currentUserActions || []).find((action) => action?.id === id);
+        return instance
+          ? { functionId: instance.functionId, parameters: instance.parameters }
+          : null;
+      }
+      return { functionId: id, parameters: fallbackParameters };
+    };
+
+    const currentSel = String(this._currentKeyboardLayoutId || '');
+    if (currentSel.startsWith('user:')) {
+      const slots = this._currentKeySlotMap;
+      if (!slots || typeof slots !== 'object') return null;
+      const assigned = slots[physicalSlotKeyForCode(e?.code)]
+        || slots[characterSlotKeyForCharacter(e?.key)];
+      if (!assigned || assigned.type !== 'function' || !assigned.id) return null;
+      return resolveFunction(String(assigned.id));
+    }
+
+    const keybindings = this._layoutKeybindings || {};
+    for (const keybinding of Object.values(keybindings)) {
+      if (!keybinding?.handler || !this._matchesKeybinding(keybinding, e)) continue;
+      return resolveFunction(
+        String(keybinding.instanceId || keybinding.functionId || ''),
+        keybinding.parameters
+      );
+    }
+    return null;
+  }
+
+  /**
+   * Resolve the Open URLs / Random Bookmark binding under a key event into the
+   * scheduling request shared by Alt+Shift (random delay) and Ctrl+Alt+Shift
+   * (exact time). Returns null when the key is not an enabled, usable binding.
+   * @param {KeyboardEvent} e
+   * @returns {{ action: string, payload: object, minMinutes: number, maxMinutes: number, target: string }|null}
+   */
+  _resolveDeferredOpenRequest(e) {
+    const binding = this._deferredOpenBindingForEvent(e);
+    if (!binding || (binding.functionId !== 'OPEN_URLS' && binding.functionId !== 'RANDOM_BOOKMARK')) {
+      return null;
+    }
+
+    const config = binding.functionId === 'OPEN_URLS'
+      ? this._settings?.deferredOpen?.openUrls
+      : this._settings?.deferredOpen?.randomBookmarks;
+    const fallback = binding.functionId === 'OPEN_URLS'
+      ? DEFAULT_SETTINGS.deferredOpen.openUrls
+      : DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
+    const resolved = config || fallback;
+    if (resolved.enabled === false) return null;
+
+    const payload = binding.functionId === 'OPEN_URLS'
+      ? { urls: normalizeOpenUrlList(binding.parameters?.urls) }
+      : {
+          folderId: normalizeBookmarkFolderId(binding.parameters?.folderId),
+          count: normalizeRandomBookmarkCount(binding.parameters?.count)
+        };
+    if (binding.functionId === 'OPEN_URLS' && !payload.urls.length) return null;
+
+    return {
+      action: binding.functionId,
+      payload,
+      minMinutes: resolved.minMinutes,
+      maxMinutes: resolved.maxMinutes,
+      target: this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target
+    };
+  }
+
+  /**
+   * Alt+Shift+key schedules at a random delay; Ctrl+Alt+Shift+key opens a dialog
+   * that schedules at an exact local date and time.
+   * @param {KeyboardEvent} e
+   * @returns {boolean} true when the event was claimed
+   */
+  _maybeHandleDeferredOpen(e) {
+    if (!e?.altKey || !e?.shiftKey || e?.metaKey) return false;
+    if (this.state?.getState?.()?.mode !== MODES.NONE) return false;
+    if (this._isUnsafeToRunActionKey(e)) return false;
+
+    const request = this._resolveDeferredOpenRequest(e);
+    if (!request) return false;
+
+    const manual = !!e.ctrlKey;
+    if (manual && !this.scheduleOpenDialog) return false;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    if (manual) {
+      this.scheduleOpenDialog.show({
+        action: request.action,
+        onSubmit: (fireAt) => this._submitDeferredOpen(request, { fireAt })
+      });
+      return true;
+    }
+
+    const { minMinutes, maxMinutes } = request;
+    this._submitDeferredOpen(request, { minMinutes, maxMinutes });
+    return true;
+  }
+
+  /**
+   * @param {{ action: string, payload: object, target: string }} request
+   * @param {{ minMinutes: number, maxMinutes: number }|{ fireAt: number }} schedule
+   */
+  _submitDeferredOpen(request, schedule) {
+    const sent = this._sendRuntimeMessage(
+      {
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: request.action,
+        payload: request.payload,
+        target: request.target,
+        ...schedule
+      },
+      {
+        silent: true,
+        onResponse: (response) => {
+          if (response?.type === MSG.SUCCESS && Number.isFinite(Number(response.scheduledAt))) {
+            const when = new Date(Number(response.scheduledAt)).toLocaleString();
+            this.showFlashNotification(
+              getMessage('deferred_open_scheduled', when),
+              COLORS.NOTIFICATION_SUCCESS
+            );
+            return;
+          }
+          this.showFlashNotification(
+            getMessage('deferred_open_schedule_failed'),
+            COLORS.NOTIFICATION_ERROR
+          );
+        }
+      }
+    );
+    if (!sent) {
+      this.showFlashNotification(getMessage('deferred_open_schedule_failed'), COLORS.NOTIFICATION_ERROR);
+    }
   }
 
   /**
@@ -3052,6 +3201,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot] Key pressed:', e.key, 'Code:', e.code);
     }
+
+    if (this._maybeHandleDeferredOpen(e)) return;
 
     // Modifier-chord slots for Functions that must run while typing (TYPE_CHARACTERS,
     // CLIPBOARD_*) — must be checked BEFORE the blanket "ignore all modifier combos" rule below,
@@ -9108,6 +9259,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     // Tab history popover
     try { this.tabHistoryPopover?.hide?.(); } catch { /* ignore */ }
     try { this.tabsOverviewPopover?.hide?.(); } catch { /* ignore */ }
+    try { this.scheduleOpenDialog?.hide?.(); } catch { /* ignore */ }
 
     // P-key / settings / guide iframe popovers + preview popovers
     try { this.handleClosePopover?.(); } catch { /* ignore */ }

@@ -1,0 +1,216 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "מבוא",
+      "file": "intro.md",
+      "icon": "book",
+      "accent": "cyan"
+    },
+    {
+      "id": "getting-started",
+      "title": "תחילת העבודה",
+      "file": "getting-started.md",
+      "icon": "rocket",
+      "accent": "green"
+    },
+    {
+      "id": "browsing",
+      "title": "גלישה",
+      "children": [
+        {
+          "id": "browsing-click",
+          "title": "לחיצה וקישורים",
+          "file": "browsing-click.md",
+          "shortcut": "F",
+          "accent": "green"
+        },
+        {
+          "id": "browsing-tabs",
+          "title": "כרטיסיות והיסטוריה",
+          "file": "browsing-tabs.md",
+          "icon": "tabs",
+          "accent": "blue"
+        },
+        {
+          "id": "browsing-scroll",
+          "title": "גלילה",
+          "file": "browsing-scroll.md",
+          "icon": "scroll",
+          "accent": "amber"
+        },
+        {
+          "id": "browsing-select",
+          "title": "בחירה",
+          "file": "browsing-select.md",
+          "icon": "select",
+          "accent": "indigo"
+        },
+        {
+          "id": "browsing-modes",
+          "title": "מצבים",
+          "file": "browsing-modes.md",
+          "icon": "layers",
+          "accent": "violet"
+        }
+      ]
+    },
+    {
+      "id": "keyboard",
+      "title": "מקלדת",
+      "children": [
+        {
+          "id": "keyboard-layouts",
+          "title": "פריסות ויד דומיננטית",
+          "file": "keyboard-layouts.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "keyboard-system-keys",
+          "title": "מקשי מערכת ו-Alt chrome",
+          "file": "keyboard-system-keys.md",
+          "icon": "shield",
+          "accent": "amber"
+        },
+        {
+          "id": "keyboard-reference",
+          "title": "מקלדת הייחוס",
+          "file": "keyboard-reference.md",
+          "shortcut": "K",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "הגדרות",
+      "file": "settings.md",
+      "shortcut": "'",
+      "accent": "blue"
+    },
+    {
+      "id": "tools",
+      "title": "כלים",
+      "children": [
+        {
+          "id": "tools-omnibox",
+          "title": "תיבת החיפוש",
+          "file": "tools-omnibox.md",
+          "shortcut": "L",
+          "accent": "green"
+        },
+        {
+          "id": "tools-launcher",
+          "title": "משגר",
+          "file": "tools-launcher.md",
+          "shortcut": "Alt+;",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-top-sites",
+          "title": "אתרים מובילים",
+          "file": "tools-top-sites.md",
+          "shortcut": ";",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-tab-history",
+          "title": "היסטוריית כרטיסייה",
+          "file": "tools-tab-history.md",
+          "shortcut": "J",
+          "accent": "blue"
+        },
+        {
+          "id": "tools-control-strip",
+          "title": "פס הבקרה",
+          "file": "tools-control-strip.md",
+          "shortcut": "Alt+J",
+          "accent": "cyan"
+        },
+        {
+          "id": "tools-previews",
+          "title": "תצוגה מקדימה של קישור וחלון צף",
+          "file": "tools-previews.md",
+          "icon": "preview",
+          "accent": "green"
+        },
+        {
+          "id": "tools-reader",
+          "title": "מצב קריאה",
+          "file": "tools-reader.md",
+          "shortcut": "P",
+          "accent": "amber"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "מדיה",
+      "children": [
+        {
+          "id": "media-page",
+          "title": "מדיה בדף",
+          "file": "media-page.md",
+          "shortcut": "O",
+          "accent": "indigo"
+        },
+        {
+          "id": "media-library",
+          "title": "ספריית מדיה",
+          "file": "media-library.md",
+          "shortcut": "M",
+          "accent": "violet"
+        },
+        {
+          "id": "media-copy",
+          "title": "העתקה מתחת לסמן",
+          "file": "media-copy.md",
+          "shortcut": "I/U",
+          "accent": "cyan"
+        }
+      ]
+    },
+    {
+      "id": "customize",
+      "title": "התאמה",
+      "children": [
+        {
+          "id": "layout-config",
+          "title": "עורך פריסת המקלדת",
+          "file": "layout-config.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "functions",
+          "title": "פונקציות ופעולות",
+          "file": "functions.md",
+          "icon": "functions",
+          "accent": "green"
+        },
+        {
+          "id": "macros-overview",
+          "title": "מאקרו",
+          "file": "macros.md",
+          "icon": "macros",
+          "accent": "violet"
+        },
+        {
+          "id": "macro-builder",
+          "title": "בונה מאקרו",
+          "file": "macro-builder.md",
+          "icon": "controls",
+          "accent": "amber"
+        },
+        {
+          "id": "execute-js",
+          "title": "הרצת JS",
+          "file": "execute-js.md",
+          "icon": "code",
+          "accent": "rose"
+        }
+      ]
+    }
+  ]
+}

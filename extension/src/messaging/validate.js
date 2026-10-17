@@ -63,6 +63,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.LIST_BOOKMARK_FOLDERS,
   MSG.OPEN_BOOKMARK_FOLDER,
   MSG.OPEN_RANDOM_BOOKMARK,
+  MSG.SCHEDULE_DEFERRED_OPEN,
   MSG.NAVIGATE_SAME_TAB,
   MSG.ZOOM_STEP,
   MSG.STATUS
@@ -164,6 +165,49 @@ export function validateRuntimeMessage(message, opts = {}) {
       const count = Number(message.count);
       if (!Number.isInteger(count) || count < 1 || count > 30) {
         return 'OPEN_RANDOM_BOOKMARK requires count: integer 1-30';
+      }
+      break;
+    }
+    case MSG.SCHEDULE_DEFERRED_OPEN: {
+      if (message.action !== 'OPEN_URLS' && message.action !== 'RANDOM_BOOKMARK') {
+        return 'SCHEDULE_DEFERRED_OPEN requires a supported action';
+      }
+      // Exactly one schedule form: an exact future `fireAt` (Ctrl+Alt+Shift dialog)
+      // or a random delay range (Alt+Shift).
+      if (message.fireAt !== undefined) {
+        if (message.minMinutes !== undefined || message.maxMinutes !== undefined) {
+          return 'SCHEDULE_DEFERRED_OPEN accepts either fireAt or a delay range';
+        }
+        if (!Number.isFinite(message.fireAt) || message.fireAt <= Date.now()) {
+          return 'SCHEDULE_DEFERRED_OPEN requires fireAt: a future timestamp';
+        }
+      } else {
+        const minMinutes = Number(message.minMinutes);
+        const maxMinutes = Number(message.maxMinutes);
+        if (!Number.isFinite(minMinutes) || !Number.isFinite(maxMinutes)
+          || minMinutes < 1 || maxMinutes > 2880 || minMinutes > maxMinutes) {
+          return 'SCHEDULE_DEFERRED_OPEN requires a delay range from 1 to 2880 minutes';
+        }
+      }
+      if (message.target !== 'activeWindow' && message.target !== 'originalWindow') {
+        return 'SCHEDULE_DEFERRED_OPEN requires a valid target';
+      }
+      if (message.action === 'OPEN_URLS') {
+        if (!Array.isArray(message.payload?.urls)
+          || message.payload.urls.length < 1
+          || message.payload.urls.length > 20
+          || message.payload.urls.some((url) => typeof url !== 'string' || !url.trim())) {
+          return 'SCHEDULE_DEFERRED_OPEN OPEN_URLS requires urls';
+        }
+      } else {
+        const count = Number(message.payload?.count);
+        if (!Number.isInteger(count) || count < 1 || count > 30) {
+          return 'SCHEDULE_DEFERRED_OPEN RANDOM_BOOKMARK requires count 1-30';
+        }
+        if (message.payload?.folderId != null
+          && (typeof message.payload.folderId !== 'string' || message.payload.folderId.length > 64)) {
+          return 'SCHEDULE_DEFERRED_OPEN RANDOM_BOOKMARK requires folderId: string';
+        }
       }
       break;
     }

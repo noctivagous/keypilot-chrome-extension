@@ -6484,5 +6484,31 @@
         "example": "Alt + J"
       }
     }
-  }
+  },
+  "settings_static_249": { "message": "Verzögertes Öffnen von Tabs" },
+  "settings_static_250": { "message": "Drücken Sie Alt+Umschalt zusammen mit einer Taste für URLs öffnen oder Zufällige Lesezeichen, um sie für einen zufälligen Zeitpunkt zu planen." },
+  "settings_static_251": { "message": "URLs öffnen verzögern" },
+  "settings_static_252": { "message": "Alt+Umschalt-Planung für jede Taste zum Öffnen von URLs aktivieren." },
+  "settings_static_253": { "message": "URLs öffnen: Minimum (Minuten)" },
+  "settings_static_254": { "message": "URLs öffnen: Maximum (Minuten)" },
+  "settings_static_255": { "message": "Zufällige Lesezeichen verzögern" },
+  "settings_static_256": { "message": "Alt+Umschalt-Planung für jede Taste für zufällige Lesezeichen aktivieren." },
+  "settings_static_257": { "message": "Zufällige Lesezeichen: Minimum (Minuten)" },
+  "settings_static_258": { "message": "Zufällige Lesezeichen: Maximum (Minuten)" },
+  "settings_static_259": { "message": "Verzögerte Tabs öffnen in" },
+  "settings_static_260": { "message": "Dem aktiven Browserfenster" },
+  "settings_static_261": { "message": "Dem ursprünglichen Browserfenster, falls verfügbar" },
+  "settings_static_262": { "message": "Wenn das gewählte Fenster nicht verfügbar ist, wartet KeyPilot und versucht es erneut." },
+  "deferred_open_scheduled": { "message": "Öffnen geplant für $1", "placeholders": { "time": { "content": "$1" } } },
+  "deferred_open_schedule_failed": { "message": "Verzögertes Öffnen konnte nicht geplant werden" },
+  "deferred_open_dialog_title_open_urls": { "message": "Öffnen von URLs planen" },
+  "deferred_open_dialog_title_random_bookmarks": { "message": "Öffnen zufälliger Lesezeichen planen" },
+  "deferred_open_dialog_label": { "message": "Öffnen am" },
+  "deferred_open_dialog_schedule": { "message": "Planen" },
+  "deferred_open_dialog_cancel": { "message": "Abbrechen" },
+  "deferred_open_dialog_error_past": { "message": "Wähle ein Datum und eine Uhrzeit in der Zukunft." },
+  "deferred_open_dialog_open_picker": { "message": "Datums- und Uhrzeitauswahl öffnen" },
+  "deferred_open_dialog_preset_1h": { "message": "+1 Stunde" },
+  "deferred_open_dialog_preset_1d": { "message": "+1 Tag" },
+  "deferred_open_dialog_preset_tomorrow": { "message": "Morgen, 9:00 Uhr" }
 }

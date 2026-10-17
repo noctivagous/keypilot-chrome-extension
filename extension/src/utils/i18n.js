@@ -123,13 +123,31 @@ export function getUILocaleTag() {
 }
 
 /**
+ * Text direction of the catalog Chrome actually loaded.
+ * `@@bidi_dir` is `rtl` for Hebrew and `ltr` otherwise.
+ * @returns {'ltr'|'rtl'}
+ */
+export function getUITextDirection() {
+  try {
+    const dir = globalThis.chrome?.i18n?.getMessage?.('@@bidi_dir');
+    return dir === 'rtl' ? 'rtl' : 'ltr';
+  } catch {
+    return 'ltr';
+  }
+}
+
+/**
  * Set the locale/language attribute on a document root so locale-specific
- * typography rules (`:lang()`) can apply. Safe to call before first paint.
+ * typography rules (`:lang()`) can apply. Also sets `dir` from Chrome's
+ * bidi locale message so Hebrew pages lay out right-to-left. Safe to call
+ * before first paint.
  * @param {Document|null|undefined} [doc]
  */
 export function applyDocumentLocale(doc = document) {
   try {
-    doc?.documentElement?.setAttribute?.('lang', getUILocaleTag());
+    const root = doc?.documentElement;
+    root?.setAttribute?.('lang', getUILocaleTag());
+    root?.setAttribute?.('dir', getUITextDirection());
   } catch {
     // ignore
   }

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-30T07:23:41.436Z
+ * Generated on 2026-10-17T19:40:08.776Z
  */
 
 (() => {
@@ -46,6 +46,8 @@
     OPEN_BOOKMARK_FOLDER: "KP_OPEN_BOOKMARK_FOLDER",
     /** Content → SW: open `count` random bookmarks. Empty folderId means every bookmark. */
     OPEN_RANDOM_BOOKMARK: "KP_OPEN_RANDOM_BOOKMARK",
+    /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
+    SCHEDULE_DEFERRED_OPEN: "KP_SCHEDULE_DEFERRED_OPEN",
     /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
     NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
     /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
@@ -605,6 +607,8 @@
     en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
     es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
     es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+    he: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.il/", "searchUrlPrefix": "https://www.google.co.il/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.il" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+    hi: { "stockSocialMedia": { "urls": ["youtube.com", "instagram.com", "facebook.com", "whatsapp.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.in/", "searchUrlPrefix": "https://www.google.co.in/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.in" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
     ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
     sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
     zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
@@ -2680,6 +2684,8 @@
 
   // src/modules/settings-manager.js
   var SETTINGS_STORAGE_KEY = "kp_settings_v1";
+  var DEFERRED_OPEN_MIN_MINUTES = 1;
+  var DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
   var TEXT_FOCUS_STYLE_IDS = Object.freeze(
     /** @type {const} */
     [
@@ -2813,6 +2819,19 @@
       middleClickScrollLine: isMacPlatform(),
       // Scroll Line: skip horizontal-only landscape overflow (carousels).
       linePreferPortraitTargets: true
+    }),
+    deferredOpen: Object.freeze({
+      openUrls: Object.freeze({
+        enabled: true,
+        minMinutes: 1,
+        maxMinutes: 60
+      }),
+      randomBookmarks: Object.freeze({
+        enabled: true,
+        minMinutes: 1,
+        maxMinutes: 60
+      }),
+      target: "activeWindow"
     })
   });
   function normalizeSearchEngine(raw) {
@@ -2981,6 +3000,37 @@
         stored.linePreferPortraitTargets,
         DEFAULT_SETTINGS.scroll.linePreferPortraitTargets
       )
+    };
+  }
+  function normalizeDeferredOpenRange(raw, fallback) {
+    const stored = raw && typeof raw === "object" ? raw : {};
+    const minMinutes = normalizeNumber(
+      stored.minMinutes,
+      fallback.minMinutes,
+      DEFERRED_OPEN_MIN_MINUTES,
+      DEFERRED_OPEN_MAX_MINUTES
+    );
+    const maxMinutes = normalizeNumber(
+      stored.maxMinutes,
+      fallback.maxMinutes,
+      DEFERRED_OPEN_MIN_MINUTES,
+      DEFERRED_OPEN_MAX_MINUTES
+    );
+    return {
+      enabled: normalizeBoolean(stored.enabled, fallback.enabled),
+      minMinutes: Math.min(minMinutes, maxMinutes),
+      maxMinutes: Math.max(minMinutes, maxMinutes)
+    };
+  }
+  function normalizeDeferredOpen(raw) {
+    const stored = raw && typeof raw === "object" ? raw : {};
+    return {
+      openUrls: normalizeDeferredOpenRange(stored.openUrls, DEFAULT_SETTINGS.deferredOpen.openUrls),
+      randomBookmarks: normalizeDeferredOpenRange(
+        stored.randomBookmarks,
+        DEFAULT_SETTINGS.deferredOpen.randomBookmarks
+      ),
+      target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow"
     };
   }
   function normalizeControlStrip(raw) {
@@ -3153,7 +3203,8 @@
         actionSettings: normalizeActionSettings(stored?.actionSettings),
         clickMode: normalizeClickMode(stored?.clickMode),
         textMode: normalizeTextMode(stored?.textMode),
-        scroll: normalizeScroll(stored?.scroll)
+        scroll: normalizeScroll(stored?.scroll),
+        deferredOpen: normalizeDeferredOpen(stored?.deferredOpen)
       };
     } catch (_e) {
       return {
@@ -3169,6 +3220,7 @@
         clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
         textMode: { ...DEFAULT_SETTINGS.textMode },
         scroll: { ...DEFAULT_SETTINGS.scroll },
+        deferredOpen: normalizeDeferredOpen(null),
         actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
         actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
         themeId: DEFAULT_THEME_ID,

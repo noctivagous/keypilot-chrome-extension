@@ -6478,11 +6478,32 @@
   "context_menu_control_strip": {
     "message": "控制条（$1）",
     "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
-    "placeholders": {
-      "shortcut": {
-        "content": "$1",
-        "example": "Alt + J"
-      }
-    }
-  }
+    "placeholders": { "shortcut": { "content": "$1", "example": "Alt + J" } }
+  },
+  "settings_static_249": { "message": "延时打开标签页" },
+  "settings_static_250": { "message": "按 Alt+Shift 和“打开网址”或“随机书签”按键，即可安排在随机时间执行。" },
+  "settings_static_251": { "message": "延时打开网址" },
+  "settings_static_252": { "message": "为所有“打开网址”按键启用 Alt+Shift 定时。" },
+  "settings_static_253": { "message": "打开网址最短时间（分钟）" },
+  "settings_static_254": { "message": "打开网址最长时间（分钟）" },
+  "settings_static_255": { "message": "延时随机书签" },
+  "settings_static_256": { "message": "为所有“随机书签”按键启用 Alt+Shift 定时。" },
+  "settings_static_257": { "message": "随机书签最短时间（分钟）" },
+  "settings_static_258": { "message": "随机书签最长时间（分钟）" },
+  "settings_static_259": { "message": "延时标签页打开位置" },
+  "settings_static_260": { "message": "当前活动的浏览器窗口" },
+  "settings_static_261": { "message": "原浏览器窗口（如果可用）" },
+  "settings_static_262": { "message": "如果所选窗口不可用，KeyPilot 将等待并重试。" },
+  "deferred_open_scheduled": { "message": "已安排在 $1 打开", "placeholders": { "time": { "content": "$1" } } },
+  "deferred_open_schedule_failed": { "message": "无法安排延时打开" },
+  "deferred_open_dialog_title_open_urls": { "message": "安排打开网址" },
+  "deferred_open_dialog_title_random_bookmarks": { "message": "安排打开随机书签" },
+  "deferred_open_dialog_label": { "message": "打开时间" },
+  "deferred_open_dialog_schedule": { "message": "安排" },
+  "deferred_open_dialog_cancel": { "message": "取消" },
+  "deferred_open_dialog_error_past": { "message": "请选择未来的日期和时间。" },
+  "deferred_open_dialog_open_picker": { "message": "打开日期和时间选择器" },
+  "deferred_open_dialog_preset_1h": { "message": "+1小时" },
+  "deferred_open_dialog_preset_1d": { "message": "+1天" },
+  "deferred_open_dialog_preset_tomorrow": { "message": "明天上午9点" }
 }

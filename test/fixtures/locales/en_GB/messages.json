@@ -6484,11 +6484,57 @@
   "context_menu_control_strip": {
     "message": "[GB] Control Strip ($1)",
     "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
-    "placeholders": {
-      "shortcut": {
-        "content": "$1",
-        "example": "Alt + J"
-      }
-    }
+    "placeholders": { "shortcut": { "content": "$1", "example": "Alt + J" } }
+  },
+  "settings_static_249": { "message": "[GB] Deferred tab opening" },
+  "settings_static_250": { "message": "[GB] Press Alt+Shift with an Open URLs or Random Bookmarks key to schedule it at a random time." },
+  "settings_static_251": { "message": "[GB] Delay Open URLs" },
+  "settings_static_252": { "message": "[GB] Enable Alt+Shift scheduling for every Open URLs key." },
+  "settings_static_253": { "message": "[GB] Open URLs minimum (minutes)" },
+  "settings_static_254": { "message": "[GB] Open URLs maximum (minutes)" },
+  "settings_static_255": { "message": "[GB] Delay Random Bookmarks" },
+  "settings_static_256": { "message": "[GB] Enable Alt+Shift scheduling for every Random Bookmarks key." },
+  "settings_static_257": { "message": "[GB] Random Bookmarks minimum (minutes)" },
+  "settings_static_258": { "message": "[GB] Random Bookmarks maximum (minutes)" },
+  "settings_static_259": { "message": "[GB] Open delayed tabs in" },
+  "settings_static_260": { "message": "[GB] The active browser window" },
+  "settings_static_261": { "message": "[GB] The original browser window when available" },
+  "settings_static_262": { "message": "[GB] If the selected window is unavailable, KeyPilot waits and retries while the browser remains open." },
+  "deferred_open_scheduled": {
+    "message": "[GB] Scheduled to open at $1",
+    "placeholders": { "time": { "content": "$1" } }
+  },
+  "deferred_open_schedule_failed": {
+    "message": "[GB] Could not schedule deferred opening"
+  },
+  "deferred_open_dialog_title_open_urls": {
+    "message": "[GB] Schedule URLs to open"
+  },
+  "deferred_open_dialog_title_random_bookmarks": {
+    "message": "[GB] Schedule random bookmarks to open"
+  },
+  "deferred_open_dialog_label": {
+    "message": "[GB] Open at"
+  },
+  "deferred_open_dialog_schedule": {
+    "message": "[GB] Schedule"
+  },
+  "deferred_open_dialog_cancel": {
+    "message": "[GB] Cancel"
+  },
+  "deferred_open_dialog_error_past": {
+    "message": "[GB] Choose a date and time in the future."
+  },
+  "deferred_open_dialog_open_picker": {
+    "message": "[GB] Open date & time picker"
+  },
+  "deferred_open_dialog_preset_1h": {
+    "message": "[GB] +1 hour"
+  },
+  "deferred_open_dialog_preset_1d": {
+    "message": "[GB] +1 day"
+  },
+  "deferred_open_dialog_preset_tomorrow": {
+    "message": "[GB] Tomorrow, 9:00 AM"
   }
 }

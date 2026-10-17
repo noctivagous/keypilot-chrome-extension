@@ -181,9 +181,9 @@ h1 {
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
-  text-align: left;
+  text-align: start;
   padding: 8px 10px;
-  padding-left: calc(10px + (var(--topic-depth, 0) * 12px));
+  padding-inline-start: calc(10px + (var(--topic-depth, 0) * 12px));
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
@@ -391,7 +391,7 @@ h1 {
 }
 
 .docs-article li {
-  padding-left: 0.35em;
+  padding-inline-start: 0.35em;
 }
 
 .docs-article li + li {
@@ -456,15 +456,15 @@ h1 {
 .docs-article th,
 .docs-article td {
   padding: 8px 10px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: left;
+  text-align: start;
   vertical-align: top;
 }
 
 .docs-article th:last-child,
 .docs-article td:last-child {
-  border-right: 0;
+  border-inline-end: 0;
 }
 
 .docs-article tr:last-child td {

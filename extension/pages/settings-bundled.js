@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-30T07:23:41.436Z
+ * Generated on 2026-10-17T19:40:08.776Z
  */
 
 
@@ -55,9 +55,19 @@ function getUILocaleTag() {
   }
   return DEFAULT_LOCALE;
 }
+function getUITextDirection() {
+  try {
+    const dir = globalThis.chrome?.i18n?.getMessage?.("@@bidi_dir");
+    return dir === "rtl" ? "rtl" : "ltr";
+  } catch {
+    return "ltr";
+  }
+}
 function applyDocumentLocale(doc = document) {
   try {
-    doc?.documentElement?.setAttribute?.("lang", getUILocaleTag());
+    const root = doc?.documentElement;
+    root?.setAttribute?.("lang", getUILocaleTag());
+    root?.setAttribute?.("dir", getUITextDirection());
   } catch {
   }
 }
@@ -481,6 +491,8 @@ var regionDefaultFiles = {
   en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
   es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
   es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+  he: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.il/", "searchUrlPrefix": "https://www.google.co.il/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.il" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+  hi: { "stockSocialMedia": { "urls": ["youtube.com", "instagram.com", "facebook.com", "whatsapp.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.in/", "searchUrlPrefix": "https://www.google.co.in/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.in" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
   ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
   sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
   zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
@@ -2801,6 +2813,8 @@ function hexForFocusColor(raw) {
 
 // src/modules/settings-manager.js
 var SETTINGS_STORAGE_KEY = "kp_settings_v1";
+var DEFERRED_OPEN_MIN_MINUTES = 1;
+var DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
 var TEXT_FOCUS_STYLE_IDS = Object.freeze(
   /** @type {const} */
   [
@@ -2934,6 +2948,19 @@ var DEFAULT_SETTINGS = Object.freeze({
     middleClickScrollLine: isMacPlatform(),
     // Scroll Line: skip horizontal-only landscape overflow (carousels).
     linePreferPortraitTargets: true
+  }),
+  deferredOpen: Object.freeze({
+    openUrls: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    randomBookmarks: Object.freeze({
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 60
+    }),
+    target: "activeWindow"
   })
 });
 function normalizeSearchEngine(raw) {
@@ -3104,6 +3131,37 @@ function normalizeScroll(raw) {
     )
   };
 }
+function normalizeDeferredOpenRange(raw, fallback) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  const minMinutes = normalizeNumber(
+    stored.minMinutes,
+    fallback.minMinutes,
+    DEFERRED_OPEN_MIN_MINUTES,
+    DEFERRED_OPEN_MAX_MINUTES
+  );
+  const maxMinutes = normalizeNumber(
+    stored.maxMinutes,
+    fallback.maxMinutes,
+    DEFERRED_OPEN_MIN_MINUTES,
+    DEFERRED_OPEN_MAX_MINUTES
+  );
+  return {
+    enabled: normalizeBoolean(stored.enabled, fallback.enabled),
+    minMinutes: Math.min(minMinutes, maxMinutes),
+    maxMinutes: Math.max(minMinutes, maxMinutes)
+  };
+}
+function normalizeDeferredOpen(raw) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  return {
+    openUrls: normalizeDeferredOpenRange(stored.openUrls, DEFAULT_SETTINGS.deferredOpen.openUrls),
+    randomBookmarks: normalizeDeferredOpenRange(
+      stored.randomBookmarks,
+      DEFAULT_SETTINGS.deferredOpen.randomBookmarks
+    ),
+    target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow"
+  };
+}
 function normalizeControlStrip(raw) {
   const stored = raw && typeof raw === "object" ? raw : {};
   return {
@@ -3271,7 +3329,8 @@ async function getSettings() {
       actionSettings: normalizeActionSettings(stored?.actionSettings),
       clickMode: normalizeClickMode(stored?.clickMode),
       textMode: normalizeTextMode(stored?.textMode),
-      scroll: normalizeScroll(stored?.scroll)
+      scroll: normalizeScroll(stored?.scroll),
+      deferredOpen: normalizeDeferredOpen(stored?.deferredOpen)
     };
   } catch (_e) {
     return {
@@ -3287,6 +3346,7 @@ async function getSettings() {
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll },
+      deferredOpen: normalizeDeferredOpen(null),
       actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
       actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
       themeId: DEFAULT_THEME_ID,
@@ -3339,6 +3399,18 @@ async function setSettings(partial) {
     scroll: {
       ...current.scroll,
       ...p.scroll && typeof p.scroll === "object" ? p.scroll : {}
+    },
+    deferredOpen: {
+      ...current.deferredOpen,
+      ...p.deferredOpen && typeof p.deferredOpen === "object" ? p.deferredOpen : {},
+      openUrls: {
+        ...current.deferredOpen.openUrls,
+        ...p.deferredOpen?.openUrls && typeof p.deferredOpen.openUrls === "object" ? p.deferredOpen.openUrls : {}
+      },
+      randomBookmarks: {
+        ...current.deferredOpen.randomBookmarks,
+        ...p.deferredOpen?.randomBookmarks && typeof p.deferredOpen.randomBookmarks === "object" ? p.deferredOpen.randomBookmarks : {}
+      }
     },
     actionSettings: (() => {
       const merged = { ...current.actionSettings || {} };
@@ -3412,6 +3484,7 @@ async function setSettings(partial) {
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);
+  next.deferredOpen = normalizeDeferredOpen(next.deferredOpen);
   next._updatedAt = Date.now();
   await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
   return next;
@@ -3434,6 +3507,7 @@ async function resetAllSettings() {
     },
     textMode: { ...DEFAULT_SETTINGS.textMode },
     scroll: { ...DEFAULT_SETTINGS.scroll },
+    deferredOpen: normalizeDeferredOpen(null),
     actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
     actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
     _updatedAt: Date.now()
@@ -4373,6 +4447,18 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "radio", name: "engine", path: "searchEngine" },
   { type: "toggle", id: "keyboard-reference-key-feedback", path: "keyboardReferenceKeyFeedback" },
   { type: "toggle", id: "keyboard-reference-show-number-row", path: "keyboardReferenceShowNumberRow" },
+  { type: "toggle", id: "deferred-open-urls-enabled", path: "deferredOpen.openUrls.enabled" },
+  { type: "rangePair", baseId: "deferred-open-urls-min", path: "deferredOpen.openUrls.minMinutes", min: 1, max: 2880 },
+  { type: "rangePair", baseId: "deferred-open-urls-max", path: "deferredOpen.openUrls.maxMinutes", min: 1, max: 2880 },
+  { type: "toggle", id: "deferred-random-bookmarks-enabled", path: "deferredOpen.randomBookmarks.enabled" },
+  { type: "rangePair", baseId: "deferred-random-bookmarks-min", path: "deferredOpen.randomBookmarks.minMinutes", min: 1, max: 2880 },
+  { type: "rangePair", baseId: "deferred-random-bookmarks-max", path: "deferredOpen.randomBookmarks.maxMinutes", min: 1, max: 2880 },
+  {
+    type: "select",
+    id: "deferred-open-target",
+    path: "deferredOpen.target",
+    normalize: (v) => v === "originalWindow" ? "originalWindow" : "activeWindow"
+  },
   { type: "toggle", id: "control-strip-visible", path: "controlStrip.visible" },
   { type: "toggle", id: "control-strip-collapsed", path: "controlStrip.collapsed" },
   { type: "select", id: "keyboard-layout-family", path: "keyboardLayoutFamilyId", viewTransition: true },
@@ -5477,6 +5563,50 @@ async function render() {
     /** @type {HTMLInputElement|null} */
     settingsEl("debug-logging")
   );
+  const deferredOpenUrlsEnabled = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-open-urls-enabled")
+  );
+  const deferredOpenUrlsMinRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-open-urls-min-range")
+  );
+  const deferredOpenUrlsMinNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-open-urls-min-number")
+  );
+  const deferredOpenUrlsMaxRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-open-urls-max-range")
+  );
+  const deferredOpenUrlsMaxNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-open-urls-max-number")
+  );
+  const deferredRandomBookmarksEnabled = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-random-bookmarks-enabled")
+  );
+  const deferredRandomBookmarksMinRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-random-bookmarks-min-range")
+  );
+  const deferredRandomBookmarksMinNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-random-bookmarks-min-number")
+  );
+  const deferredRandomBookmarksMaxRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-random-bookmarks-max-range")
+  );
+  const deferredRandomBookmarksMaxNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-random-bookmarks-max-number")
+  );
+  const deferredOpenTarget = (
+    /** @type {HTMLSelectElement|null} */
+    settingsEl("deferred-open-target")
+  );
   const textCursorType = (
     /** @type {HTMLSelectElement|null} */
     settingsEl("text-cursor-type")
@@ -5761,6 +5891,22 @@ async function render() {
     if (debugLoggingToggle) debugLoggingToggle.checked = on;
     applyDebugSetting(on);
   };
+  const applyDeferredOpen = (deferredOpen) => {
+    const value = deferredOpen || DEFAULT_SETTINGS.deferredOpen;
+    const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
+    const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
+    if (deferredOpenUrlsEnabled) deferredOpenUrlsEnabled.checked = openUrls.enabled !== false;
+    setInputValue(deferredOpenUrlsMinRange, openUrls.minMinutes);
+    setInputValue(deferredOpenUrlsMinNumber, openUrls.minMinutes);
+    setInputValue(deferredOpenUrlsMaxRange, openUrls.maxMinutes);
+    setInputValue(deferredOpenUrlsMaxNumber, openUrls.maxMinutes);
+    if (deferredRandomBookmarksEnabled) deferredRandomBookmarksEnabled.checked = randomBookmarks.enabled !== false;
+    setInputValue(deferredRandomBookmarksMinRange, randomBookmarks.minMinutes);
+    setInputValue(deferredRandomBookmarksMinNumber, randomBookmarks.minMinutes);
+    setInputValue(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
+    setInputValue(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
+    setInputValue(deferredOpenTarget, value.target === "originalWindow" ? "originalWindow" : "activeWindow");
+  };
   const applyAllSettings = (settings) => {
     const s = settings || DEFAULT_SETTINGS;
     lastUiSettings = s;
@@ -5777,6 +5923,7 @@ async function render() {
     applyClickMode(s.clickMode);
     applyTextMode(s.textMode);
     applyScroll(s.scroll);
+    applyDeferredOpen(s.deferredOpen);
     applyDebugLogging(s.debugLogging);
   };
   try {

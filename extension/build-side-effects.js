@@ -701,6 +701,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `    if (!host) return null;\n` +
       `    try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }\n` +
       `    try { host.setAttribute('lang', getUILocaleTag()); } catch { /* ignore */ }\n` +
+      `    try { host.setAttribute('dir', getUITextDirection()); } catch { /* ignore */ }\n` +
       `    try { host.classList.add('kp-chrome-window'); } catch { /* ignore */ }\n` +
       `    try {\n` +
       `      const themeId = document.documentElement.getAttribute('data-kp-theme') || peekCachedThemeId() || 'dark-pro';\n` +

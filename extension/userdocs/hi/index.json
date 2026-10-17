@@ -1,0 +1,216 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "परिचय",
+      "file": "intro.md",
+      "icon": "book",
+      "accent": "cyan"
+    },
+    {
+      "id": "getting-started",
+      "title": "शुरुआत",
+      "file": "getting-started.md",
+      "icon": "rocket",
+      "accent": "green"
+    },
+    {
+      "id": "browsing",
+      "title": "ब्राउज़िंग",
+      "children": [
+        {
+          "id": "browsing-click",
+          "title": "क्लिक और लिंक",
+          "file": "browsing-click.md",
+          "shortcut": "F",
+          "accent": "green"
+        },
+        {
+          "id": "browsing-tabs",
+          "title": "टैब और इतिहास",
+          "file": "browsing-tabs.md",
+          "icon": "tabs",
+          "accent": "blue"
+        },
+        {
+          "id": "browsing-scroll",
+          "title": "स्क्रॉलिंग",
+          "file": "browsing-scroll.md",
+          "icon": "scroll",
+          "accent": "amber"
+        },
+        {
+          "id": "browsing-select",
+          "title": "चयन",
+          "file": "browsing-select.md",
+          "icon": "select",
+          "accent": "indigo"
+        },
+        {
+          "id": "browsing-modes",
+          "title": "मोड",
+          "file": "browsing-modes.md",
+          "icon": "layers",
+          "accent": "violet"
+        }
+      ]
+    },
+    {
+      "id": "keyboard",
+      "title": "कीबोर्ड",
+      "children": [
+        {
+          "id": "keyboard-layouts",
+          "title": "लेआउट और हाथ",
+          "file": "keyboard-layouts.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "keyboard-system-keys",
+          "title": "सिस्टम कुंजियाँ और Alt chrome",
+          "file": "keyboard-system-keys.md",
+          "icon": "shield",
+          "accent": "amber"
+        },
+        {
+          "id": "keyboard-reference",
+          "title": "कीबोर्ड संदर्भ",
+          "file": "keyboard-reference.md",
+          "shortcut": "K",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "सेटिंग्स",
+      "file": "settings.md",
+      "shortcut": "'",
+      "accent": "blue"
+    },
+    {
+      "id": "tools",
+      "title": "टूल",
+      "children": [
+        {
+          "id": "tools-omnibox",
+          "title": "ऑम्निबॉक्स",
+          "file": "tools-omnibox.md",
+          "shortcut": "L",
+          "accent": "green"
+        },
+        {
+          "id": "tools-launcher",
+          "title": "लॉन्चर",
+          "file": "tools-launcher.md",
+          "shortcut": "Alt+;",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-top-sites",
+          "title": "टॉप साइट्स",
+          "file": "tools-top-sites.md",
+          "shortcut": ";",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-tab-history",
+          "title": "टैब इतिहास",
+          "file": "tools-tab-history.md",
+          "shortcut": "J",
+          "accent": "blue"
+        },
+        {
+          "id": "tools-control-strip",
+          "title": "कंट्रोल स्ट्रिप",
+          "file": "tools-control-strip.md",
+          "shortcut": "Alt+J",
+          "accent": "cyan"
+        },
+        {
+          "id": "tools-previews",
+          "title": "लिंक पूर्वावलोकन और पॉपओवर",
+          "file": "tools-previews.md",
+          "icon": "preview",
+          "accent": "green"
+        },
+        {
+          "id": "tools-reader",
+          "title": "रीडर मोड",
+          "file": "tools-reader.md",
+          "shortcut": "P",
+          "accent": "amber"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "मीडिया",
+      "children": [
+        {
+          "id": "media-page",
+          "title": "पेज मीडिया",
+          "file": "media-page.md",
+          "shortcut": "O",
+          "accent": "indigo"
+        },
+        {
+          "id": "media-library",
+          "title": "मीडिया लाइब्रेरी",
+          "file": "media-library.md",
+          "shortcut": "M",
+          "accent": "violet"
+        },
+        {
+          "id": "media-copy",
+          "title": "कर्सर के नीचे कॉपी",
+          "file": "media-copy.md",
+          "shortcut": "I/U",
+          "accent": "cyan"
+        }
+      ]
+    },
+    {
+      "id": "customize",
+      "title": "अनुकूलन",
+      "children": [
+        {
+          "id": "layout-config",
+          "title": "कीबोर्ड लेआउट एडिटर",
+          "file": "layout-config.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "functions",
+          "title": "फ़ंक्शन और ऐक्शन",
+          "file": "functions.md",
+          "icon": "functions",
+          "accent": "green"
+        },
+        {
+          "id": "macros-overview",
+          "title": "मैक्रो",
+          "file": "macros.md",
+          "icon": "macros",
+          "accent": "violet"
+        },
+        {
+          "id": "macro-builder",
+          "title": "मैक्रो बिल्डर",
+          "file": "macro-builder.md",
+          "icon": "controls",
+          "accent": "amber"
+        },
+        {
+          "id": "execute-js",
+          "title": "Execute JS",
+          "file": "execute-js.md",
+          "icon": "code",
+          "accent": "rose"
+        }
+      ]
+    }
+  ]
+}

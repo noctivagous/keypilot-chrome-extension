@@ -60,6 +60,9 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.clickMode.paintStrategy, DEFAULT_SETTINGS.clickMode.paintStrategy);
     assert.equal(settings.scroll.middleClickScrollLine, false);
     assert.equal(settings.controlStrip.collapsed, true);
+    assert.equal(settings.deferredOpen.openUrls.enabled, true);
+    assert.equal(settings.deferredOpen.randomBookmarks.enabled, true);
+    assert.equal(settings.deferredOpen.target, 'activeWindow');
     assert.ok(!mock.syncStore.has(SETTINGS_STORAGE_KEY));
   });
 
@@ -131,6 +134,38 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.clickMode.paintStrategy, 'BC');
     assert.equal(settings.clickMode.cursor.lineWidth, 12);
     assert.equal(settings.textMode.focusStyle, DEFAULT_SETTINGS.textMode.focusStyle);
+  });
+
+  it('normalizes deferred-open ranges and preserves independent action settings', async () => {
+    const { getSettings, setSettings, SETTINGS_STORAGE_KEY } =
+      await import('../extension/src/modules/settings-manager.js');
+    mock.seed(SETTINGS_STORAGE_KEY, {
+      deferredOpen: {
+        openUrls: { enabled: false, minMinutes: 5000, maxMinutes: 2 },
+        randomBookmarks: { enabled: true, minMinutes: 0, maxMinutes: 9000 },
+        target: 'originalWindow'
+      }
+    }, 'sync');
+
+    const normalized = await getSettings();
+    assert.deepEqual(normalized.deferredOpen.openUrls, {
+      enabled: false,
+      minMinutes: 2,
+      maxMinutes: 2880
+    });
+    assert.deepEqual(normalized.deferredOpen.randomBookmarks, {
+      enabled: true,
+      minMinutes: 1,
+      maxMinutes: 2880
+    });
+    assert.equal(normalized.deferredOpen.target, 'originalWindow');
+
+    const updated = await setSettings({
+      deferredOpen: { openUrls: { enabled: true } }
+    });
+    assert.equal(updated.deferredOpen.openUrls.enabled, true);
+    assert.equal(updated.deferredOpen.randomBookmarks.enabled, true);
+    assert.equal(updated.deferredOpen.target, 'originalWindow');
   });
 
   it('resetAllSettings replaces stored values with defaults', async () => {

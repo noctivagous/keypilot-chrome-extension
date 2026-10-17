@@ -18,7 +18,7 @@ implementation phases and design constraints, see
 ## Locale coverage snapshot
 
 Regenerate this table (`ls extension/_locales`, etc.) before trusting it — it
-is a snapshot, not a live status. As of 2026-09-22:
+is a snapshot, not a live status. As of 2026-10-17:
 
 | Locale | `_locales/<l>/messages.json` | `userdocs/<l>/` | `onboarding/<l>.xml` | `online-stores/chrome/copy/<l>.json` | `online-stores/chrome/listing/<l>.txt` | `online-stores/chrome/captures/<l>/` | `online-stores/generated/chrome/<l>/` | intro reel (`promo/intro-reel`) | site (`promo/web`) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -31,6 +31,8 @@ is a snapshot, not a live status. As of 2026-09-22:
 | `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
 | `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending | no |
 | `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | yes | yes | copy; YouTube pending | yes |
+| `he` | yes (2026-10-17, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | yes | yes | rendered; YouTube no | yes |
+| `hi` | yes (2026-10-17, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes (`onboarding/hi.xml`) | yes | yes | yes | yes | rendered; YouTube no | yes |
 
 A locale can ship in the extension with only `messages.json` complete — Docs,
 onboarding, and store assets fall back to base language then English. The

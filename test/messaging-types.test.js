@@ -131,6 +131,53 @@ describe('messaging validate', () => {
       validateRuntimeMessage({ type: MSG.OPEN_RANDOM_BOOKMARK, count: 31 }) || '',
       /count/
     );
+    assert.equal(
+      validateRuntimeMessage({
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: 'OPEN_URLS',
+        payload: { urls: ['https://example.com'] },
+        minMinutes: 1,
+        maxMinutes: 2880,
+        target: 'activeWindow'
+      }),
+      null
+    );
+    assert.match(
+      validateRuntimeMessage({
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: 'RANDOM_BOOKMARK',
+        payload: { folderId: '', count: 1 },
+        minMinutes: 60,
+        maxMinutes: 1,
+        target: 'activeWindow'
+      }) || '',
+      /delay range/
+    );
+  });
+
+  it('validates exact-time deferred scheduling', () => {
+    const base = {
+      type: MSG.SCHEDULE_DEFERRED_OPEN,
+      action: 'RANDOM_BOOKMARK',
+      payload: { folderId: '', count: 1 },
+      target: 'activeWindow'
+    };
+    assert.equal(validateRuntimeMessage({ ...base, fireAt: Date.now() + 3_600_000 }), null);
+    assert.match(
+      validateRuntimeMessage({ ...base, fireAt: Date.now() - 1_000 }) || '',
+      /future timestamp/
+    );
+    assert.match(validateRuntimeMessage({ ...base, fireAt: Number.NaN }) || '', /future timestamp/);
+    assert.match(validateRuntimeMessage({ ...base, fireAt: '2999-01-01' }) || '', /future timestamp/);
+    assert.match(
+      validateRuntimeMessage({
+        ...base,
+        fireAt: Date.now() + 3_600_000,
+        minMinutes: 1,
+        maxMinutes: 2
+      }) || '',
+      /either fireAt or a delay range/
+    );
   });
 
   it('builds ERROR envelopes', () => {

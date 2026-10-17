@@ -38,6 +38,12 @@ import {
   pickRandomBookmarkUrls
 } from './src/utils/bookmark-folder.js';
 import { stepZoomFactor } from './src/utils/page-zoom.js';
+import {
+  createDeferredOpenJob,
+  handleDeferredOpenAlarm,
+  persistDeferredOpenJob,
+  restoreDeferredOpenAlarms
+} from './src/utils/deferred-open.js';
 
 void startKeyPilotDebugFromSettings();
 
@@ -1189,8 +1195,91 @@ class ContentScriptManager {
 // Create content script manager instance
 const contentScriptManager = new ContentScriptManager();
 // Log when service worker starts up
-console.log('KeyPilot service worker started');/**
+console.log('KeyPilot service worker started');
 
+function tabContextFromTab(tab) {
+  return {
+    baseIndex: tab && typeof tab.index === 'number' ? tab.index : null,
+    windowId: tab && typeof tab.windowId === 'number' ? tab.windowId : null,
+    openerTabId: tab && typeof tab.id === 'number' ? tab.id : null
+  };
+}
+
+async function openUrlsInTabContext(urls, context, opts = {}) {
+  let opened = 0;
+  let focusTabId = null;
+  for (let i = 0; i < urls.length; i++) {
+    const createProps = { url: urls[i], active: false };
+    if (context?.baseIndex != null) createProps.index = context.baseIndex + 1 + i;
+    if (context?.windowId != null) createProps.windowId = context.windowId;
+    if (context?.openerTabId != null) createProps.openerTabId = context.openerTabId;
+    const tab = await chrome.tabs.create(createProps);
+    if (i === 0 && tab && typeof tab.id === 'number') focusTabId = tab.id;
+    opened += 1;
+  }
+  if (opts.activateFirst && focusTabId != null) {
+    await chrome.tabs.update(focusTabId, { active: true });
+  }
+  return opened;
+}
+
+async function randomBookmarkUrls(folderId, count) {
+  if (!chrome.bookmarks
+    || typeof chrome.bookmarks.getTree !== 'function'
+    || typeof chrome.bookmarks.getSubTree !== 'function') {
+    throw new Error('Bookmarks unavailable');
+  }
+  const tree = folderId
+    ? await chrome.bookmarks.getSubTree(folderId)
+    : await chrome.bookmarks.getTree();
+  return pickRandomBookmarkUrls(collectBookmarkUrls(tree, Infinity), count);
+}
+
+async function resolveDeferredTabContext(job) {
+  let windowInfo = null;
+  if (job.target === 'originalWindow' && Number.isInteger(job.originalWindowId)) {
+    try {
+      windowInfo = await chrome.windows.get(job.originalWindowId, { populate: true });
+    } catch {
+      return null;
+    }
+  } else {
+    try {
+      windowInfo = await chrome.windows.getLastFocused({ populate: true, windowTypes: ['normal'] });
+    } catch {
+      return null;
+    }
+  }
+  if (!windowInfo || windowInfo.type !== 'normal') return null;
+  const tabs = Array.isArray(windowInfo.tabs) ? windowInfo.tabs : [];
+  const anchor = tabs.find((tab) => tab?.active) || tabs[0] || null;
+  return {
+    baseIndex: anchor && typeof anchor.index === 'number' ? anchor.index : null,
+    windowId: typeof windowInfo.id === 'number' ? windowInfo.id : null,
+    openerTabId: anchor && typeof anchor.id === 'number' ? anchor.id : null
+  };
+}
+
+async function executeDeferredOpenJob(job) {
+  const context = await resolveDeferredTabContext(job);
+  if (!context || context.windowId == null) return false;
+  if (job.action === 'OPEN_URLS') {
+    const urls = normalizeOpenUrlList(job.payload?.urls);
+    if (!urls.length) return true;
+    await openUrlsInTabContext(urls, context);
+    return true;
+  }
+  if (job.action === 'RANDOM_BOOKMARK') {
+    const folderId = normalizeBookmarkFolderId(job.payload?.folderId);
+    const count = normalizeRandomBookmarkCount(job.payload?.count);
+    const urls = await randomBookmarkUrls(folderId, count);
+    if (urls.length) await openUrlsInTabContext(urls, context, { activateFirst: true });
+    return true;
+  }
+  return true;
+}
+
+/**
  * Message Handler for Cross-Tab Communication
  * Handles messages from popup and content scripts
  */
@@ -3081,29 +3170,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ type: MSG.ERROR, error: 'No urls' });
             break;
           }
-          const baseIndex = sender.tab && typeof sender.tab.index === 'number'
-            ? sender.tab.index
-            : null;
-          const windowId = sender.tab && typeof sender.tab.windowId === 'number'
-            ? sender.tab.windowId
-            : null;
-          const openerTabId = sender.tab && typeof sender.tab.id === 'number'
-            ? sender.tab.id
-            : null;
           let opened = 0;
           try {
-            for (let i = 0; i < urls.length; i++) {
-              /** @type {chrome.tabs.CreateProperties} */
-              const createProps = {
-                url: urls[i],
-                active: false
-              };
-              if (baseIndex != null) createProps.index = baseIndex + 1 + i;
-              if (windowId != null) createProps.windowId = windowId;
-              if (openerTabId != null) createProps.openerTabId = openerTabId;
-              await chrome.tabs.create(createProps);
-              opened += 1;
-            }
+            opened = await openUrlsInTabContext(urls, tabContextFromTab(sender.tab));
             sendResponse({ type: MSG.SUCCESS, opened });
           } catch (error) {
             console.error('Failed to open URL tabs:', error);
@@ -3194,16 +3263,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const count = normalizeRandomBookmarkCount(message.count);
           let urls = [];
           try {
-            if (!chrome.bookmarks
-              || typeof chrome.bookmarks.getTree !== 'function'
-              || typeof chrome.bookmarks.getSubTree !== 'function') {
-              sendResponse({ type: MSG.ERROR, error: 'Bookmarks unavailable' });
-              break;
-            }
-            const tree = folderId
-              ? await chrome.bookmarks.getSubTree(folderId)
-              : await chrome.bookmarks.getTree();
-            urls = pickRandomBookmarkUrls(collectBookmarkUrls(tree, Infinity), count);
+            urls = await randomBookmarkUrls(folderId, count);
           } catch (error) {
             console.error('KP_OPEN_RANDOM_BOOKMARK failed:', error);
             sendResponse({ type: MSG.ERROR, error: 'Failed to read bookmarks' });
@@ -3213,35 +3273,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ type: MSG.SUCCESS, opened: 0 });
             break;
           }
-          const baseIndex = sender.tab && typeof sender.tab.index === 'number'
-            ? sender.tab.index
-            : null;
-          const windowId = sender.tab && typeof sender.tab.windowId === 'number'
-            ? sender.tab.windowId
-            : null;
-          const openerTabId = sender.tab && typeof sender.tab.id === 'number'
-            ? sender.tab.id
-            : null;
           let opened = 0;
-          /** @type {number|null} */
-          let focusTabId = null;
           try {
-            for (let i = 0; i < urls.length; i++) {
-              /** @type {chrome.tabs.CreateProperties} */
-              const createProps = {
-                url: urls[i],
-                active: false
-              };
-              if (baseIndex != null) createProps.index = baseIndex + 1 + i;
-              if (windowId != null) createProps.windowId = windowId;
-              if (openerTabId != null) createProps.openerTabId = openerTabId;
-              const tab = await chrome.tabs.create(createProps);
-              if (i === 0 && tab && typeof tab.id === 'number') focusTabId = tab.id;
-              opened += 1;
-            }
-            if (focusTabId != null) {
-              await chrome.tabs.update(focusTabId, { active: true });
-            }
+            opened = await openUrlsInTabContext(
+              urls,
+              tabContextFromTab(sender.tab),
+              { activateFirst: true }
+            );
             sendResponse({ type: MSG.SUCCESS, opened });
           } catch (error) {
             console.error('Failed to open random bookmark tabs:', error);
@@ -3250,6 +3288,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               error: 'Failed to open tabs: ' + error.message,
               opened
             });
+          }
+          break;
+        }
+
+        case MSG.SCHEDULE_DEFERRED_OPEN: {
+          const action = message.action;
+          const payload = action === 'OPEN_URLS'
+            ? { urls: normalizeOpenUrlList(message.payload?.urls) }
+            : {
+                folderId: normalizeBookmarkFolderId(message.payload?.folderId),
+                count: normalizeRandomBookmarkCount(message.payload?.count)
+              };
+          try {
+            const job = createDeferredOpenJob({
+              action,
+              payload,
+              ...(message.fireAt !== undefined
+                ? { fireAt: message.fireAt }
+                : { minMinutes: message.minMinutes, maxMinutes: message.maxMinutes }),
+              target: message.target,
+              originalWindowId: sender.tab?.windowId
+            });
+            await persistDeferredOpenJob(job);
+            sendResponse({ type: MSG.SUCCESS, scheduledAt: job.fireAt, jobId: job.id });
+          } catch (error) {
+            console.error('Failed to schedule deferred open:', error);
+            sendResponse({ type: MSG.ERROR, error: 'Failed to schedule deferred opening' });
           }
           break;
         }
@@ -3336,9 +3401,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * Service Worker Lifecycle Events
  */
 
+chrome.alarms.onAlarm.addListener((alarm) => {
+  void handleDeferredOpenAlarm(alarm?.name, executeDeferredOpenJob);
+});
+
+// Alarms normally survive worker suspension, but rebuilding them from the local
+// queue also covers extension/browser restarts and overdue jobs.
+void restoreDeferredOpenAlarms().catch((error) => {
+  console.warn('[KeyPilot] Failed to restore deferred open alarms:', error?.message || error);
+});
+
 // Initialize when service worker starts
 chrome.runtime.onStartup.addListener(async () => {
   void refreshKeyboardReferenceContextMenu();
+  await restoreDeferredOpenAlarms();
   console.log('Chrome startup detected, initializing ExtensionToggleManager...');
   await extensionToggleManager.initialize();
 
@@ -3350,6 +3426,7 @@ chrome.runtime.onStartup.addListener(async () => {
 // Initialize when extension is installed or updated
 chrome.runtime.onInstalled.addListener(async (details) => {
   void refreshKeyboardReferenceContextMenu();
+  await restoreDeferredOpenAlarms();
   console.log('Extension installed/updated:', details.reason);
   await extensionToggleManager.initialize();
 

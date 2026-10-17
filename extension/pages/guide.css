@@ -131,7 +131,7 @@ h1 {
 
 .list {
   margin: 0;
-  padding-left: 18px;
+  padding-inline-start: 18px;
   color: rgba(255,255,255,0.86);
 }
 

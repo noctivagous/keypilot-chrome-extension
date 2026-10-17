@@ -6,7 +6,9 @@
  * from the extension package.
  */
 import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pngDimensions } from './png.mjs';
@@ -173,6 +175,25 @@ function splitCalloutKbd(text) {
   return { before: match[1], kbd: match[2], after: match[3] };
 }
 
+function isHebrewGlyph(ch) {
+  const code = ch.codePointAt(0);
+  return code >= 0x0590 && code <= 0x05ff;
+}
+
+function isDevanagariGlyph(ch) {
+  const code = ch.codePointAt(0);
+  if (code < 0x0900 || code > 0x097f) return false;
+  const combining =
+    (code >= 0x0900 && code <= 0x0903) ||
+    code === 0x093a ||
+    code === 0x093c ||
+    (code >= 0x0941 && code <= 0x0948) ||
+    code === 0x094d ||
+    (code >= 0x0951 && code <= 0x0957) ||
+    (code >= 0x0962 && code <= 0x0963);
+  return !combining;
+}
+
 function isWideGlyph(ch) {
   const code = ch.codePointAt(0);
   return (
@@ -193,6 +214,7 @@ export function estimateOverlayWidth(text, fontSize) {
   let width = 0;
   for (const ch of String(text)) {
     if (ch === ' ') width += fontSize * 0.25;
+    else if (isHebrewGlyph(ch) || isDevanagariGlyph(ch)) width += fontSize * 0.55;
     else if (isWideGlyph(ch)) width += fontSize * 1;
     else if ('iIlj.,:;!\''.includes(ch)) width += fontSize * 0.26;
     else if ('mwWM@'.includes(ch)) width += fontSize * 0.76;
@@ -219,6 +241,17 @@ export function applyTemplate(template, values) {
     throw new Error(`SVG placeholder "{{${leftover[0]}}}" is unresolved`);
   }
   return svg;
+}
+
+/** Hebrew copy stays on the LTR stage. Direction is set on the text runs only.
+ *  resvg anchors `text-anchor="end"` to the physical end, so the template's
+ *  existing anchor is left alone and RTL runs grow to the right of x. */
+export function applyRtlOverlayText(svg, locale) {
+  if (locale !== 'he') return svg;
+  return String(svg).replace(/<text\b([^>]*)>/g, (tag, attrs) => {
+    if (!/\sdata-copy=/.test(attrs) || /\sdirection=/.test(attrs)) return tag;
+    return `<text${attrs} direction="rtl" unicode-bidi="embed">`;
+  });
 }
 
 export function captureMetaPath(root, slots, locale) {
@@ -270,7 +303,7 @@ function loadResvg() {
 }
 
 export const OVERLAY_FONT_FAMILY =
-  'Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif';
+  'Titillium Web, Noto Sans Devanagari, Noto Sans Hebrew, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif';
 
 const FONT_FILE = /\.(ttf|otf|ttc)$/i;
 const LATIN_FONT_FILE = /\.(ttf|otf)$/i;
@@ -291,6 +324,16 @@ const NOTO_CJK_SUBSET = [
   {
     file: 'NotoSansHK-VF.ttf',
     url: 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansHK-VF.ttf'
+  },
+  {
+    file: 'NotoSansHebrew-Regular.ttf',
+    url: 'https://github.com/google/fonts/raw/main/ofl/notosanshebrew/NotoSansHebrew%5Bwdth%2Cwght%5D.ttf',
+    instance: { wght: 700, wdth: 100, family: 'Noto Sans Hebrew', postscript: 'NotoSansHebrew-Regular' }
+  },
+  {
+    file: 'NotoSansDevanagari-Regular.ttf',
+    url: 'https://github.com/google/fonts/raw/main/ofl/notosansdevanagari/NotoSansDevanagari%5Bwdth%2Cwght%5D.ttf',
+    instance: { wght: 700, wdth: 100, family: 'Noto Sans Devanagari', postscript: 'NotoSansDevanagari-Regular' }
   }
 ];
 
@@ -313,17 +356,58 @@ export function fontFiles(root = repoRoot) {
   ];
 }
 
+function instanceStaticFace(variablePath, dest, axes) {
+  const script = `
+import sys
+from fontTools.ttLib import TTFont
+from fontTools.varLib.instancer import instantiateVariableFont
+src, dest, wght, wdth, family, postscript = sys.argv[1:]
+font = TTFont(src)
+inst = instantiateVariableFont(font, {"wght": float(wght), "wdth": float(wdth)})
+name = inst["name"]
+def set_name(name_id, value):
+    name.setName(value, name_id, 3, 1, 0x409)
+    name.setName(value, name_id, 1, 0, 0)
+set_name(1, family)
+set_name(2, "Regular")
+set_name(4, family + " Regular")
+set_name(6, postscript)
+set_name(16, family)
+set_name(17, "Regular")
+inst.save(dest)
+`;
+  const result = spawnSync(
+    'python3',
+    ['-c', script, variablePath, dest, String(axes.wght), String(axes.wdth), axes.family, axes.postscript],
+    { encoding: 'utf8' }
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `Failed to instance ${axes.family} (${result.stderr || result.stdout || result.error || result.status})`
+    );
+  }
+}
+
 export async function ensureOverlayCjkFonts(root = repoRoot) {
   const dir = overlayCjkFontDir(root);
   fs.mkdirSync(dir, { recursive: true });
-  for (const { file, url } of NOTO_CJK_SUBSET) {
+  const staleVariable = path.join(dir, 'NotoSansHebrew-VF.ttf');
+  if (fs.existsSync(staleVariable)) fs.unlinkSync(staleVariable);
+  for (const { file, url, instance } of NOTO_CJK_SUBSET) {
     const dest = path.join(dir, file);
     if (fs.existsSync(dest) && fs.statSync(dest).size > 10_000) continue;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to download overlay CJK font ${file} (${response.status})`);
     }
-    fs.writeFileSync(dest, Buffer.from(await response.arrayBuffer()));
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (!instance) {
+      fs.writeFileSync(dest, bytes);
+      continue;
+    }
+    const variablePath = path.join(os.tmpdir(), `${file}.variable.ttf`);
+    fs.writeFileSync(variablePath, bytes);
+    instanceStaticFace(variablePath, dest, instance);
   }
   return fontFiles(root);
 }
@@ -409,7 +493,10 @@ export function generateLocaleScreenshots(root, slots, locale, { write = true } 
         `Locale "${locale}" slot "${slot.id}" has ${copy.slots[slot.copyKey].callouts.length} callouts, template needs ${neededCallouts}`
       );
     }
-    const svg = applyTemplate(template, substitutionsForSlot(slot, copy.slots[slot.copyKey], pngToDataUri(capturePng)));
+    const svg = applyRtlOverlayText(
+      applyTemplate(template, substitutionsForSlot(slot, copy.slots[slot.copyKey], pngToDataUri(capturePng))),
+      locale
+    );
     const png = renderSvgToPng(svg, {
       width: slot.width,
       height: slot.height,

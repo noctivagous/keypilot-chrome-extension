@@ -479,7 +479,7 @@ input:disabled+.toggle-slider {
 
 .legend-table th,
 .legend-table td{
-  text-align: left;
+  text-align: start;
   padding: 6px 8px;
   border-bottom: 1px solid #a1b6de !important;
   min-width: 0;

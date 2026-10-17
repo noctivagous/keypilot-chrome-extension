@@ -1,4 +1,8 @@
+[ ] make new built-in keyboard layout: Scrapbook Browsing.   right side of keyboard made of keys like Copy Image, Copy URL
 
+[ ] calculator widget
+[ ] KP command box - type "calc" and it opens calculator on the page so that you
+don't have to have every key.
 
 [x] some graphical indicator on the KB Ref. that the key action has settings, such as a rectangle that looks like a form in the lower right corner.
 
@@ -97,6 +101,8 @@ q.a. check: key actions:
 
 [ ] Key Action category: AI
 
+[ ] AI - Proofread Textarea -  press this key over a text area and it will open up a popover 
+in the page (reuse Font Info popover) with responses.  will work for contenteditable or textarea.
 
 [ ]  AI - Explain Rect. key action - using selection rectangle, but may not need conventional text range 
 selection, it will explain what is inside the rect.  Explain Rect. will be the key action that allows 

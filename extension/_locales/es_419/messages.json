@@ -6438,11 +6438,32 @@
   "context_menu_control_strip": {
     "message": "Tira de control ($1)",
     "description": "Context-menu item that shows or hides the control strip. $1 is the shortcut glyph.",
-    "placeholders": {
-      "shortcut": {
-        "content": "$1",
-        "example": "Alt + J"
-      }
-    }
-  }
+    "placeholders": { "shortcut": { "content": "$1", "example": "Alt + J" } }
+  },
+  "settings_static_249": { "message": "Apertura diferida de pestañas" },
+  "settings_static_250": { "message": "Presiona Alt+Mayús con una tecla Abrir URL o Marcadores aleatorios para programarla a una hora aleatoria." },
+  "settings_static_251": { "message": "Retrasar Abrir URL" },
+  "settings_static_252": { "message": "Activa la programación con Alt+Mayús para cada tecla Abrir URL." },
+  "settings_static_253": { "message": "Abrir URL: mínimo (minutos)" },
+  "settings_static_254": { "message": "Abrir URL: máximo (minutos)" },
+  "settings_static_255": { "message": "Retrasar Marcadores aleatorios" },
+  "settings_static_256": { "message": "Activa la programación con Alt+Mayús para cada tecla Marcadores aleatorios." },
+  "settings_static_257": { "message": "Marcadores aleatorios: mínimo (minutos)" },
+  "settings_static_258": { "message": "Marcadores aleatorios: máximo (minutos)" },
+  "settings_static_259": { "message": "Abrir las pestañas diferidas en" },
+  "settings_static_260": { "message": "La ventana activa del navegador" },
+  "settings_static_261": { "message": "La ventana original del navegador cuando esté disponible" },
+  "settings_static_262": { "message": "Si la ventana elegida no está disponible, KeyPilot espera y vuelve a intentarlo." },
+  "deferred_open_scheduled": { "message": "Apertura programada para $1", "placeholders": { "time": { "content": "$1" } } },
+  "deferred_open_schedule_failed": { "message": "No se pudo programar la apertura diferida" },
+  "deferred_open_dialog_title_open_urls": { "message": "Programar la apertura de URLs" },
+  "deferred_open_dialog_title_random_bookmarks": { "message": "Programar la apertura de marcadores aleatorios" },
+  "deferred_open_dialog_label": { "message": "Abrir el" },
+  "deferred_open_dialog_schedule": { "message": "Programar" },
+  "deferred_open_dialog_cancel": { "message": "Cancelar" },
+  "deferred_open_dialog_error_past": { "message": "Elige una fecha y hora futuras." },
+  "deferred_open_dialog_open_picker": { "message": "Abrir selector de fecha y hora" },
+  "deferred_open_dialog_preset_1h": { "message": "+1 hora" },
+  "deferred_open_dialog_preset_1d": { "message": "+1 día" },
+  "deferred_open_dialog_preset_tomorrow": { "message": "Mañana, 9:00" }
 }

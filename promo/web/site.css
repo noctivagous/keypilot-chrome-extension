@@ -83,6 +83,14 @@ html:lang(zh-Hant) body {
     font-family: var(--font-main), "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
 }
 
+html:lang(he) body {
+    font-family: var(--font-main), Arial, "Noto Sans Hebrew", "Segoe UI", sans-serif;
+}
+
+html:lang(hi) body {
+    font-family: var(--font-main), "Kohinoor Devanagari", "Nirmala UI", "Noto Sans Devanagari", sans-serif;
+}
+
 html:lang(ja) body {
     font-family: var(--font-main), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
 }
