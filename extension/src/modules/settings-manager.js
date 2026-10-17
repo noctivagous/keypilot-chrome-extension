@@ -172,7 +172,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   deferredOpen: {
  *     openUrls: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     randomBookmarks: { enabled: boolean, minMinutes: number, maxMinutes: number },
- *     target: DeferredOpenTarget
+ *     target: DeferredOpenTarget,
+ *     silentRandomScheduling: boolean
  *   },
  *   actionSettings: Record<string, { mode?: string, parameters?: Record<string, any> }>
  * }} KeyPilotSettings
@@ -307,7 +308,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
       minMinutes: 1,
       maxMinutes: 60
     }),
-    target: 'activeWindow'
+    target: 'activeWindow',
+    silentRandomScheduling: true
   })
 });
 
@@ -607,7 +609,11 @@ export function normalizeDeferredOpen(raw) {
       stored.randomBookmarks,
       DEFAULT_SETTINGS.deferredOpen.randomBookmarks
     ),
-    target: stored.target === 'originalWindow' ? 'originalWindow' : 'activeWindow'
+    target: stored.target === 'originalWindow' ? 'originalWindow' : 'activeWindow',
+    silentRandomScheduling: normalizeBoolean(
+      stored.silentRandomScheduling,
+      DEFAULT_SETTINGS.deferredOpen.silentRandomScheduling
+    )
   };
 }
 

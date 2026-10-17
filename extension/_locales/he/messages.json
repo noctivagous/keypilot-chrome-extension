@@ -6510,5 +6510,11 @@
   "deferred_open_dialog_open_picker": { "message": "פתח בורר תאריך ושעה" },
   "deferred_open_dialog_preset_1h": { "message": "‎+1 שעה" },
   "deferred_open_dialog_preset_1d": { "message": "‎+1 יום" },
-  "deferred_open_dialog_preset_tomorrow": { "message": "מחר, 9:00" }
+  "deferred_open_dialog_preset_tomorrow": { "message": "מחר, 9:00" },
+  "deferred_open_dialog_hour": { "message": "שעה" },
+  "deferred_open_dialog_minute": { "message": "דקה" },
+  "deferred_open_dialog_earlier": { "message": "מוקדם יותר" },
+  "deferred_open_dialog_later": { "message": "מאוחר יותר" },
+  "settings_static_263": { "message": "תזמון אקראי שקט" },
+  "settings_static_264": { "message": "מסתיר את התראת הזמן של Alt+Shift עבור פתיחת כתובות וסימניות אקראיות. אם התזמון נכשל, מופיע סימן אדום קטן." }
 }

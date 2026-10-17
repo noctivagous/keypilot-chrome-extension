@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T19:40:08.776Z
+ * Generated on 2026-10-17T20:18:37.083Z
  */
 
 
@@ -2960,7 +2960,8 @@ var DEFAULT_SETTINGS = Object.freeze({
       minMinutes: 1,
       maxMinutes: 60
     }),
-    target: "activeWindow"
+    target: "activeWindow",
+    silentRandomScheduling: true
   })
 });
 function normalizeSearchEngine(raw) {
@@ -3159,7 +3160,11 @@ function normalizeDeferredOpen(raw) {
       stored.randomBookmarks,
       DEFAULT_SETTINGS.deferredOpen.randomBookmarks
     ),
-    target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow"
+    target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow",
+    silentRandomScheduling: normalizeBoolean(
+      stored.silentRandomScheduling,
+      DEFAULT_SETTINGS.deferredOpen.silentRandomScheduling
+    )
   };
 }
 function normalizeControlStrip(raw) {
@@ -4447,6 +4452,7 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "radio", name: "engine", path: "searchEngine" },
   { type: "toggle", id: "keyboard-reference-key-feedback", path: "keyboardReferenceKeyFeedback" },
   { type: "toggle", id: "keyboard-reference-show-number-row", path: "keyboardReferenceShowNumberRow" },
+  { type: "toggle", id: "deferred-silent-random", path: "deferredOpen.silentRandomScheduling" },
   { type: "toggle", id: "deferred-open-urls-enabled", path: "deferredOpen.openUrls.enabled" },
   { type: "rangePair", baseId: "deferred-open-urls-min", path: "deferredOpen.openUrls.minMinutes", min: 1, max: 2880 },
   { type: "rangePair", baseId: "deferred-open-urls-max", path: "deferredOpen.openUrls.maxMinutes", min: 1, max: 2880 },
@@ -5607,6 +5613,10 @@ async function render() {
     /** @type {HTMLSelectElement|null} */
     settingsEl("deferred-open-target")
   );
+  const deferredSilentRandom = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("deferred-silent-random")
+  );
   const textCursorType = (
     /** @type {HTMLSelectElement|null} */
     settingsEl("text-cursor-type")
@@ -5906,6 +5916,7 @@ async function render() {
     setInputValue(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
     setInputValue(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
     setInputValue(deferredOpenTarget, value.target === "originalWindow" ? "originalWindow" : "activeWindow");
+    if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
   };
   const applyAllSettings = (settings) => {
     const s = settings || DEFAULT_SETTINGS;

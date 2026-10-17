@@ -12,6 +12,7 @@ import {
   formatDateTimeLocalValue,
   isValidManualFireAt,
   parseDateTimeLocalValue,
+  shiftLocalFireAt,
   tomorrowMorningFireAt
 } from '../utils/deferred-open.js';
 import {
@@ -48,14 +49,27 @@ const CSS = `
     font-weight: 600;
     color: rgba(255,140,0,0.85);
   }
-  .kp-sod-input-row {
+  .kp-sod-time {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .kp-sod-time-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .kp-sod-stepper {
     display: flex;
     align-items: stretch;
-    gap: 6px;
+    gap: 4px;
   }
-  .kp-sod-input {
+  .kp-sod-input,
+  .kp-sod-select {
     box-sizing: border-box;
-    flex: 1 1 auto;
+    width: 100%;
     min-width: 0;
     padding: 8px 10px;
     border-radius: ${NCT_DARK_UI_BTN_RADIUS};
@@ -68,21 +82,23 @@ const CSS = `
   }
   .kp-sod-input::-webkit-calendar-picker-indicator {
     cursor: pointer;
-    padding: 2px;
+    padding: 4px;
     border-radius: 3px;
+    opacity: 1;
   }
   .kp-sod-input::-webkit-calendar-picker-indicator:hover {
     background: rgba(255,255,255,0.15);
   }
-  .kp-sod-picker-btn {
+  .kp-sod-step {
     margin: 0;
     flex: 0 0 auto;
-    width: 38px;
+    width: 32px;
     padding: 0;
     border-radius: ${NCT_DARK_UI_BTN_RADIUS};
     border: ${NCT_DARK_UI_BTN_BORDER};
     background: ${NCT_DARK_UI_BTN_GRADIENT};
     color: ${NCT_DARK_UI_COLORS.fg};
+    font: inherit;
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
@@ -111,7 +127,8 @@ const CSS = `
     border-color: rgba(255,140,0,0.55);
   }
   .kp-sod-input:focus-visible,
-  .kp-sod-picker-btn:focus-visible,
+  .kp-sod-select:focus-visible,
+  .kp-sod-step:focus-visible,
   .kp-sod-chip:focus-visible,
   .kp-sod-btn:focus-visible {
     outline: 2px solid rgba(255,140,0,0.85);
@@ -190,7 +207,7 @@ export class ScheduleOpenDialog {
       resizable: false
     });
     try {
-      setTimeout(() => this._panel?.input?.focus?.(), 0);
+      setTimeout(() => this._panel?.dateInput?.focus?.(), 0);
     } catch { /* ignore */ }
     return true;
   }
@@ -218,7 +235,7 @@ export class ScheduleOpenDialog {
       left: '50%',
       top: '50%',
       transform: 'translate(-50%, -50%)',
-      width: 'min(380px, calc(100vw - 32px))',
+      width: 'min(420px, calc(100vw - 32px))',
       borderRadius: NCT_DARK_UI_PANEL_RADIUS,
       border: `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`,
       background: NCT_DARK_UI_COLORS.panel,
@@ -240,67 +257,54 @@ export class ScheduleOpenDialog {
     const body = doc.createElement('div');
     body.className = 'kp-sod-body';
 
-    const label = doc.createElement('label');
+    const label = doc.createElement('div');
     label.className = 'kp-sod-label';
-    label.setAttribute('for', 'kp-sod-input');
+    label.id = 'kp-sod-label';
     label.textContent = getMessage('deferred_open_dialog_label');
 
-    const input = doc.createElement('input');
-    input.type = 'datetime-local';
-    input.id = 'kp-sod-input';
-    input.className = 'kp-sod-input';
-    input.step = '60';
-    input.required = true;
-    const now = this._now();
-    input.min = formatDateTimeLocalValue(now);
-    input.value = formatDateTimeLocalValue(defaultManualFireAt(now));
+    const dateInput = doc.createElement('input');
+    dateInput.type = 'date';
+    dateInput.id = 'kp-sod-date';
+    dateInput.className = 'kp-sod-input';
+    dateInput.required = true;
+    dateInput.setAttribute('aria-labelledby', 'kp-sod-label');
 
-    const pickerBtn = doc.createElement('button');
-    pickerBtn.type = 'button';
-    pickerBtn.className = 'kp-sod-picker-btn';
-    pickerBtn.textContent = '📅';
-    pickerBtn.setAttribute('aria-label', getMessage('deferred_open_dialog_open_picker'));
-    pickerBtn.title = getMessage('deferred_open_dialog_open_picker');
-    pickerBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      try {
-        if (typeof input.showPicker === 'function') input.showPicker();
-        else input.focus();
-      } catch {
-        try { input.focus(); } catch { /* ignore */ }
-      }
-    });
+    const hourLabelText = getMessage('deferred_open_dialog_hour');
+    const minuteLabelText = getMessage('deferred_open_dialog_minute');
+    const earlierText = getMessage('deferred_open_dialog_earlier');
+    const laterText = getMessage('deferred_open_dialog_later');
 
-    const inputRow = doc.createElement('div');
-    inputRow.className = 'kp-sod-input-row';
-    inputRow.append(input, pickerBtn);
+    const hourSelect = buildSelect(doc, 'kp-sod-hour', 24, (value) => hourOptionLabel(value));
+    const minuteSelect = buildSelect(doc, 'kp-sod-minute', 60, (value) => pad2(value));
+    hourSelect.setAttribute('aria-label', hourLabelText);
+    minuteSelect.setAttribute('aria-label', minuteLabelText);
+
+    /** @type {(part: 'hour'|'minute', delta: number) => void} */
+    let shiftPart = () => {};
+    const timeRow = doc.createElement('div');
+    timeRow.className = 'kp-sod-time';
+    timeRow.append(
+      buildTimeField(doc, hourLabelText, hourSelect, 'hour', earlierText, laterText, (part, delta) => {
+        shiftPart(part, delta);
+      }),
+      buildTimeField(doc, minuteLabelText, minuteSelect, 'minute', earlierText, laterText, (part, delta) => {
+        shiftPart(part, delta);
+      })
+    );
 
     const chips = doc.createElement('div');
     chips.className = 'kp-sod-chips';
     const presets = [
-      ['deferred_open_dialog_preset_1h', () => this._now() + 60 * 60 * 1000],
-      ['deferred_open_dialog_preset_1d', () => this._now() + 24 * 60 * 60 * 1000],
+      ['deferred_open_dialog_preset_1h', (base) => shiftLocalFireAt(base, { hours: 1 })],
+      ['deferred_open_dialog_preset_1d', (base) => shiftLocalFireAt(base, { days: 1 })],
       ['deferred_open_dialog_preset_tomorrow', () => tomorrowMorningFireAt(this._now())]
     ];
-    for (const [messageKey, computeFireAt] of presets) {
-      const chip = doc.createElement('button');
-      chip.type = 'button';
-      chip.className = 'kp-sod-chip';
-      chip.textContent = getMessage(messageKey);
-      chip.addEventListener('click', (e) => {
-        e.preventDefault();
-        input.value = formatDateTimeLocalValue(computeFireAt());
-        refresh();
-        try { input.focus(); } catch { /* ignore */ }
-      });
-      chips.appendChild(chip);
-    }
 
     const error = doc.createElement('div');
     error.className = 'kp-sod-error';
     error.setAttribute('role', 'alert');
 
-    body.append(label, inputRow, chips, error);
+    body.append(label, dateInput, timeRow, chips, error);
 
     const actions = doc.createElement('div');
     actions.className = 'kp-sod-actions';
@@ -318,11 +322,26 @@ export class ScheduleOpenDialog {
     actions.append(cancel, submit);
     shell.append(header, body, actions);
 
-    const readFireAt = () => parseDateTimeLocalValue(input.value);
+    const readFireAt = () => parseDateTimeLocalValue(
+      `${dateInput.value}T${pad2(hourSelect.value)}:${pad2(minuteSelect.value)}`
+    );
+    const applyFireAt = (ms) => {
+      const formatted = formatDateTimeLocalValue(ms);
+      const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(formatted);
+      if (!match) return;
+      dateInput.value = match[1];
+      hourSelect.value = String(Number(match[2]));
+      minuteSelect.value = String(Number(match[3]));
+    };
+    const currentOrNow = () => {
+      const current = readFireAt();
+      return Number.isFinite(current) ? current : this._now();
+    };
     const refresh = () => {
-      const valid = isValidManualFireAt(readFireAt(), this._now());
+      const fireAt = readFireAt();
+      const valid = isValidManualFireAt(fireAt, this._now());
       submit.disabled = !valid;
-      error.textContent = valid || !input.value
+      error.textContent = valid || !dateInput.value
         ? ''
         : getMessage('deferred_open_dialog_error_past');
       return valid;
@@ -333,14 +352,41 @@ export class ScheduleOpenDialog {
       this.hide();
       onSubmit(fireAt);
     };
+    shiftPart = (part, delta) => {
+      const base = currentOrNow();
+      const next = part === 'minute'
+        ? shiftLocalMinutes(base, delta)
+        : shiftLocalFireAt(base, { hours: delta });
+      applyFireAt(next);
+      refresh();
+    };
 
-    input.addEventListener('input', refresh);
-    input.addEventListener('change', refresh);
-    input.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      commit();
-    });
+    for (const [messageKey, computeFireAt] of presets) {
+      const chip = doc.createElement('button');
+      chip.type = 'button';
+      chip.className = 'kp-sod-chip';
+      chip.setAttribute('data-preset', messageKey);
+      chip.textContent = getMessage(messageKey);
+      chip.addEventListener('click', (e) => {
+        e.preventDefault();
+        const anchor = messageKey === 'deferred_open_dialog_preset_tomorrow'
+          ? this._now()
+          : currentOrNow();
+        applyFireAt(computeFireAt(anchor));
+        refresh();
+      });
+      chips.appendChild(chip);
+    }
+
+    for (const field of [dateInput, hourSelect, minuteSelect]) {
+      field.addEventListener('input', refresh);
+      field.addEventListener('change', refresh);
+      field.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        commit();
+      });
+    }
     cancel.addEventListener('click', (e) => {
       e.preventDefault();
       this.hide();
@@ -349,8 +395,101 @@ export class ScheduleOpenDialog {
       e.preventDefault();
       commit();
     });
+
+    const now = this._now();
+    dateInput.min = formatDateTimeLocalValue(now).slice(0, 10);
+    applyFireAt(defaultManualFireAt(now));
     refresh();
 
-    return { host, input, submit, cancel, error };
+    return { host, dateInput, hourSelect, minuteSelect, submit, cancel, error };
   }
+}
+
+function pad2(value) {
+  return String(Number(value) || 0).padStart(2, '0');
+}
+
+function hourOptionLabel(hour) {
+  try {
+    return new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).format(
+      new Date(2020, 0, 1, hour, 0, 0, 0)
+    );
+  } catch {
+    return pad2(hour);
+  }
+}
+
+function shiftLocalMinutes(ms, delta) {
+  const date = new Date(ms);
+  if (Number.isNaN(date.getTime())) return NaN;
+  date.setMinutes(date.getMinutes() + delta);
+  return date.getTime();
+}
+
+/**
+ * @param {Document} doc
+ * @param {string} className
+ * @param {number} count
+ * @param {(value: number) => string} labelFor
+ */
+function buildSelect(doc, className, count, labelFor) {
+  const select = doc.createElement('select');
+  select.className = `kp-sod-select ${className}`;
+  for (let value = 0; value < count; value += 1) {
+    const option = doc.createElement('option');
+    option.value = String(value);
+    option.textContent = labelFor(value);
+    select.appendChild(option);
+  }
+  return select;
+}
+
+/**
+ * @param {Document} doc
+ * @param {string} labelText
+ * @param {HTMLSelectElement} select
+ * @param {'hour'|'minute'} part
+ * @param {string} earlierText
+ * @param {string} laterText
+ * @param {(part: 'hour'|'minute', delta: number) => void} onStep
+ */
+function buildTimeField(doc, labelText, select, part, earlierText, laterText, onStep) {
+  const field = doc.createElement('div');
+  field.className = 'kp-sod-time-field';
+
+  const caption = doc.createElement('div');
+  caption.className = 'kp-sod-label';
+  caption.textContent = labelText;
+
+  const stepper = doc.createElement('div');
+  stepper.className = 'kp-sod-stepper';
+
+  const earlier = doc.createElement('button');
+  earlier.type = 'button';
+  earlier.className = 'kp-sod-step';
+  earlier.setAttribute('data-part', part);
+  earlier.setAttribute('data-delta', '-1');
+  earlier.textContent = '−';
+  earlier.setAttribute('aria-label', `${earlierText} ${labelText}`);
+
+  const later = doc.createElement('button');
+  later.type = 'button';
+  later.className = 'kp-sod-step';
+  later.setAttribute('data-part', part);
+  later.setAttribute('data-delta', '1');
+  later.textContent = '+';
+  later.setAttribute('aria-label', `${laterText} ${labelText}`);
+
+  earlier.addEventListener('click', (e) => {
+    e.preventDefault();
+    onStep(part, -1);
+  });
+  later.addEventListener('click', (e) => {
+    e.preventDefault();
+    onStep(part, 1);
+  });
+
+  stepper.append(earlier, select, later);
+  field.append(caption, stepper);
+  return field;
 }

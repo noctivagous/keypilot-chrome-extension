@@ -96,6 +96,7 @@ import {
   normalizeBookmarkFolderId,
   normalizeRandomBookmarkCount
 } from './utils/bookmark-folder.js';
+import { randomScheduleIsSilent } from './utils/deferred-open.js';
 import { getStockActionById, isStockActionId } from './config/stock-actions.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent, isChordSlotKey } from './utils/key-chord.js';
@@ -1592,7 +1593,12 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       {
         silent: true,
         onResponse: (response) => {
+          const quiet = randomScheduleIsSilent(
+            schedule,
+            this._settings?.deferredOpen?.silentRandomScheduling
+          );
           if (response?.type === MSG.SUCCESS && Number.isFinite(Number(response.scheduledAt))) {
+            if (quiet) return;
             const when = new Date(Number(response.scheduledAt)).toLocaleString();
             this.showFlashNotification(
               getMessage('deferred_open_scheduled', when),
@@ -1600,16 +1606,65 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
             );
             return;
           }
-          this.showFlashNotification(
-            getMessage('deferred_open_schedule_failed'),
-            COLORS.NOTIFICATION_ERROR
-          );
+          this._showDeferredOpenFailure(quiet);
         }
       }
     );
     if (!sent) {
-      this.showFlashNotification(getMessage('deferred_open_schedule_failed'), COLORS.NOTIFICATION_ERROR);
+      this._showDeferredOpenFailure(randomScheduleIsSilent(
+        schedule,
+        this._settings?.deferredOpen?.silentRandomScheduling
+      ));
     }
+  }
+
+  /**
+   * @param {boolean} quiet
+   */
+  _showDeferredOpenFailure(quiet) {
+    if (quiet) {
+      this._showSilentScheduleFailureMark();
+      return;
+    }
+    this.showFlashNotification(
+      getMessage('deferred_open_schedule_failed'),
+      COLORS.NOTIFICATION_ERROR
+    );
+  }
+
+  /**
+   * A 10×10 red square in the upper right. Used when silent random scheduling
+   * fails, so the miss is visible without a text alert.
+   */
+  _showSilentScheduleFailureMark() {
+    try {
+      this._silentScheduleMark?.remove?.();
+    } catch { /* ignore */ }
+    this._silentScheduleMark = null;
+    if (!document?.body) return;
+    const mark = document.createElement('div');
+    mark.setAttribute('aria-hidden', 'true');
+    Object.assign(mark.style, {
+      position: 'fixed',
+      top: '8px',
+      right: '8px',
+      width: '10px',
+      height: '10px',
+      backgroundColor: COLORS.NOTIFICATION_ERROR,
+      zIndex: String(Z_INDEX.NOTIFICATION),
+      pointerEvents: 'none',
+      opacity: '1'
+    });
+    try {
+      document.body.appendChild(mark);
+    } catch {
+      return;
+    }
+    this._silentScheduleMark = mark;
+    setTimeout(() => {
+      try { mark.remove(); } catch { /* ignore */ }
+      if (this._silentScheduleMark === mark) this._silentScheduleMark = null;
+    }, 700);
   }
 
   /**

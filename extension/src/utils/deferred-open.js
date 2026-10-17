@@ -68,6 +68,22 @@ export function tomorrowMorningFireAt(now = Date.now(), hour = 9) {
 }
 
 /**
+ * Move a local date/time by whole hours and calendar days.
+ * Hours and days are applied on the local clock, so a DST change does not
+ * shrink or stretch the result the way a fixed millisecond offset would.
+ * @param {number} ms
+ * @param {{ hours?: number, days?: number }} [delta]
+ * @returns {number}
+ */
+export function shiftLocalFireAt(ms, { hours = 0, days = 0 } = {}) {
+  const date = new Date(ms);
+  if (Number.isNaN(date.getTime())) return NaN;
+  if (days) date.setDate(date.getDate() + days);
+  if (hours) date.setHours(date.getHours() + hours);
+  return date.getTime();
+}
+
+/**
  * A manual schedule must be a finite timestamp strictly after `now`.
  * @param {unknown} fireAt
  * @param {number} [now]
@@ -75,6 +91,19 @@ export function tomorrowMorningFireAt(now = Date.now(), hour = 9) {
  */
 export function isValidManualFireAt(fireAt, now = Date.now()) {
   return typeof fireAt === 'number' && Number.isFinite(fireAt) && fireAt > now;
+}
+
+/**
+ * Random Alt+Shift scheduling stays quiet when the shared setting is on.
+ * An exact `fireAt` from the dialog always confirms out loud. A missing
+ * setting is silent, matching the default.
+ * @param {{ fireAt?: number }|null|undefined} schedule
+ * @param {boolean|undefined} silentRandomScheduling
+ * @returns {boolean}
+ */
+export function randomScheduleIsSilent(schedule, silentRandomScheduling) {
+  if (schedule?.fireAt !== undefined) return false;
+  return silentRandomScheduling !== false;
 }
 
 export function normalizeDeferredDelayRange(minMinutes, maxMinutes) {

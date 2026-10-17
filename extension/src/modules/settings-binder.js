@@ -29,6 +29,7 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'radio', name: 'engine', path: 'searchEngine' },
   { type: 'toggle', id: 'keyboard-reference-key-feedback', path: 'keyboardReferenceKeyFeedback' },
   { type: 'toggle', id: 'keyboard-reference-show-number-row', path: 'keyboardReferenceShowNumberRow' },
+  { type: 'toggle', id: 'deferred-silent-random', path: 'deferredOpen.silentRandomScheduling' },
   { type: 'toggle', id: 'deferred-open-urls-enabled', path: 'deferredOpen.openUrls.enabled' },
   { type: 'rangePair', baseId: 'deferred-open-urls-min', path: 'deferredOpen.openUrls.minMinutes', min: 1, max: 2880 },
   { type: 'rangePair', baseId: 'deferred-open-urls-max', path: 'deferredOpen.openUrls.maxMinutes', min: 1, max: 2880 },

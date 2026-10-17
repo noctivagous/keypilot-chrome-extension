@@ -6579,5 +6579,23 @@
   "deferred_open_dialog_preset_tomorrow": {
     "message": "Tomorrow, 9:00 AM",
     "description": "Quick-pick chip in the schedule dialog: schedules tomorrow at 9:00 AM local time."
-  }
+  },
+  "deferred_open_dialog_hour": {
+    "message": "Hour",
+    "description": "Label for the hour control in the schedule dialog."
+  },
+  "deferred_open_dialog_minute": {
+    "message": "Minute",
+    "description": "Label for the minute control in the schedule dialog."
+  },
+  "deferred_open_dialog_earlier": {
+    "message": "Earlier",
+    "description": "Accessible name prefix for the button that moves the schedule time earlier."
+  },
+  "deferred_open_dialog_later": {
+    "message": "Later",
+    "description": "Accessible name prefix for the button that moves the schedule time later."
+  },
+  "settings_static_263": { "message": "Silent random scheduling" },
+  "settings_static_264": { "message": "Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." }
 }

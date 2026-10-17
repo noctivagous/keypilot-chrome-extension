@@ -6465,5 +6465,11 @@
   "deferred_open_dialog_open_picker": { "message": "Abrir selector de fecha y hora" },
   "deferred_open_dialog_preset_1h": { "message": "+1 hora" },
   "deferred_open_dialog_preset_1d": { "message": "+1 día" },
-  "deferred_open_dialog_preset_tomorrow": { "message": "Mañana, 9:00" }
+  "deferred_open_dialog_preset_tomorrow": { "message": "Mañana, 9:00" },
+  "deferred_open_dialog_hour": { "message": "Hora" },
+  "deferred_open_dialog_minute": { "message": "Minuto" },
+  "deferred_open_dialog_earlier": { "message": "Antes" },
+  "deferred_open_dialog_later": { "message": "Después" },
+  "settings_static_263": { "message": "Programación aleatoria silenciosa" },
+  "settings_static_264": { "message": "Oculta el aviso de hora para Alt+Mayús en Abrir URLs y Marcadores aleatorios. Si no se puede programar, aparece una marca roja pequeña." }
 }

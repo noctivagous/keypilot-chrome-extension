@@ -63,6 +63,7 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.deferredOpen.openUrls.enabled, true);
     assert.equal(settings.deferredOpen.randomBookmarks.enabled, true);
     assert.equal(settings.deferredOpen.target, 'activeWindow');
+    assert.equal(settings.deferredOpen.silentRandomScheduling, true);
     assert.ok(!mock.syncStore.has(SETTINGS_STORAGE_KEY));
   });
 
@@ -143,7 +144,8 @@ describe('getSettings / setSettings / resetAllSettings', () => {
       deferredOpen: {
         openUrls: { enabled: false, minMinutes: 5000, maxMinutes: 2 },
         randomBookmarks: { enabled: true, minMinutes: 0, maxMinutes: 9000 },
-        target: 'originalWindow'
+        target: 'originalWindow',
+        silentRandomScheduling: false
       }
     }, 'sync');
 
@@ -159,6 +161,7 @@ describe('getSettings / setSettings / resetAllSettings', () => {
       maxMinutes: 2880
     });
     assert.equal(normalized.deferredOpen.target, 'originalWindow');
+    assert.equal(normalized.deferredOpen.silentRandomScheduling, false);
 
     const updated = await setSettings({
       deferredOpen: { openUrls: { enabled: true } }
@@ -166,6 +169,13 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(updated.deferredOpen.openUrls.enabled, true);
     assert.equal(updated.deferredOpen.randomBookmarks.enabled, true);
     assert.equal(updated.deferredOpen.target, 'originalWindow');
+    assert.equal(updated.deferredOpen.silentRandomScheduling, false);
+
+    const silenced = await setSettings({
+      deferredOpen: { silentRandomScheduling: true }
+    });
+    assert.equal(silenced.deferredOpen.silentRandomScheduling, true);
+    assert.equal(silenced.deferredOpen.target, 'originalWindow');
   });
 
   it('resetAllSettings replaces stored values with defaults', async () => {

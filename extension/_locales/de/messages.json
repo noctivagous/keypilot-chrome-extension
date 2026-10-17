@@ -6510,5 +6510,11 @@
   "deferred_open_dialog_open_picker": { "message": "Datums- und Uhrzeitauswahl öffnen" },
   "deferred_open_dialog_preset_1h": { "message": "+1 Stunde" },
   "deferred_open_dialog_preset_1d": { "message": "+1 Tag" },
-  "deferred_open_dialog_preset_tomorrow": { "message": "Morgen, 9:00 Uhr" }
+  "deferred_open_dialog_preset_tomorrow": { "message": "Morgen, 9:00 Uhr" },
+  "deferred_open_dialog_hour": { "message": "Stunde" },
+  "deferred_open_dialog_minute": { "message": "Minute" },
+  "deferred_open_dialog_earlier": { "message": "Früher" },
+  "deferred_open_dialog_later": { "message": "Später" },
+  "settings_static_263": { "message": "Stilles zufälliges Planen" },
+  "settings_static_264": { "message": "Blendet die Zeit-Meldung für Alt+Umschalt bei URLs öffnen und Zufällige Lesezeichen aus. Schlägt das Planen fehl, erscheint stattdessen eine kleine rote Markierung." }
 }

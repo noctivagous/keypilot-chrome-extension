@@ -47,9 +47,9 @@ Browsing includes a bundled **Random Bookmark** instance on <kbd>,</kbd> (right-
 
 Press <kbd>Alt</kbd>+<kbd>Shift</kbd> with any **Open URLs** or **Random Bookmark** key to schedule that action for a random time. The action remains scheduled if you navigate away from or close the current tab, and runs while the browser is open.
 
-To pick an exact time instead, press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd> with the same key. A dialog asks for a date and time (pre-filled one hour ahead). Use the calendar button to open the native date/time picker, or one of the quick-pick buttons (+1 hour, +1 day, Tomorrow 9:00 AM) instead of typing. **Schedule** is available only for a future time; <kbd>Esc</kbd>, **Cancel**, or clicking outside the dialog schedules nothing.
+To pick an exact time instead, press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd> with the same key. A dialog asks for a date and time (pre-filled one hour ahead). The date field's calendar sets the day. Hour and minute controls, with − and + buttons, set the time of day. **+1 hour** and **+1 day** move the time already shown; **Tomorrow, 9:00 AM** jumps to that morning. **Schedule** is available only for a future time; <kbd>Esc</kbd>, **Cancel**, or clicking outside the dialog schedules nothing.
 
-In **Settings → Keyboard → Deferred tab opening**, you can enable each action type separately, choose its minimum and maximum delay from 1 minute to 48 hours, and choose whether delayed tabs open in the active browser window or the original window. Both action types are enabled by default.
+In **Settings → Keyboard → Deferred tab opening**, you can enable each action type separately, choose its minimum and maximum delay from 1 minute to 48 hours, and choose whether delayed tabs open in the active browser window or the original window. Both action types are enabled by default. **Silent random scheduling** is on by default: Alt+Shift does not show the scheduled-time alert. Turn it off to see that alert. If a silent schedule cannot be saved, a small red square flashes in the upper right.
 
 ### Tips
 

@@ -6505,5 +6505,11 @@
   "deferred_open_dialog_open_picker": { "message": "打开日期和时间选择器" },
   "deferred_open_dialog_preset_1h": { "message": "+1小时" },
   "deferred_open_dialog_preset_1d": { "message": "+1天" },
-  "deferred_open_dialog_preset_tomorrow": { "message": "明天上午9点" }
+  "deferred_open_dialog_preset_tomorrow": { "message": "明天上午9点" },
+  "deferred_open_dialog_hour": { "message": "小时" },
+  "deferred_open_dialog_minute": { "message": "分钟" },
+  "deferred_open_dialog_earlier": { "message": "更早" },
+  "deferred_open_dialog_later": { "message": "更晚" },
+  "settings_static_263": { "message": "静默随机安排" },
+  "settings_static_264": { "message": "隐藏“打开网址”和“随机书签”的 Alt+Shift 安排时间提示。安排失败时只显示一个小红点。" }
 }

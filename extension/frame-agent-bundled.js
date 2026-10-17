@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T19:40:08.776Z
+ * Generated on 2026-10-17T20:18:37.083Z
  */
 
 (() => {
@@ -2831,7 +2831,8 @@
         minMinutes: 1,
         maxMinutes: 60
       }),
-      target: "activeWindow"
+      target: "activeWindow",
+      silentRandomScheduling: true
     })
   });
   function normalizeSearchEngine(raw) {
@@ -3030,7 +3031,11 @@
         stored.randomBookmarks,
         DEFAULT_SETTINGS.deferredOpen.randomBookmarks
       ),
-      target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow"
+      target: stored.target === "originalWindow" ? "originalWindow" : "activeWindow",
+      silentRandomScheduling: normalizeBoolean(
+        stored.silentRandomScheduling,
+        DEFAULT_SETTINGS.deferredOpen.silentRandomScheduling
+      )
     };
   }
   function normalizeControlStrip(raw) {

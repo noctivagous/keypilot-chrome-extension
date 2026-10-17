@@ -6536,5 +6536,19 @@
   },
   "deferred_open_dialog_preset_tomorrow": {
     "message": "[GB] Tomorrow, 9:00 AM"
-  }
+  },
+  "deferred_open_dialog_hour": {
+    "message": "[GB] Hour"
+  },
+  "deferred_open_dialog_minute": {
+    "message": "[GB] Minute"
+  },
+  "deferred_open_dialog_earlier": {
+    "message": "[GB] Earlier"
+  },
+  "deferred_open_dialog_later": {
+    "message": "[GB] Later"
+  },
+  "settings_static_263": { "message": "[GB] Silent random scheduling" },
+  "settings_static_264": { "message": "[GB] Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." }
 }

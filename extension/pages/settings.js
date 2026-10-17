@@ -633,6 +633,7 @@ async function render() {
   const deferredRandomBookmarksMaxRange = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-max-range'));
   const deferredRandomBookmarksMaxNumber = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-random-bookmarks-max-number'));
   const deferredOpenTarget = /** @type {HTMLSelectElement|null} */ (settingsEl('deferred-open-target'));
+  const deferredSilentRandom = /** @type {HTMLInputElement|null} */ (settingsEl('deferred-silent-random'));
 
   const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
   const textCursorPreview = settingsEl('text-cursor-preview');
@@ -924,6 +925,7 @@ async function render() {
     setInputValue(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
     setInputValue(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
     setInputValue(deferredOpenTarget, value.target === 'originalWindow' ? 'originalWindow' : 'activeWindow');
+    if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
   };
 
   const applyAllSettings = (settings) => {

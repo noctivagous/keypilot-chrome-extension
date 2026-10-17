@@ -6510,5 +6510,11 @@
   "deferred_open_dialog_open_picker": { "message": "दिनांक और समय चयनकर्ता खोलें" },
   "deferred_open_dialog_preset_1h": { "message": "+1 घंटा" },
   "deferred_open_dialog_preset_1d": { "message": "+1 दिन" },
-  "deferred_open_dialog_preset_tomorrow": { "message": "कल, सुबह 9:00 बजे" }
+  "deferred_open_dialog_preset_tomorrow": { "message": "कल, सुबह 9:00 बजे" },
+  "deferred_open_dialog_hour": { "message": "घंटा" },
+  "deferred_open_dialog_minute": { "message": "मिनट" },
+  "deferred_open_dialog_earlier": { "message": "पहले" },
+  "deferred_open_dialog_later": { "message": "बाद में" },
+  "settings_static_263": { "message": "मौन यादृच्छिक शेड्यूलिंग" },
+  "settings_static_264": { "message": "URL खोलें और यादृच्छिक बुकमार्क के लिए Alt+Shift का समय अलर्ट छिपाता है। शेड्यूल विफल होने पर एक छोटा लाल चिह्न दिखता है।" }
 }

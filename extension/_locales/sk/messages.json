@@ -6505,5 +6505,11 @@
   "deferred_open_dialog_open_picker": { "message": "Otvoriť výber dátumu a času" },
   "deferred_open_dialog_preset_1h": { "message": "+1 hodina" },
   "deferred_open_dialog_preset_1d": { "message": "+1 deň" },
-  "deferred_open_dialog_preset_tomorrow": { "message": "Zajtra, 9:00" }
+  "deferred_open_dialog_preset_tomorrow": { "message": "Zajtra, 9:00" },
+  "deferred_open_dialog_hour": { "message": "Hodina" },
+  "deferred_open_dialog_minute": { "message": "Minúta" },
+  "deferred_open_dialog_earlier": { "message": "Skôr" },
+  "deferred_open_dialog_later": { "message": "Neskôr" },
+  "settings_static_263": { "message": "Tiché náhodné plánovanie" },
+  "settings_static_264": { "message": "Skryje hlásenie času pre Alt+Shift pri Otvoriť URL a Náhodné záložky. Ak sa plánovanie nepodarí, zobrazí sa malá červená značka." }
 }
