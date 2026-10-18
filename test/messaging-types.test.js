@@ -175,6 +175,39 @@ describe('messaging validate', () => {
       null
     );
     assert.equal(validateRuntimeMessage({ type: MSG.CLOSE_WINDOW }), null);
+    const control = {
+      tag: 'button',
+      type: 'submit',
+      name: '',
+      value: '',
+      id: '',
+      text: 'Save',
+      selector: 'button:nth-of-type(1)',
+      controlIndex: 0,
+      formIndex: 0
+    };
+    assert.equal(
+      validateRuntimeMessage({
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: 'CLICK_CONTROL',
+        payload: { control },
+        minMinutes: 1,
+        maxMinutes: 60,
+        target: 'activeWindow'
+      }),
+      null
+    );
+    assert.match(
+      validateRuntimeMessage({
+        type: MSG.SCHEDULE_DEFERRED_OPEN,
+        action: 'CLICK_CONTROL',
+        payload: { control: { tag: 'a', type: 'submit' } },
+        minMinutes: 1,
+        maxMinutes: 60,
+        target: 'activeWindow'
+      }) || '',
+      /button or input/
+    );
   });
 
   it('validates exact-time deferred scheduling', () => {

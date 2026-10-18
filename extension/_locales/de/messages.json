@@ -6575,5 +6575,39 @@
   "fn_cat_deferred_open_urls_description": {
     "message": "Plant, dass ein Link unter dem Zeiger später geöffnet wird.",
     "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "deferred_open_dialog_minutes_from_now": {
+    "message": "In $MINUTES$ Minuten",
+    "description": "Button that sets the schedule time to a number of minutes from now.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "Link manuell planen",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "Eine eingegebene URL auf eine genaue Zeit planen",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_details": {
+    "message": "Öffnet den Zeitdialog mit einem URL-Feld. Die eingegebene Adresse wird zur gewählten Zeit geöffnet.",
+    "description": "Function Library details for SCHEDULE_LINK_MANUAL."
+  },
+  "deferred_open_dialog_title_schedule_link_manual": {
+    "message": "Link manuell planen",
+    "description": "Title for the dialog that schedules a typed URL."
+  },
+  "deferred_open_dialog_url": {
+    "message": "URL",
+    "description": "Label for the URL field in the manual link schedule dialog."
+  },
+  "deferred_open_dialog_error_url": {
+    "message": "Geben Sie eine Website-URL ein.",
+    "description": "Error shown when the manual schedule URL is not a website address."
   }
 }

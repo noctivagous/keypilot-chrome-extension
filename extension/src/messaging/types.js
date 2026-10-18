@@ -55,6 +55,8 @@ export const MSG = Object.freeze({
   OPEN_RANDOM_BOOKMARK: 'KP_OPEN_RANDOM_BOOKMARK',
   /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
   SCHEDULE_DEFERRED_OPEN: 'KP_SCHEDULE_DEFERRED_OPEN',
+  /** SW → content: press the button or form control captured when a click was scheduled. */
+  RUN_DEFERRED_CLICK: 'KP_RUN_DEFERRED_CLICK',
   /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
   NAVIGATE_SAME_TAB: 'KP_NAVIGATE_SAME_TAB',
   /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */

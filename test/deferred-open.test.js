@@ -223,4 +223,36 @@ describe('deferred opening queue', () => {
       globalThis.chrome.windows = originalWindows;
     }
   });
+
+  it('sends a deferred click only while the scheduling tab still exists', async () => {
+    const { runDeferredClick } = await import('../extension/src/utils/deferred-open.js');
+    const { MSG } = await import('../extension/src/messaging/types.js');
+    const sent = [];
+    const originalTabs = globalThis.chrome.tabs;
+    globalThis.chrome.tabs = {
+      async get(id) {
+        if (id === 7) return { id };
+        throw new Error('No tab with id');
+      },
+      async sendMessage(tabId, message, options) {
+        sent.push([tabId, message, options]);
+      }
+    };
+    const control = { tag: 'button', type: 'submit', text: 'Save' };
+    try {
+      assert.equal(await runDeferredClick({
+        payload: { tabId: 7, frameId: 3, control }
+      }), true);
+      assert.equal(await runDeferredClick({
+        payload: { tabId: 99, frameId: 0, control }
+      }), true);
+      assert.deepEqual(sent, [[
+        7,
+        { type: MSG.RUN_DEFERRED_CLICK, control },
+        { frameId: 3 }
+      ]]);
+    } finally {
+      globalThis.chrome.tabs = originalTabs;
+    }
+  });
 });

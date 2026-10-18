@@ -10376,6 +10376,10 @@
     "labelKey": "fn_ACTIVATE_DEFERRED_SCHEDULED_label",
     "keyboardClass": "key-activate"
   },
+  "SCHEDULE_LINK_MANUAL": {
+    "labelKey": "fn_SCHEDULE_LINK_MANUAL_label",
+    "keyboardClass": "key-activate"
+  },
   "ACTIVATE_NEW_TAB": {
     "labelKey": "fn_ACTIVATE_NEW_TAB_label",
     "keyboardClass": "key-activate-new"

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-18T17:43:38.044Z
+ * Generated on 2026-10-18T19:19:22.364Z
  */
 
 (() => {
@@ -49,6 +49,8 @@
     OPEN_RANDOM_BOOKMARK: "KP_OPEN_RANDOM_BOOKMARK",
     /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
     SCHEDULE_DEFERRED_OPEN: "KP_SCHEDULE_DEFERRED_OPEN",
+    /** SW → content: press the button or form control captured when a click was scheduled. */
+    RUN_DEFERRED_CLICK: "KP_RUN_DEFERRED_CLICK",
     /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
     NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
     /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
@@ -955,6 +957,14 @@
       keyboardClass: "key-activate",
       row: 0
     }),
+    SCHEDULE_LINK_MANUAL: Object.freeze({
+      handler: "handleScheduleLinkManualKey",
+      label: "Schedule Link Manual",
+      description: "Schedule a typed URL for an exact time",
+      details: "Opens the time dialog with a URL field. The address you type is opened at the time you choose.",
+      keyboardClass: "key-activate",
+      row: 0
+    }),
     // Foreground new tab (switch to the new tab).
     ACTIVATE_NEW_TAB: Object.freeze({
       handler: "handleActivateNewTabKey",
@@ -1392,6 +1402,7 @@
     ACTIVATE: "Navigation",
     ACTIVATE_DEFERRED_RANDOM: "Deferred Open URLs",
     ACTIVATE_DEFERRED_SCHEDULED: "Deferred Open URLs",
+    SCHEDULE_LINK_MANUAL: "Deferred Open URLs",
     ACTIVATE_NEW_TAB: "Navigation",
     ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
     PREVIEW_LINK_POPOVER: "Navigation",
@@ -1577,6 +1588,7 @@
     ACTIVATE: physicalAssignment("KeyF", "F"),
     ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
     ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
+    SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4"),
     ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyG", "G"),
     HIGHLIGHT: physicalAssignment("KeyH", "H"),
     TAB_HISTORY: physicalAssignment("KeyJ", "J"),
@@ -1623,6 +1635,7 @@
     ACTIVATE: physicalAssignment("KeyJ", "J"),
     ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
     ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
+    SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4"),
     ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
     // H is background-tab open on left; G is text select.
     HIGHLIGHT: physicalAssignment("KeyG", "G"),

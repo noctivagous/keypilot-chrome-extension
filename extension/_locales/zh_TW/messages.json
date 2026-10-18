@@ -6570,5 +6570,39 @@
   "fn_cat_deferred_open_urls_description": {
     "message": "安排游標下的連結稍後開啟。",
     "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "deferred_open_dialog_minutes_from_now": {
+    "message": "$MINUTES$ 分鐘後",
+    "description": "Button that sets the schedule time to a number of minutes from now.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "手動安排連結",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "將輸入的網址安排到確切時間",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_details": {
+    "message": "開啟帶網址欄位的時間對話框。你輸入的地址會在所選時間開啟。",
+    "description": "Function Library details for SCHEDULE_LINK_MANUAL."
+  },
+  "deferred_open_dialog_title_schedule_link_manual": {
+    "message": "手動安排連結",
+    "description": "Title for the dialog that schedules a typed URL."
+  },
+  "deferred_open_dialog_url": {
+    "message": "網址",
+    "description": "Label for the URL field in the manual link schedule dialog."
+  },
+  "deferred_open_dialog_error_url": {
+    "message": "請輸入網站網址。",
+    "description": "Error shown when the manual schedule URL is not a website address."
   }
 }

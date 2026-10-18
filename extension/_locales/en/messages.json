@@ -6656,5 +6656,39 @@
   "fn_cat_deferred_open_urls_description": {
     "message": "Schedule a hovered link to open later.",
     "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "deferred_open_dialog_minutes_from_now": {
+    "message": "$MINUTES$ minutes from now",
+    "description": "Button that sets the schedule time to a number of minutes from now.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "Schedule Link Manual",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "Schedule a typed URL for an exact time",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_details": {
+    "message": "Opens the time dialog with a URL field. The address you type is opened at the time you choose.",
+    "description": "Function Library details for SCHEDULE_LINK_MANUAL."
+  },
+  "deferred_open_dialog_title_schedule_link_manual": {
+    "message": "Schedule Link Manual",
+    "description": "Title for the dialog that schedules a typed URL."
+  },
+  "deferred_open_dialog_url": {
+    "message": "URL",
+    "description": "Label for the URL field in the manual link schedule dialog."
+  },
+  "deferred_open_dialog_error_url": {
+    "message": "Enter a website URL.",
+    "description": "Error shown when the manual schedule URL is not a website address."
   }
 }

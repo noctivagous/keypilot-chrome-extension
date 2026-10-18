@@ -33,9 +33,11 @@ describe('built-in keyboard layout physical bindings', () => {
       if (layoutId === 'browsing-right' || layoutId === 'browsing-left') {
         assert.deepEqual(bindings.ACTIVATE_DEFERRED_RANDOM.keys, ['Digit1'], layoutId);
         assert.deepEqual(bindings.ACTIVATE_DEFERRED_SCHEDULED.keys, ['Digit2'], layoutId);
+        assert.deepEqual(bindings.SCHEDULE_LINK_MANUAL.keys, ['Digit4'], layoutId);
       } else {
         assert.equal(bindings.ACTIVATE_DEFERRED_RANDOM, undefined, layoutId);
         assert.equal(bindings.ACTIVATE_DEFERRED_SCHEDULED, undefined, layoutId);
+        assert.equal(bindings.SCHEDULE_LINK_MANUAL, undefined, layoutId);
       }
     }
   });

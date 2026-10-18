@@ -98,6 +98,36 @@ export function isTabUiForwardType(type) {
 }
 
 /**
+ * @param {any} control
+ * @returns {string|null}
+ */
+function deferredClickControlError(control) {
+  if (!control || typeof control !== 'object') {
+    return 'SCHEDULE_DEFERRED_OPEN CLICK_CONTROL requires a control';
+  }
+  if (control.tag !== 'button' && control.tag !== 'input') {
+    return 'SCHEDULE_DEFERRED_OPEN CLICK_CONTROL requires a button or input';
+  }
+  if (typeof control.type !== 'string' || control.type.length > 20) {
+    return 'SCHEDULE_DEFERRED_OPEN CLICK_CONTROL requires a type';
+  }
+  for (const key of ['name', 'value', 'id', 'text', 'selector']) {
+    if (control[key] != null && (typeof control[key] !== 'string' || control[key].length > 500)) {
+      return 'SCHEDULE_DEFERRED_OPEN CLICK_CONTROL has an invalid field';
+    }
+  }
+  if (control.controlIndex != null
+    && (!Number.isInteger(control.controlIndex) || control.controlIndex < -1 || control.controlIndex > 5000)) {
+    return 'SCHEDULE_DEFERRED_OPEN CLICK_CONTROL has an invalid index';
+  }
+  if (control.formIndex != null
+    && (!Number.isInteger(control.formIndex) || control.formIndex < 0 || control.formIndex > 500)) {
+    return 'SCHEDULE_DEFERRED_OPEN CLICK_CONTROL has an invalid form';
+  }
+  return null;
+}
+
+/**
  * Validate a chrome.runtime message envelope at a context boundary.
  * Returns null when valid; otherwise a short error string.
  *
@@ -171,7 +201,8 @@ export function validateRuntimeMessage(message, opts = {}) {
     }
     case MSG.SCHEDULE_DEFERRED_OPEN: {
       if (message.action !== 'OPEN_URLS' && message.action !== 'RANDOM_BOOKMARK'
-        && message.action !== 'CLOSE_TAB' && message.action !== 'CLOSE_WINDOW') {
+        && message.action !== 'CLOSE_TAB' && message.action !== 'CLOSE_WINDOW'
+        && message.action !== 'CLICK_CONTROL') {
         return 'SCHEDULE_DEFERRED_OPEN requires a supported action';
       }
       // Exactly one schedule form: an exact future `fireAt` (Ctrl+Alt+Shift dialog)
@@ -210,6 +241,9 @@ export function validateRuntimeMessage(message, opts = {}) {
           && (typeof message.payload.folderId !== 'string' || message.payload.folderId.length > 64)) {
           return 'SCHEDULE_DEFERRED_OPEN RANDOM_BOOKMARK requires folderId: string';
         }
+      } else if (message.action === 'CLICK_CONTROL') {
+        const controlError = deferredClickControlError(message.payload?.control);
+        if (controlError) return controlError;
       }
       break;
     }

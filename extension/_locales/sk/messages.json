@@ -6570,5 +6570,39 @@
   "fn_cat_deferred_open_urls_description": {
     "message": "Naplánuje, aby sa odkaz pod kurzorom otvoril neskôr.",
     "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "deferred_open_dialog_minutes_from_now": {
+    "message": "O $MINUTES$ minút",
+    "description": "Button that sets the schedule time to a number of minutes from now.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "Naplánovať odkaz ručne",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "Naplánovať zadanú URL na presný čas",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_details": {
+    "message": "Otvorí dialóg času s poľom URL. Zadaná adresa sa otvorí vo zvolenom čase.",
+    "description": "Function Library details for SCHEDULE_LINK_MANUAL."
+  },
+  "deferred_open_dialog_title_schedule_link_manual": {
+    "message": "Naplánovať odkaz ručne",
+    "description": "Title for the dialog that schedules a typed URL."
+  },
+  "deferred_open_dialog_url": {
+    "message": "URL",
+    "description": "Label for the URL field in the manual link schedule dialog."
+  },
+  "deferred_open_dialog_error_url": {
+    "message": "Zadajte URL webovej stránky.",
+    "description": "Error shown when the manual schedule URL is not a website address."
   }
 }

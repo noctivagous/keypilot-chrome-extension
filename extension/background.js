@@ -40,6 +40,7 @@ import {
 import { stepZoomFactor } from './src/utils/page-zoom.js';
 import {
   closeDeferredTarget,
+  runDeferredClick,
   createDeferredOpenJob,
   handleDeferredOpenAlarm,
   persistDeferredOpenJob,
@@ -1264,6 +1265,9 @@ async function resolveDeferredTabContext(job) {
 async function executeDeferredOpenJob(job) {
   if (job?.action === 'CLOSE_TAB' || job?.action === 'CLOSE_WINDOW') {
     return closeDeferredTarget(job);
+  }
+  if (job?.action === 'CLICK_CONTROL') {
+    return runDeferredClick(job);
   }
   const context = await resolveDeferredTabContext(job);
   if (!context || context.windowId == null) return false;
@@ -3324,6 +3328,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             payload = {
               folderId: normalizeBookmarkFolderId(message.payload?.folderId),
               count: normalizeRandomBookmarkCount(message.payload?.count)
+            };
+          } else if (action === 'CLICK_CONTROL') {
+            const tabId = Number.isInteger(sender.tab?.id) ? sender.tab.id : null;
+            if (tabId == null) {
+              sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
+              break;
+            }
+            payload = {
+              tabId,
+              frameId: Number.isInteger(sender.frameId) ? sender.frameId : 0,
+              control: message.payload.control
             };
           } else {
             const tabId = Number.isInteger(sender.tab?.id) ? sender.tab.id : null;

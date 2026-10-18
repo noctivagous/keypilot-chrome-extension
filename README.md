@@ -39,6 +39,7 @@ on the keyboard in specific places to make web navigation quick.
 | --- | --- |
 | `1` | Schedule the hovered link for a random time |
 | `2` | Schedule the hovered link for an exact time |
+| `4` | Schedule a typed URL for an exact time |
 | `[` | Zoom the page out at the cursor |
 | `]` | Zoom the page in at the cursor |
 | `I` | Copy hovered image |

@@ -93,6 +93,11 @@ import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
 import { normalizeOpenUrlList } from './utils/open-url-list.js';
 import {
+  closestFormButton,
+  describeDeferredClickTarget,
+  findDeferredClickTarget
+} from './utils/deferred-click-target.js';
+import {
   normalizeBookmarkFolderId,
   normalizeRandomBookmarkCount
 } from './utils/bookmark-folder.js';
@@ -1569,23 +1574,33 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   /**
-   * The hovered link, captured now, as an Open URLs job using the Click Element delay.
-   * @returns {{ action: string, dialogAction: string, payload: { urls: string[] }, minMinutes: number, maxMinutes: number, target: string }|null}
+   * The hovered link, or a button / form button, captured now.
+   * A link becomes an Open URLs job. A control becomes a click in this tab.
+   * @returns {{ action: string, dialogAction: string, payload: object, minMinutes: number, maxMinutes: number, target: string }|null}
    */
   _deferredClickElementRequest() {
     const config = this._settings?.deferredOpen?.clickElement
       || DEFAULT_SETTINGS.deferredOpen.clickElement;
     if (config.enabled === false) return null;
-    const urls = normalizeOpenUrlList([this._getHoveredHyperlinkUrl()]);
-    if (!urls.length) return null;
-    return {
-      action: 'OPEN_URLS',
+    const target = this._getValidatedActivationTarget();
+    const base = {
       dialogAction: 'ACTIVATE',
-      payload: { urls },
       minMinutes: config.minMinutes,
       maxMinutes: config.maxMinutes,
       target: this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target
     };
+    const control = describeDeferredClickTarget(closestFormButton(target), document);
+    if (control) {
+      return { ...base, action: 'CLICK_CONTROL', payload: { control } };
+    }
+    const linkUrl = target ? this._resolveHoveredLink(target)?.url : '';
+    const urls = normalizeOpenUrlList([linkUrl]);
+    if (urls.length) {
+      return { ...base, action: 'OPEN_URLS', payload: { urls } };
+    }
+    const fallback = normalizeOpenUrlList([this._getHoveredHyperlinkUrl()]);
+    if (!fallback.length) return null;
+    return { ...base, action: 'OPEN_URLS', payload: { urls: fallback } };
   }
 
   handleActivateDeferredRandomKey() {
@@ -1603,6 +1618,23 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     this.scheduleOpenDialog.show({
       action: request.dialogAction || request.action,
       onSubmit: (fireAt) => this._submitDeferredOpen(request, { fireAt })
+    });
+  }
+
+  handleScheduleLinkManualKey() {
+    if (!this.scheduleOpenDialog) return;
+    const target = this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target;
+    this.scheduleOpenDialog.show({
+      action: 'SCHEDULE_LINK_MANUAL',
+      onSubmit: (fireAt, details) => {
+        const urls = normalizeOpenUrlList([details?.url]);
+        if (!urls.length) return;
+        this._submitDeferredOpen({
+          action: 'OPEN_URLS',
+          payload: { urls },
+          target
+        }, { fireAt });
+      }
     });
   }
 
@@ -3024,7 +3056,16 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       registerContentRuntimeHandler(MSG.POPOVER_WINDOW_CLOSED, handler),
       registerContentRuntimeHandler(MSG.OPEN_ONBOARDING, handler),
       registerContentRuntimeHandler(MSG.LAUNCH_WALKTHROUGH, handler),
-      registerContentRuntimeHandler(MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION, handler)
+      registerContentRuntimeHandler(MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION, handler),
+      registerContentRuntimeHandler(MSG.RUN_DEFERRED_CLICK, (msg, _sender, sendResponse) => {
+        try {
+          const target = findDeferredClickTarget(document, msg?.control);
+          if (target && typeof target.click === 'function') target.click();
+        } catch (e) {
+          console.warn('[KeyPilot] Failed to run deferred click:', e);
+        }
+        try { sendResponse({ type: MSG.SUCCESS }); } catch { /* ignore */ }
+      })
     ];
   }
 

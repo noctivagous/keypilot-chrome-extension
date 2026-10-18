@@ -6570,5 +6570,39 @@
   "fn_cat_deferred_open_urls_description": {
     "message": "カーソル下のリンクを後で開くよう予定します。",
     "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "deferred_open_dialog_minutes_from_now": {
+    "message": "今から$MINUTES$分後",
+    "description": "Button that sets the schedule time to a number of minutes from now.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "リンクを手動で予定",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "入力した URL を指定時刻に予定する",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_details": {
+    "message": "URL 欄付きの時刻ダイアログを開きます。入力したアドレスは選んだ時刻に開きます。",
+    "description": "Function Library details for SCHEDULE_LINK_MANUAL."
+  },
+  "deferred_open_dialog_title_schedule_link_manual": {
+    "message": "リンクを手動で予定",
+    "description": "Title for the dialog that schedules a typed URL."
+  },
+  "deferred_open_dialog_url": {
+    "message": "URL",
+    "description": "Label for the URL field in the manual link schedule dialog."
+  },
+  "deferred_open_dialog_error_url": {
+    "message": "ウェブサイトの URL を入力してください。",
+    "description": "Error shown when the manual schedule URL is not a website address."
   }
 }

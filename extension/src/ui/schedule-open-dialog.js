@@ -7,12 +7,14 @@
  */
 
 import { getMessage } from '../utils/i18n.js';
+import { canonicalizeHttpUrl } from '../utils/open-url-list.js';
 import {
   defaultManualFireAt,
   formatDateTimeLocalValue,
   isValidManualFireAt,
   parseDateTimeLocalValue,
   shiftLocalFireAt,
+  minutesFromNow,
   tomorrowMorningFireAt
 } from '../utils/deferred-open.js';
 import {
@@ -169,6 +171,7 @@ const CSS = `
  */
 function titleForAction(action) {
   if (action === 'ACTIVATE') return getMessage('deferred_open_dialog_title_click_element');
+  if (action === 'SCHEDULE_LINK_MANUAL') return getMessage('deferred_open_dialog_title_schedule_link_manual');
   if (action === 'CLOSE_TAB') return getMessage('deferred_open_dialog_title_close_tab');
   if (action === 'CLOSE_WINDOW') return getMessage('deferred_open_dialog_title_close_window');
   return getMessage(
@@ -210,7 +213,8 @@ export class ScheduleOpenDialog {
       resizable: false
     });
     try {
-      setTimeout(() => this._panel?.dateInput?.focus?.(), 0);
+      const focusTarget = this._panel?.urlInput || this._panel?.dateInput;
+      setTimeout(() => focusTarget?.focus?.(), 0);
     } catch { /* ignore */ }
     return true;
   }
@@ -264,6 +268,25 @@ export class ScheduleOpenDialog {
     label.className = 'kp-sod-label';
     label.id = 'kp-sod-label';
     label.textContent = getMessage('deferred_open_dialog_label');
+
+    /** @type {HTMLInputElement|null} */
+    let urlInput = null;
+    if (action === 'SCHEDULE_LINK_MANUAL') {
+      const urlLabel = doc.createElement('label');
+      urlLabel.className = 'kp-sod-label';
+      urlLabel.id = 'kp-sod-url-label';
+      urlLabel.htmlFor = 'kp-sod-url';
+      urlLabel.textContent = getMessage('deferred_open_dialog_url');
+      urlInput = doc.createElement('input');
+      urlInput.type = 'text';
+      urlInput.id = 'kp-sod-url';
+      urlInput.className = 'kp-sod-input';
+      urlInput.autocomplete = 'off';
+      urlInput.spellcheck = false;
+      urlInput.setAttribute('aria-labelledby', 'kp-sod-url-label');
+      urlInput.placeholder = 'https://';
+      body.append(urlLabel, urlInput);
+    }
 
     const dateInput = doc.createElement('input');
     dateInput.type = 'date';
@@ -342,18 +365,26 @@ export class ScheduleOpenDialog {
     };
     const refresh = () => {
       const fireAt = readFireAt();
-      const valid = isValidManualFireAt(fireAt, this._now());
-      submit.disabled = !valid;
-      error.textContent = valid || !dateInput.value
-        ? ''
-        : getMessage('deferred_open_dialog_error_past');
-      return valid;
+      const timeValid = isValidManualFireAt(fireAt, this._now());
+      const typedUrl = urlInput ? String(urlInput.value || '').trim() : '';
+      const url = urlInput ? canonicalizeHttpUrl(typedUrl) : '';
+      const urlValid = !urlInput || !!url;
+      submit.disabled = !timeValid || !urlValid;
+      if (urlInput && typedUrl && !url) {
+        error.textContent = getMessage('deferred_open_dialog_error_url');
+      } else {
+        error.textContent = timeValid || !dateInput.value
+          ? ''
+          : getMessage('deferred_open_dialog_error_past');
+      }
+      return timeValid && urlValid;
     };
     const commit = () => {
       if (!refresh()) return;
       const fireAt = readFireAt();
+      const url = urlInput ? canonicalizeHttpUrl(urlInput.value) : '';
       this.hide();
-      onSubmit(fireAt);
+      onSubmit(fireAt, url ? { url } : undefined);
     };
     shiftPart = (part, delta) => {
       const base = currentOrNow();
@@ -381,7 +412,23 @@ export class ScheduleOpenDialog {
       chips.appendChild(chip);
     }
 
-    for (const field of [dateInput, hourSelect, minuteSelect]) {
+    if (action === 'ACTIVATE' || action === 'SCHEDULE_LINK_MANUAL') {
+      for (const minutes of [5, 10, 15, 30, 45, 60]) {
+        const chip = doc.createElement('button');
+        chip.type = 'button';
+        chip.className = 'kp-sod-chip';
+        chip.setAttribute('data-minutes-from-now', String(minutes));
+        chip.textContent = getMessage('deferred_open_dialog_minutes_from_now', String(minutes));
+        chip.addEventListener('click', (e) => {
+          e.preventDefault();
+          applyFireAt(minutesFromNow(minutes, this._now()));
+          refresh();
+        });
+        chips.appendChild(chip);
+      }
+    }
+
+    for (const field of [dateInput, hourSelect, minuteSelect, urlInput].filter(Boolean)) {
       field.addEventListener('input', refresh);
       field.addEventListener('change', refresh);
       field.addEventListener('keydown', (e) => {
@@ -404,7 +451,7 @@ export class ScheduleOpenDialog {
     applyFireAt(defaultManualFireAt(now));
     refresh();
 
-    return { host, dateInput, hourSelect, minuteSelect, submit, cancel, error };
+    return { host, dateInput, hourSelect, minuteSelect, urlInput, submit, cancel, error };
   }
 }
 

@@ -239,6 +239,65 @@ describe('ScheduleOpenDialog', () => {
     assert.equal(submit.disabled, false);
   });
 
+  it('sets the link dialog to a fixed number of minutes from now', async () => {
+    const { ScheduleOpenDialog, SCHEDULE_OPEN_DIALOG_ID } = await import(
+      '../extension/src/ui/schedule-open-dialog.js'
+    );
+    const utils = await import('../extension/src/utils/deferred-open.js');
+    const now = new Date(2030, 0, 1, 12, 0, 0, 0).getTime();
+    const popupManager = new FakePopupManager();
+    const dialog = new ScheduleOpenDialog({ popupManager, now: () => now });
+    assert.equal(dialog.show({ action: 'ACTIVATE', onSubmit: () => {} }), true);
+    const root = popupManager.modals.get(SCHEDULE_OPEN_DIALOG_ID).panel.shadowRoot;
+    const chips = root.findAll((n) => n.getAttribute('data-minutes-from-now'));
+    assert.deepEqual(chips.map((chip) => chip.getAttribute('data-minutes-from-now')), [
+      '5', '10', '15', '30', '45', '60'
+    ]);
+    const state = {
+      dateInput: root.find((n) => n.tagName === 'INPUT'),
+      hourSelect: root.find((n) => n.className?.includes('kp-sod-hour')),
+      minuteSelect: root.find((n) => n.className?.includes('kp-sod-minute')),
+      utils
+    };
+    chips[0].fire('click');
+    assert.equal(chosenTime(state), utils.minutesFromNow(5, now));
+    chips[3].fire('click');
+    assert.equal(chosenTime(state), utils.minutesFromNow(30, now));
+    chips[5].fire('click');
+    assert.equal(chosenTime(state), utils.minutesFromNow(60, now));
+  });
+
+  it('asks for a URL above the date when scheduling a link manually', async () => {
+    const { ScheduleOpenDialog, SCHEDULE_OPEN_DIALOG_ID } = await import(
+      '../extension/src/ui/schedule-open-dialog.js'
+    );
+    const now = new Date(2030, 0, 1, 12, 0, 0, 0).getTime();
+    const popupManager = new FakePopupManager();
+    const dialog = new ScheduleOpenDialog({ popupManager, now: () => now });
+    const submitted = [];
+    assert.equal(dialog.show({
+      action: 'SCHEDULE_LINK_MANUAL',
+      onSubmit: (fireAt, details) => submitted.push({ fireAt, details })
+    }), true);
+    const root = popupManager.modals.get(SCHEDULE_OPEN_DIALOG_ID).panel.shadowRoot;
+    const body = root.find((n) => n.className === 'kp-sod-body');
+    const inputs = body.children.filter((n) => n.tagName === 'INPUT');
+    assert.equal(inputs[0].id, 'kp-sod-url');
+    assert.equal(inputs[1].id, 'kp-sod-date');
+    const submit = root.findAll((n) => n.tagName === 'BUTTON' && n.className === 'kp-sod-btn')[1];
+    assert.equal(submit.disabled, true);
+    inputs[0].value = 'not a url';
+    inputs[0].fire('input');
+    assert.equal(submit.disabled, true);
+    inputs[0].value = 'example.com/later';
+    inputs[0].fire('input');
+    assert.equal(submit.disabled, false);
+    submit.fire('click');
+    assert.equal(submitted.length, 1);
+    assert.equal(submitted[0].details.url, 'https://example.com/later');
+    assert.equal(dialog.isOpen(), false);
+  });
+
   it('closes without scheduling on Cancel, Escape, and backdrop close requests', async () => {
     let state = await openDialog();
     state.buttons[0].fire('click');

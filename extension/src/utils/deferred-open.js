@@ -1,3 +1,5 @@
+import { MSG } from '../messaging/types.js';
+
 export const DEFERRED_OPEN_STORAGE_KEY = 'kp_deferred_open_jobs_v1';
 export const DEFERRED_OPEN_ALARM_PREFIX = 'kp-deferred-open:';
 export const DEFERRED_OPEN_RETRY_MS = 60 * 1000;
@@ -84,6 +86,18 @@ export function shiftLocalFireAt(ms, { hours = 0, days = 0 } = {}) {
 }
 
 /**
+ * An exact offset from now, in whole minutes.
+ * @param {number} minutes
+ * @param {number} [now]
+ * @returns {number}
+ */
+export function minutesFromNow(minutes, now = Date.now()) {
+  const count = Number(minutes);
+  if (!Number.isFinite(count)) return now;
+  return now + Math.round(count * 60_000);
+}
+
+/**
  * A manual schedule must be a finite timestamp strictly after `now`.
  * @param {unknown} fireAt
  * @param {number} [now]
@@ -123,6 +137,34 @@ export async function closeDeferredTarget(job) {
     return true;
   }
   return false;
+}
+
+/**
+ * Press the stored control in the tab that scheduled it. A missing tab, frame,
+ * or content script finishes the job without clicking anything else.
+ * @param {{ payload?: { tabId?: number, frameId?: number, control?: object } }} job
+ * @returns {Promise<boolean>}
+ */
+export async function runDeferredClick(job) {
+  const tabId = job?.payload?.tabId;
+  const frameId = job?.payload?.frameId;
+  const control = job?.payload?.control;
+  if (!Number.isInteger(tabId) || !control) return true;
+  try {
+    await chrome.tabs.get(tabId);
+  } catch {
+    return true;
+  }
+  try {
+    await chrome.tabs.sendMessage(
+      tabId,
+      { type: MSG.RUN_DEFERRED_CLICK, control },
+      { frameId: Number.isInteger(frameId) ? frameId : 0 }
+    );
+  } catch {
+    return true;
+  }
+  return true;
 }
 
 /**

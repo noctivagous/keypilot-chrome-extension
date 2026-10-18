@@ -6609,5 +6609,39 @@
   "fn_cat_deferred_open_urls_description": {
     "message": "[GB] Schedule a hovered link to open later.",
     "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "deferred_open_dialog_minutes_from_now": {
+    "message": "[GB] $MINUTES$ minutes from now",
+    "description": "Button that sets the schedule time to a number of minutes from now.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "[GB] Schedule Link Manual",
+    "description": "Built-in Function SCHEDULE_LINK_MANUAL label."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "[GB] Schedule a typed URL for an exact time",
+    "description": "Built-in Function SCHEDULE_LINK_MANUAL short description."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_details": {
+    "message": "[GB] Opens the time dialog with a URL field. The address you type is opened at the time you choose.",
+    "description": "Built-in Function SCHEDULE_LINK_MANUAL inspector details."
+  },
+  "deferred_open_dialog_title_schedule_link_manual": {
+    "message": "[GB] Schedule Link Manual",
+    "description": "Title for the dialog that schedules a typed URL."
+  },
+  "deferred_open_dialog_url": {
+    "message": "[GB] URL",
+    "description": "Label for the URL field in the manual link schedule dialog."
+  },
+  "deferred_open_dialog_error_url": {
+    "message": "[GB] Enter a website URL.",
+    "description": "Error shown when the manual schedule URL is not a website address."
   }
 }
