@@ -28,7 +28,14 @@ describe('built-in keyboard layout physical bindings', () => {
         assert.equal(binding.bindingType, 'physical', `${layoutId}:${actionId}`);
         assert.deepEqual(binding.matchOn, ['code'], `${layoutId}:${actionId}`);
         assert.equal(binding.keys.length, 1, `${layoutId}:${actionId}`);
-        assert.match(binding.keys[0], /^(Key[A-Z]|Backspace|Semicolon|Comma|Period|Slash|BracketLeft|BracketRight)$/, `${layoutId}:${actionId}`);
+        assert.match(binding.keys[0], /^(Key[A-Z]|Digit[0-9]|Backspace|Semicolon|Comma|Period|Slash|BracketLeft|BracketRight)$/, `${layoutId}:${actionId}`);
+      }
+      if (layoutId === 'browsing-right' || layoutId === 'browsing-left') {
+        assert.deepEqual(bindings.ACTIVATE_DEFERRED_RANDOM.keys, ['Digit1'], layoutId);
+        assert.deepEqual(bindings.ACTIVATE_DEFERRED_SCHEDULED.keys, ['Digit2'], layoutId);
+      } else {
+        assert.equal(bindings.ACTIVATE_DEFERRED_RANDOM, undefined, layoutId);
+        assert.equal(bindings.ACTIVATE_DEFERRED_SCHEDULED, undefined, layoutId);
       }
     }
   });

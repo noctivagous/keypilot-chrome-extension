@@ -225,10 +225,11 @@ export class FocusOverlayPainter {
   /**
    * Suppress the semi-transparent blue focus fill by category:
    * - slider: never (progress bars are not link-like)
+   * - playing video covering most of the focus box: no fill (outline stays)
    * - media with seek chrome in the player shell: no fill (players, not thumbnails)
    * - text: no blue wash
    *
-   * Links / generic / media thumbnails keep the fill.
+   * Links / generic / paused media thumbnails keep the fill.
    *
    * @param {Element|null} element
    * @returns {boolean}

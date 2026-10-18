@@ -195,6 +195,6 @@ That is a complete, still-friendly v1: grouping is the product; If, Switch, Repe
 ## Industry notes (research)
 
 - **Keyboard Maestro** (best analog): indented nested actions; If/Then/Else, Switch/Case, Repeat/While as containers; variables; Pause; Cancel. Not a node canvas.
-- **Make / n8n / Zapier**: visual canvas, routers, iterators — overkill for this UI; borrow the *ideas* (iterator, router), not the layout.
+- **Make / n8n / Zapier**: visual canvas, routers, iterators.
 - **Macro-builder-style tools**: Repeat Until Found, Loop Start/End, conditional blocks — start/end tokens are the failure mode to avoid.
 - **Flowmattic-style modules**: Router/Branch ≈ Switch/If; Iterator ≈ For-each; Filter ≈ If; Sub-Workflow ≈ existing Run Macro.

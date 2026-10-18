@@ -348,6 +348,22 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-activate',
     row: 2
   }),
+  ACTIVATE_DEFERRED_RANDOM: Object.freeze({
+    handler: 'handleActivateDeferredRandomKey',
+    label: 'Click Element Deferred Random',
+    description: 'Schedule the hovered link for a random time',
+    details: 'Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.',
+    keyboardClass: 'key-activate',
+    row: 0
+  }),
+  ACTIVATE_DEFERRED_SCHEDULED: Object.freeze({
+    handler: 'handleActivateDeferredScheduledKey',
+    label: 'Click Element Deferred Scheduled',
+    description: 'Schedule the hovered link for an exact time',
+    details: 'Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.',
+    keyboardClass: 'key-activate',
+    row: 0
+  }),
   // Foreground new tab (switch to the new tab).
   ACTIVATE_NEW_TAB: Object.freeze({
     handler: 'handleActivateNewTabKey',
@@ -784,6 +800,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
 export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   // Navigation — click / link preview / history
   ACTIVATE: 'Navigation',
+  ACTIVATE_DEFERRED_RANDOM: 'Deferred Open URLs',
+  ACTIVATE_DEFERRED_SCHEDULED: 'Deferred Open URLs',
   ACTIVATE_NEW_TAB: 'Navigation',
   ACTIVATE_NEW_TAB_BACKGROUND: 'Navigation',
   PREVIEW_LINK_POPOVER: 'Navigation',
@@ -841,6 +859,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
 /** Stable category order for the Config palette. */
 export const KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
   'Navigation',
+  'Deferred Open URLs',
   'Tab Control',
   'Begin URL',
   'Get Page Data',
@@ -1173,6 +1192,8 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   ROOT: physicalAssignment('KeyS', 'S'),
   BACK: physicalAssignment('KeyD', 'D'),
   ACTIVATE: physicalAssignment('KeyF', 'F'),
+  ACTIVATE_DEFERRED_RANDOM: physicalAssignment('Digit1', '1'),
+  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment('Digit2', '2'),
   ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyG', 'G'),
   HIGHLIGHT: physicalAssignment('KeyH', 'H'),
 
@@ -1226,6 +1247,8 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   ROOT: physicalAssignment('KeyL', 'L'),
   BACK: physicalAssignment('KeyK', 'K'),
   ACTIVATE: physicalAssignment('KeyJ', 'J'),
+  ACTIVATE_DEFERRED_RANDOM: physicalAssignment('Digit1', '1'),
+  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment('Digit2', '2'),
   ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyH', 'H'),
   // H is background-tab open on left; G is text select.
   HIGHLIGHT: physicalAssignment('KeyG', 'G'),

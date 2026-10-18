@@ -396,6 +396,8 @@ function docsUrl(topicId, hash) {
 /** @type {Readonly<Record<string, string>>} */
 const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   ACTIVATE: docsUrl('browsing-click'),
+  ACTIVATE_DEFERRED_RANDOM: docsUrl('browsing-tabs'),
+  ACTIVATE_DEFERRED_SCHEDULED: docsUrl('browsing-tabs'),
   ACTIVATE_NEW_TAB: docsUrl('browsing-click'),
   ACTIVATE_NEW_TAB_BACKGROUND: docsUrl('browsing-click'),
   PREVIEW_LINK_POPOVER: docsUrl('tools-previews'),
@@ -976,6 +978,7 @@ export const FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
 /** Stable category display order for the Functions browser. Canonical ids stay English. */
 export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   'Navigation',
+  'Deferred Open URLs',
   'Tab Control',
   'Begin URL',
   'Get Page Data',
@@ -1001,6 +1004,7 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
 /** Message keys for Actions Library category labels. */
 export const FUNCTION_CATEGORY_LABEL_KEYS = Object.freeze({
   Navigation: 'fn_cat_navigation_label',
+  'Deferred Open URLs': 'fn_cat_deferred_open_urls_label',
   'Tab Control': 'fn_cat_tab_control_label',
   'Begin URL': 'fn_cat_begin_url_label',
   'Get Page Data': 'fn_cat_get_page_data_label',
@@ -1026,6 +1030,7 @@ export const FUNCTION_CATEGORY_LABEL_KEYS = Object.freeze({
 /** Message keys for Actions Library category blurbs. */
 export const FUNCTION_CATEGORY_DESCRIPTION_KEYS = Object.freeze({
   Navigation: 'fn_cat_navigation_description',
+  'Deferred Open URLs': 'fn_cat_deferred_open_urls_description',
   'Tab Control': 'fn_cat_tab_control_description',
   'Begin URL': 'fn_cat_begin_url_description',
   'Get Page Data': 'fn_cat_get_page_data_description',
@@ -1062,6 +1067,8 @@ export const LIBRARY_SECTION_DESCRIPTIONS = Object.freeze({
 export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   // Navigation
   ACTIVATE: 10,
+  ACTIVATE_DEFERRED_RANDOM: 12,
+  ACTIVATE_DEFERRED_SCHEDULED: 14,
   ACTIVATE_NEW_TAB: 20,
   ACTIVATE_NEW_TAB_BACKGROUND: 30,
   PREVIEW_LINK_POPOVER: 40,

@@ -6543,5 +6543,37 @@
   "settings_static_275": { "message": "विंडो बंद करें न्यूनतम (मिनट)" },
   "settings_static_276": { "message": "विंडो बंद करें अधिकतम (मिनट)" },
   "deferred_open_dialog_title_close_tab": { "message": "इस टैब को बंद करने का समय तय करें" },
-  "deferred_open_dialog_title_close_window": { "message": "इस विंडो को बंद करने का समय तय करें" }
+  "deferred_open_dialog_title_close_window": { "message": "इस विंडो को बंद करने का समय तय करें" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "तत्व क्लिक विलंबित यादृच्छिक",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "कर्सर के नीचे की कड़ी को यादृच्छिक समय के लिए निर्धारित करें",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "कर्सर के नीचे की कड़ी को तत्व क्लिक विलंब की सीमा में यादृच्छिक समय के लिए निर्धारित करता है। Alt+Shift के साथ तत्व क्लिक जैसा ही।",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "तत्व क्लिक विलंबित निर्धारित",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "कर्सर के नीचे की कड़ी को सटीक समय के लिए निर्धारित करें",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "कर्सर के नीचे की कड़ी के लिए समय संवाद खोलता है। Ctrl+Alt+Shift के साथ तत्व क्लिक जैसा ही।",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "विलंबित URL खोलना",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "कर्सर के नीचे की कड़ी को बाद में खुलने के लिए निर्धारित करें।",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

@@ -46,6 +46,7 @@ import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
 import { containsComposed } from '../ui/kp-chrome-shadow.js';
 import { dispatchClickSequence } from '../utils/synthetic-pointer.js';
 import { tryActivateScrubber, tryActivateVolumeSlider } from '../utils/media-scrubber.js';
+import { playingVideoCoversElement } from '../utils/playing-video-fill.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean, topOrigin?: string }} FrameActivateOptions
@@ -678,7 +679,8 @@ export function installFrameClickAgent() {
       const thickness = Math.min(Math.max(Number(focusChrome.rectangleThickness) || 3, 1), 16);
       try {
         hoverEl.style.border = `${thickness}px solid ${p.border}`;
-        hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false
+        const suppressPlayingVideoFill = !isText && playingVideoCoversElement(target);
+        hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false || suppressPlayingVideoFill
           ? 'transparent'
           : p.fill;
         hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false

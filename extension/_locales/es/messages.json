@@ -6538,5 +6538,37 @@
   "settings_static_275": { "message": "Cerrar ventana mínimo (minutos)" },
   "settings_static_276": { "message": "Cerrar ventana máximo (minutos)" },
   "deferred_open_dialog_title_close_tab": { "message": "Programar el cierre de esta pestaña" },
-  "deferred_open_dialog_title_close_window": { "message": "Programar el cierre de esta ventana" }
+  "deferred_open_dialog_title_close_window": { "message": "Programar el cierre de esta ventana" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "Clic en elemento diferido aleatorio",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "Programar el enlace bajo el cursor para un momento aleatorio",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "Programa el enlace bajo el cursor para un momento aleatorio dentro del rango Retrasar clic en elemento. Igual que Alt+Mayús con Clic en elemento.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "Clic en elemento diferido programado",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "Programar el enlace bajo el cursor para una hora exacta",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "Abre el diálogo de hora para el enlace bajo el cursor. Igual que Ctrl+Alt+Mayús con Clic en elemento.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "Apertura diferida de URLs",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "Programa que un enlace bajo el cursor se abra más tarde.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

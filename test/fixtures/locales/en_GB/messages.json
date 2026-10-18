@@ -6577,5 +6577,37 @@
   "settings_static_275": { "message": "[GB] Close Window minimum (minutes)" },
   "settings_static_276": { "message": "[GB] Close Window maximum (minutes)" },
   "deferred_open_dialog_title_close_tab": { "message": "[GB] Schedule closing this tab" },
-  "deferred_open_dialog_title_close_window": { "message": "[GB] Schedule closing this window" }
+  "deferred_open_dialog_title_close_window": { "message": "[GB] Schedule closing this window" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "[GB] Click Element Deferred Random",
+    "description": "Built-in Function ACTIVATE_DEFERRED_RANDOM label."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "[GB] Schedule the hovered link for a random time",
+    "description": "Built-in Function ACTIVATE_DEFERRED_RANDOM short description."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "[GB] Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.",
+    "description": "Built-in Function ACTIVATE_DEFERRED_RANDOM inspector details."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "[GB] Click Element Deferred Scheduled",
+    "description": "Built-in Function ACTIVATE_DEFERRED_SCHEDULED label."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "[GB] Schedule the hovered link for an exact time",
+    "description": "Built-in Function ACTIVATE_DEFERRED_SCHEDULED short description."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "[GB] Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.",
+    "description": "Built-in Function ACTIVATE_DEFERRED_SCHEDULED inspector details."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "[GB] Deferred Open URLs",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "[GB] Schedule a hovered link to open later.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

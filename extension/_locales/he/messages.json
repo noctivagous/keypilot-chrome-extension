@@ -6543,5 +6543,37 @@
   "settings_static_275": { "message": "סגירת חלון מינימום (דקות)" },
   "settings_static_276": { "message": "סגירת חלון מקסימום (דקות)" },
   "deferred_open_dialog_title_close_tab": { "message": "תזמן סגירת כרטיסייה זו" },
-  "deferred_open_dialog_title_close_window": { "message": "תזמן סגירת חלון זה" }
+  "deferred_open_dialog_title_close_window": { "message": "תזמן סגירת חלון זה" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "לחיצה על רכיב מושהית אקראית",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "תזמן את הקישור שמתחת לסמן לזמן אקראי",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "מתזמן את הקישור שמתחת לסמן לזמן אקראי בטווח השהיית לחיצה על רכיב. זהה ל-Alt+Shift עם לחיצה על רכיב.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "לחיצה על רכיב מושהית מתוזמנת",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "תזמן את הקישור שמתחת לסמן לזמן מדויק",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "פותח את תיבת הזמן לקישור שמתחת לסמן. זהה ל-Ctrl+Alt+Shift עם לחיצה על רכיב.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "פתיחת כתובות מושהית",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "מתזמן קישור שמתחת לסמן להיפתח מאוחר יותר.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

@@ -6538,5 +6538,37 @@
   "settings_static_275": { "message": "ウィンドウを閉じる最短（分）" },
   "settings_static_276": { "message": "ウィンドウを閉じる最長（分）" },
   "deferred_open_dialog_title_close_tab": { "message": "このタブを閉じる予定" },
-  "deferred_open_dialog_title_close_window": { "message": "このウィンドウを閉じる予定" }
+  "deferred_open_dialog_title_close_window": { "message": "このウィンドウを閉じる予定" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "要素クリック遅延（ランダム）",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "カーソル下のリンクをランダムな時刻に予定する",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "カーソル下のリンクを、要素クリックの遅延範囲内のランダムな時刻に予定します。Alt+Shift と要素クリックと同じです。",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "要素クリック遅延（指定時刻）",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "カーソル下のリンクを指定した時刻に予定する",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "カーソル下のリンクの時刻ダイアログを開きます。Ctrl+Alt+Shift と要素クリックと同じです。",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "URL の遅延オープン",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "カーソル下のリンクを後で開くよう予定します。",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

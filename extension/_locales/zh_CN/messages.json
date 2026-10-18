@@ -6538,5 +6538,37 @@
   "settings_static_275": { "message": "关闭窗口最短（分钟）" },
   "settings_static_276": { "message": "关闭窗口最长（分钟）" },
   "deferred_open_dialog_title_close_tab": { "message": "安排关闭此标签页" },
-  "deferred_open_dialog_title_close_window": { "message": "安排关闭此窗口" }
+  "deferred_open_dialog_title_close_window": { "message": "安排关闭此窗口" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "延迟随机点击元素",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "将光标下的链接安排到随机时间",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "将光标下的链接安排到“延迟点击元素”范围内的随机时间。与 Alt+Shift 加点击元素相同。",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "延迟定时点击元素",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "将光标下的链接安排到确切时间",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "为光标下的链接打开时间对话框。与 Ctrl+Alt+Shift 加点击元素相同。",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "延迟打开网址",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "安排光标下的链接稍后打开。",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

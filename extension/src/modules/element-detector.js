@@ -3,6 +3,7 @@
  */
 import { CLICKABLE_CATEGORY, CSS_CLASSES, FEATURE_FLAGS } from '../config/constants.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
+import { playingVideoCoversElement } from '../utils/playing-video-fill.js';
 import {
   resolveHoveredLink,
   activationIdentitiesMatch,
@@ -1749,6 +1750,9 @@ export class ElementDetector {
     const cat = this.getClickableCategory(el);
     if (cat === CLICKABLE_CATEGORY.SLIDER) return true;
     if (cat === CLICKABLE_CATEGORY.TEXT) return true;
+    // Playing video covering most of the focus box: keep the outline, drop the wash.
+    // Paused posters and small chips keep the fill.
+    if (playingVideoCoversElement(el)) return true;
     // Media: suppress only when the player shell has semantic seek chrome
     // (thumbnail videos without a range/slider keep the blue wash).
     if (cat === CLICKABLE_CATEGORY.MEDIA) {

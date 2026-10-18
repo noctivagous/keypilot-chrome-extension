@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-17T23:39:13.478Z
+ * Generated on 2026-10-18T17:43:38.044Z
  */
 
 (() => {
@@ -939,6 +939,22 @@
       keyboardClass: "key-activate",
       row: 2
     }),
+    ACTIVATE_DEFERRED_RANDOM: Object.freeze({
+      handler: "handleActivateDeferredRandomKey",
+      label: "Click Element Deferred Random",
+      description: "Schedule the hovered link for a random time",
+      details: "Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.",
+      keyboardClass: "key-activate",
+      row: 0
+    }),
+    ACTIVATE_DEFERRED_SCHEDULED: Object.freeze({
+      handler: "handleActivateDeferredScheduledKey",
+      label: "Click Element Deferred Scheduled",
+      description: "Schedule the hovered link for an exact time",
+      details: "Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.",
+      keyboardClass: "key-activate",
+      row: 0
+    }),
     // Foreground new tab (switch to the new tab).
     ACTIVATE_NEW_TAB: Object.freeze({
       handler: "handleActivateNewTabKey",
@@ -1374,6 +1390,8 @@
   var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
     // Navigation — click / link preview / history
     ACTIVATE: "Navigation",
+    ACTIVATE_DEFERRED_RANDOM: "Deferred Open URLs",
+    ACTIVATE_DEFERRED_SCHEDULED: "Deferred Open URLs",
     ACTIVATE_NEW_TAB: "Navigation",
     ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
     PREVIEW_LINK_POPOVER: "Navigation",
@@ -1429,6 +1447,7 @@
   });
   var KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
     "Navigation",
+    "Deferred Open URLs",
     "Tab Control",
     "Begin URL",
     "Get Page Data",
@@ -1556,6 +1575,8 @@
     ROOT: physicalAssignment("KeyS", "S"),
     BACK: physicalAssignment("KeyD", "D"),
     ACTIVATE: physicalAssignment("KeyF", "F"),
+    ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
+    ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
     ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyG", "G"),
     HIGHLIGHT: physicalAssignment("KeyH", "H"),
     TAB_HISTORY: physicalAssignment("KeyJ", "J"),
@@ -1600,6 +1621,8 @@
     ROOT: physicalAssignment("KeyL", "L"),
     BACK: physicalAssignment("KeyK", "K"),
     ACTIVATE: physicalAssignment("KeyJ", "J"),
+    ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
+    ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
     ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
     // H is background-tab open on left; G is text select.
     HIGHLIGHT: physicalAssignment("KeyG", "G"),
@@ -5430,6 +5453,149 @@
     return volume == null ? true : volume;
   }
 
+  // src/utils/playing-video-fill.js
+  var PLAYING_VIDEO_FILL_RATIO = 0.35;
+  var MAX_VIDEOS = 16;
+  var MAX_SHADOW_NODES = 250;
+  var MAX_SHADOW_DEPTH = 5;
+  var MAX_FRAMES = 8;
+  function isPlayingVideo(el) {
+    try {
+      if (!el || el.nodeType !== 1 || el.tagName !== "VIDEO") return false;
+      if (el.paused || el.ended) return false;
+      return el.readyState >= 2;
+    } catch {
+      return false;
+    }
+  }
+  function intersectionRatio(host, inner) {
+    const hostArea = host.width * host.height;
+    if (!(hostArea > 0)) return 0;
+    const w = Math.min(host.right, inner.right) - Math.max(host.left, inner.left);
+    const h = Math.min(host.bottom, inner.bottom) - Math.max(host.top, inner.top);
+    if (!(w > 0) || !(h > 0)) return 0;
+    return w * h / hostArea;
+  }
+  function addVideos(root, bucket) {
+    if (!root || bucket.length >= MAX_VIDEOS) return;
+    try {
+      if (
+        /** @type {Element} */
+        root.tagName === "VIDEO"
+      ) {
+        bucket.push(
+          /** @type {Element} */
+          root
+        );
+      }
+    } catch {
+    }
+    try {
+      const list = root.querySelectorAll?.("video");
+      if (!list) return;
+      for (let i = 0; i < list.length && bucket.length < MAX_VIDEOS; i++) {
+        bucket.push(list[i]);
+      }
+    } catch {
+    }
+  }
+  function addShadowVideos(root, bucket, depth, budget) {
+    if (!root || depth > MAX_SHADOW_DEPTH || bucket.length >= MAX_VIDEOS || budget.left <= 0) return;
+    let nodes = null;
+    try {
+      nodes = root.querySelectorAll?.("*");
+    } catch {
+      nodes = null;
+    }
+    if (!nodes) return;
+    const limit = Math.min(nodes.length, budget.left);
+    for (let i = 0; i < limit; i++) {
+      budget.left--;
+      let shadow = null;
+      try {
+        shadow = nodes[i].shadowRoot;
+      } catch {
+        shadow = null;
+      }
+      if (!shadow) continue;
+      addVideos(shadow, bucket);
+      addShadowVideos(shadow, bucket, depth + 1, budget);
+      if (bucket.length >= MAX_VIDEOS) return;
+    }
+  }
+  function addSameOriginFrameVideos(root, bucket) {
+    if (bucket.length >= MAX_VIDEOS) return;
+    const frames = [];
+    try {
+      if (root.tagName === "IFRAME" || root.tagName === "FRAME") frames.push(root);
+    } catch {
+    }
+    try {
+      const list = root.querySelectorAll?.("iframe, frame");
+      if (list) {
+        for (let i = 0; i < list.length && frames.length < MAX_FRAMES; i++) frames.push(list[i]);
+      }
+    } catch {
+    }
+    for (const frame of frames) {
+      if (bucket.length >= MAX_VIDEOS) return;
+      try {
+        const doc = (
+          /** @type {HTMLIFrameElement} */
+          frame.contentDocument
+        );
+        if (doc) addVideos(doc, bucket);
+      } catch {
+      }
+    }
+  }
+  function anyPlayingVideoCovers(host, videos, seen) {
+    for (const video of videos) {
+      if (seen.has(video)) continue;
+      seen.add(video);
+      if (!isPlayingVideo(video)) continue;
+      let rect;
+      try {
+        rect = video.getBoundingClientRect();
+      } catch {
+        continue;
+      }
+      if (intersectionRatio(host, rect) >= PLAYING_VIDEO_FILL_RATIO) return true;
+    }
+    return false;
+  }
+  function playingVideoCoversElement(el) {
+    if (!el || el.nodeType !== 1) return false;
+    let host;
+    try {
+      host = el.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!(host.width > 0) || !(host.height > 0)) return false;
+    const videos = [];
+    const seen = /* @__PURE__ */ new Set();
+    try {
+      const ancestor = typeof el.closest === "function" ? el.closest("video") : null;
+      if (ancestor) videos.push(ancestor);
+    } catch {
+    }
+    addVideos(el, videos);
+    addSameOriginFrameVideos(el, videos);
+    if (anyPlayingVideoCovers(host, videos, seen)) return true;
+    const beforeShadow = videos.length;
+    let ownShadow = null;
+    try {
+      ownShadow = el.shadowRoot;
+    } catch {
+      ownShadow = null;
+    }
+    if (ownShadow) addVideos(ownShadow, videos);
+    addShadowVideos(el, videos, 0, { left: MAX_SHADOW_NODES });
+    if (videos.length === beforeShadow && !ownShadow) return false;
+    return anyPlayingVideoCovers(host, videos, seen);
+  }
+
   // src/modules/frame-click-agent.js
   var CLICKABLE_SEL = 'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], summary, [onclick], input, select, textarea, label';
   function withNativePageCursors(fn) {
@@ -5909,7 +6075,8 @@
         const thickness = Math.min(Math.max(Number(focusChrome.rectangleThickness) || 3, 1), 16);
         try {
           hoverEl.style.border = `${thickness}px solid ${p.border}`;
-          hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false ? "transparent" : p.fill;
+          const suppressPlayingVideoFill = !isText && playingVideoCoversElement(target);
+          hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false || suppressPlayingVideoFill ? "transparent" : p.fill;
           hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false ? "none" : `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`;
         } catch {
         }

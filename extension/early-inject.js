@@ -10368,6 +10368,14 @@
     "labelKey": "fn_ACTIVATE_label",
     "keyboardClass": "key-activate"
   },
+  "ACTIVATE_DEFERRED_RANDOM": {
+    "labelKey": "fn_ACTIVATE_DEFERRED_RANDOM_label",
+    "keyboardClass": "key-activate"
+  },
+  "ACTIVATE_DEFERRED_SCHEDULED": {
+    "labelKey": "fn_ACTIVATE_DEFERRED_SCHEDULED_label",
+    "keyboardClass": "key-activate"
+  },
   "ACTIVATE_NEW_TAB": {
     "labelKey": "fn_ACTIVATE_NEW_TAB_label",
     "keyboardClass": "key-activate-new"

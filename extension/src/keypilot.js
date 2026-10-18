@@ -1539,19 +1539,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       };
     }
     if (binding.functionId === 'ACTIVATE') {
-      const config = this._settings?.deferredOpen?.clickElement
-        || DEFAULT_SETTINGS.deferredOpen.clickElement;
-      if (config.enabled === false) return null;
-      const urls = normalizeOpenUrlList([this._getHoveredHyperlinkUrl()]);
-      if (!urls.length) return null;
-      return {
-        action: 'OPEN_URLS',
-        dialogAction: 'ACTIVATE',
-        payload: { urls },
-        minMinutes: config.minMinutes,
-        maxMinutes: config.maxMinutes,
-        target
-      };
+      return this._deferredClickElementRequest();
     }
 
     const config = binding.functionId === 'OPEN_URLS'
@@ -1578,6 +1566,44 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       maxMinutes: resolved.maxMinutes,
       target
     };
+  }
+
+  /**
+   * The hovered link, captured now, as an Open URLs job using the Click Element delay.
+   * @returns {{ action: string, dialogAction: string, payload: { urls: string[] }, minMinutes: number, maxMinutes: number, target: string }|null}
+   */
+  _deferredClickElementRequest() {
+    const config = this._settings?.deferredOpen?.clickElement
+      || DEFAULT_SETTINGS.deferredOpen.clickElement;
+    if (config.enabled === false) return null;
+    const urls = normalizeOpenUrlList([this._getHoveredHyperlinkUrl()]);
+    if (!urls.length) return null;
+    return {
+      action: 'OPEN_URLS',
+      dialogAction: 'ACTIVATE',
+      payload: { urls },
+      minMinutes: config.minMinutes,
+      maxMinutes: config.maxMinutes,
+      target: this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target
+    };
+  }
+
+  handleActivateDeferredRandomKey() {
+    const request = this._deferredClickElementRequest();
+    if (!request) return;
+    this._submitDeferredOpen(request, {
+      minMinutes: request.minMinutes,
+      maxMinutes: request.maxMinutes
+    });
+  }
+
+  handleActivateDeferredScheduledKey() {
+    const request = this._deferredClickElementRequest();
+    if (!request || !this.scheduleOpenDialog) return;
+    this.scheduleOpenDialog.show({
+      action: request.dialogAction || request.action,
+      onSubmit: (fireAt) => this._submitDeferredOpen(request, { fireAt })
+    });
   }
 
   /**

@@ -6543,5 +6543,37 @@
   "settings_static_275": { "message": "Fenster schließen Minimum (Minuten)" },
   "settings_static_276": { "message": "Fenster schließen Maximum (Minuten)" },
   "deferred_open_dialog_title_close_tab": { "message": "Schließen dieses Tabs planen" },
-  "deferred_open_dialog_title_close_window": { "message": "Schließen dieses Fensters planen" }
+  "deferred_open_dialog_title_close_window": { "message": "Schließen dieses Fensters planen" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "Element klicken, zufällig verzögert",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "Den Link unter dem Zeiger zufällig planen",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "Plant den Link unter dem Zeiger für eine zufällige Zeit im Bereich Element klicken verzögern. Entspricht Alt+Umschalt mit Element klicken.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "Element klicken, zeitlich geplant",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "Den Link unter dem Zeiger auf eine genaue Zeit planen",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "Öffnet den Zeitdialog für den Link unter dem Zeiger. Entspricht Strg+Alt+Umschalt mit Element klicken.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "URLs verzögert öffnen",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "Plant, dass ein Link unter dem Zeiger später geöffnet wird.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

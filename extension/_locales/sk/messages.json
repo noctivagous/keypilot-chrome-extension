@@ -6538,5 +6538,37 @@
   "settings_static_275": { "message": "Zavrieť okno minimum (minúty)" },
   "settings_static_276": { "message": "Zavrieť okno maximum (minúty)" },
   "deferred_open_dialog_title_close_tab": { "message": "Naplánovať zatvorenie tejto karty" },
-  "deferred_open_dialog_title_close_window": { "message": "Naplánovať zatvorenie tohto okna" }
+  "deferred_open_dialog_title_close_window": { "message": "Naplánovať zatvorenie tohto okna" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "Kliknutie na prvok odložené náhodne",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "Naplánovať odkaz pod kurzorom na náhodný čas",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "Naplánuje odkaz pod kurzorom na náhodný čas v rozsahu Odložiť kliknutie na prvok. Rovnaké ako Alt+Shift s Kliknutím na prvok.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "Kliknutie na prvok odložené na čas",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "Naplánovať odkaz pod kurzorom na presný čas",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "Otvorí dialóg času pre odkaz pod kurzorom. Rovnaké ako Ctrl+Alt+Shift s Kliknutím na prvok.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "Odložené otváranie URL",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "Naplánuje, aby sa odkaz pod kurzorom otvoril neskôr.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }

@@ -6624,5 +6624,37 @@
   "settings_static_275": { "message": "Close Window minimum (minutes)" },
   "settings_static_276": { "message": "Close Window maximum (minutes)" },
   "deferred_open_dialog_title_close_tab": { "message": "Schedule closing this tab" },
-  "deferred_open_dialog_title_close_window": { "message": "Schedule closing this window" }
+  "deferred_open_dialog_title_close_window": { "message": "Schedule closing this window" },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "Click Element Deferred Random",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "Schedule the hovered link for a random time",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_details": {
+    "message": "Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "Click Element Deferred Scheduled",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "Schedule the hovered link for an exact time",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_details": {
+    "message": "Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.",
+    "description": "Function Library details for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "Deferred Open URLs",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "Schedule a hovered link to open later.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  }
 }
