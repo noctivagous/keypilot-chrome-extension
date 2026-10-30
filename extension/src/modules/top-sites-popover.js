@@ -288,17 +288,8 @@ export class TopSitesPopover {
       return true;
     }
 
-    if (key >= '1' && key <= '9') {
-      const idx = Number(key) - 1;
-      const tab = TABS[idx];
-      if (tab) {
-        e.preventDefault();
-        e.stopPropagation();
-        void this._selectTab(tab.id);
-        return true;
-      }
-    }
-
+    // Number keys belong to the keyboard layout (Click Element deferred, Schedule
+    // Link Manual). Tab still cycles the panel tabs.
     if (key === 'Tab') {
       e.preventDefault();
       e.stopPropagation();

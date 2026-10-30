@@ -630,6 +630,131 @@ export class PopoverController {
   }
 
   /**
+   * Deferred opening window. Same chrome as Settings, one column, no nav.
+   * @param {object} [opts]
+   */
+  async showInPageDeferredOpenPopover(opts = {}) {
+    let settingsUi;
+    try {
+      settingsUi = await loadSettingsUi();
+    } catch (err) {
+      console.warn('[KeyPilot] Failed to load Deferred opening UI bundle:', err);
+      return;
+    }
+    this._settingsUi = settingsUi;
+    this.hidePopover();
+
+    const requestClosePopover = () => {
+      try {
+        if (window.__KeyPilotInstance && typeof window.__KeyPilotInstance.handleClosePopover === 'function') {
+          window.__KeyPilotInstance.handleClosePopover();
+          return;
+        }
+      } catch { /* ignore */ }
+      this.hidePopover();
+    };
+
+    this.popoverContainer = this.createElement('div', {
+      className: 'kpv2-popover-container kpv2-settings-popover kp-chrome-window',
+      tabindex: '-1',
+      role: 'dialog',
+      'aria-modal': 'true',
+      style: `
+        position: fixed;
+        inset: 0;
+        width: ${opts.width || '720px'};
+        height: ${opts.height || 'calc(100vh - 40pt)'};
+        max-width: calc(100vw - 40pt);
+        max-height: calc(100vh - 40pt);
+        margin: auto;
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+        border: ${NCT_DARK_UI_PANEL_BORDER};
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        font-family: ${KP_UI_FONT};
+        font-size: 14px;
+        line-height: 1.3;
+        letter-spacing: normal;
+      `
+    });
+    markChromeWindow(this.popoverContainer);
+
+    const chromeHost = this.createElement('div', {
+      className: 'kpv2-popover-chrome-host',
+      style: 'display:flex;flex:0 0 auto;flex-direction:column;min-height:0;'
+    });
+    const chromeShadow = ensureOpenChromeShadow(chromeHost, { id: 'deferred-open-popover' });
+    const chromeMount = chromeShadow || chromeHost;
+    const title = (opts.title && String(opts.title).trim()) || getMessage('deferred_open_window_title');
+    const titlebarApi = createPopoverTitlebar({
+      title,
+      shortcut: '',
+      icon: 'gear',
+      variant: 'modal',
+      showClose: true,
+      onClose: requestClosePopover,
+      closeTitle: getMessage('popover_titlebar_close'),
+      hint: createTitlebarCloseHint({
+        keys: ['Esc'],
+        suffix: getMessage('popover_nav_hint_suffix')
+      }),
+      className: 'kpv2-popover-titlebar'
+    });
+    this.popoverCloseButton = titlebarApi.closeButton;
+    chromeMount.appendChild(titlebarApi.titlebar);
+    this.popoverContainer.appendChild(chromeHost);
+
+    const bodyHost = this.createElement('div', {
+      className: 'kpv2-settings-host',
+      style: `
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--kp-color-bg, #0f0f10);
+      `
+    });
+    const shadow = ensureOpenChromeShadow(bodyHost, { id: 'deferred-open-app' }) || bodyHost.shadowRoot;
+    this._docsHost = null;
+    this._inPagePopoverKind = 'deferred-open';
+    this._docsUnmount = await settingsUi.mountDeferredOpenApp(shadow);
+    this.popoverContainer.appendChild(bodyHost);
+
+    this.popupManager?.showModal?.({
+      id: this._popoverPopupId,
+      panel: this.popoverContainer,
+      onRequestClose: requestClosePopover
+    });
+    document.body.style.overflow = 'hidden';
+
+    const handlePopoverKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      try {
+        const kp = window.__KeyPilotInstance;
+        const st = kp?.state?.getState?.();
+        if (st?.mode === MODES.TEXT_FOCUS || st?.focusedTextElement) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          kp.handleEscapeFromTextFocus(st);
+          return;
+        }
+      } catch { /* ignore */ }
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      requestClosePopover();
+    };
+    document.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverContainer.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverKeyHandler = handlePopoverKeyDown;
+    try { this.popoverContainer.focus(); } catch { /* ignore */ }
+  }
+
+  /**
    * Show popover with iframe (extension Guide/settings pages) or OS window (http(s)).
    * http(s) Open Popover always opens a sized OS popup. Settings/Guide keep the
    * in-page iframe overlay with {@link createPopoverTitlebar}.

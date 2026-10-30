@@ -32,6 +32,7 @@ import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from
 import {
   buildEffectiveKeybindings,
   builtinFamilySelectValue,
+  deferredNumberRowActive,
   getKeyboardUiLayoutForLayout,
   inferFamilyAndHandednessFromLayoutId,
   listLayoutPickerGroups,
@@ -2444,12 +2445,14 @@ export class FloatingKeyboardHelp {
           handedness
         }) || this.layoutId || 'browsing-right';
         this.layoutId = layoutId;
+        const deferredNumberRow = deferredNumberRowActive(settings);
         const uiLayout = getKeyboardUiLayoutForLayout(layoutId, {
           includeNumberRow: showNumberRow,
-          hardwareLayoutId: settings?.keyboardHardwareLayoutId
+          hardwareLayoutId: settings?.keyboardHardwareLayoutId,
+          deferredNumberRow
         });
         this.keyboardLayout = uiLayout;
-        const keybindings = buildEffectiveKeybindings(layoutId, handedness);
+        const keybindings = buildEffectiveKeybindings(layoutId, handedness, { deferredNumberRow });
         this.keybindings = keybindings;
         renderKeybindingsKeyboard({
           container: this.keyboardContainer,
@@ -2544,12 +2547,14 @@ export class FloatingKeyboardHelp {
             handedness
           }) || this.layoutId || 'browsing-right';
           this.layoutId = layoutId;
+          const deferredNumberRow = deferredNumberRowActive(settings);
           const uiLayout = getKeyboardUiLayoutForLayout(layoutId, {
             includeNumberRow: showNumberRow,
-            hardwareLayoutId: settings?.keyboardHardwareLayoutId
+            hardwareLayoutId: settings?.keyboardHardwareLayoutId,
+            deferredNumberRow
           });
           this.keyboardLayout = uiLayout;
-          const keybindings = buildEffectiveKeybindings(layoutId, handedness);
+          const keybindings = buildEffectiveKeybindings(layoutId, handedness, { deferredNumberRow });
           this.keybindings = keybindings;
           renderKeybindingsKeyboard({
             container: this.keyboardContainer,

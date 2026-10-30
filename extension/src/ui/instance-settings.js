@@ -131,7 +131,11 @@ async function retargetInstanceSlot(kp, keyEl, toId, fromId) {
     const builtinLayoutId = kp._keyboardLayoutId || 'browsing-right';
     const layouts = await listUserKeyboardLayouts();
     const label = nextUserCopyLayoutLabel(familyBaseLabel(builtinLayoutId), layouts);
-    layout = await duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label });
+    layout = await duplicateBuiltinLayoutToUserLayout({
+      builtinLayoutId,
+      label,
+      deferredNumberRow: kp?._settings?.deferredOpen?.enabled === true
+    });
   }
   if (!layout) return false;
 

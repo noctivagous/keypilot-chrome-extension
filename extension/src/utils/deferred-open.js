@@ -168,16 +168,16 @@ export async function runDeferredClick(job) {
 }
 
 /**
- * Random Alt+Shift scheduling stays quiet when the shared setting is on.
+ * Random Alt+Shift scheduling stays quiet only when the shared setting is on.
  * An exact `fireAt` from the dialog always confirms out loud. A missing
- * setting is silent, matching the default.
+ * setting confirms, matching the default.
  * @param {{ fireAt?: number }|null|undefined} schedule
  * @param {boolean|undefined} silentRandomScheduling
  * @returns {boolean}
  */
 export function randomScheduleIsSilent(schedule, silentRandomScheduling) {
   if (schedule?.fireAt !== undefined) return false;
-  return silentRandomScheduling !== false;
+  return silentRandomScheduling === true;
 }
 
 export function normalizeDeferredDelayRange(minMinutes, maxMinutes) {

@@ -717,7 +717,8 @@ export class KeyboardLayoutConfigPanel {
         const label = nextUserCopyLayoutLabel(this._familyBaseLabel(), layouts);
         const created = await duplicateBuiltinLayoutToUserLayout({
           builtinLayoutId: this._st.builtinLayoutId,
-          label
+          label,
+          deferredNumberRow: this._kp?._settings?.deferredOpen?.enabled === true
         });
         if (created?.id) {
           adoptedCopy = created;
@@ -887,7 +888,8 @@ export class KeyboardLayoutConfigPanel {
         ? await duplicateUserKeyboardLayout({ source: sourceUser, label: nextLabel })
         : await duplicateBuiltinLayoutToUserLayout({
           builtinLayoutId: fromBuiltinId || this._st.builtinLayoutId,
-          label: nextLabel
+          label: nextLabel,
+          deferredNumberRow: this._kp?._settings?.deferredOpen?.enabled === true
         });
       if (!created?.id) {
         this._notify('Failed to duplicate layout.', 'error');
@@ -8925,7 +8927,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const label = nextUserCopyLayoutLabel(base, layouts);
       const created = await duplicateBuiltinLayoutToUserLayout({
         builtinLayoutId: this._st.builtinLayoutId,
-        label
+        label,
+        deferredNumberRow: this._kp?._settings?.deferredOpen?.enabled === true
       });
       this._st.userLayouts = await listUserKeyboardLayouts();
       this._st.mode = 'user';

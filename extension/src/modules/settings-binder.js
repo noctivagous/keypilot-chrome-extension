@@ -3,7 +3,7 @@
  * Adapts DOM controls to SettingsController.update / updateThemeOverride.
  */
 
-import { CLICK_EFFECT_IDS } from './settings-manager.js';
+import { CLICK_EFFECT_IDS, OVERLAY_FILL_MAX_SIZE_MAX, OVERLAY_FILL_MAX_SIZE_MIN } from './settings-manager.js';
 import { clampNumber } from './settings-path.js';
 
 /**
@@ -67,6 +67,20 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'rangePair', baseId: 'click-cursor-size', path: 'clickMode.cursor.sizePixels', min: 5, max: 60 },
   { type: 'rangePair', baseId: 'click-cursor-gap', path: 'clickMode.cursor.gap', min: 0, max: 20 },
   { type: 'toggle', id: 'click-overlay-fill', path: 'clickMode.overlayFillEnabled' },
+  {
+    type: 'rangePair',
+    baseId: 'click-overlay-fill-max-width',
+    path: 'clickMode.overlayFillMaxWidth',
+    min: OVERLAY_FILL_MAX_SIZE_MIN,
+    max: OVERLAY_FILL_MAX_SIZE_MAX
+  },
+  {
+    type: 'rangePair',
+    baseId: 'click-overlay-fill-max-height',
+    path: 'clickMode.overlayFillMaxHeight',
+    min: OVERLAY_FILL_MAX_SIZE_MIN,
+    max: OVERLAY_FILL_MAX_SIZE_MAX
+  },
   { type: 'toggle', id: 'click-overlay-shadow', path: 'clickMode.overlayShadowEnabled' },
   { type: 'rangePair', baseId: 'click-rect-thickness', path: 'clickMode.rectangleThickness', min: 1, max: 16 },
   { type: 'toggle', id: 'click-keyboard-link-hints', path: 'clickMode.keyboardLinkHoverHints' },

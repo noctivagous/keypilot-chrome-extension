@@ -18,6 +18,8 @@ import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-
 import { CursorManager } from '../src/modules/cursor.js';
 import { normalizeSettingsPanelId } from '../src/utils/kp-deep-link.js';
 
+export { mountDeferredOpenApp } from './deferred-open-settings.js';
+
 /** Document or open ShadowRoot the settings UI is mounted in. */
 let settingsScope = document;
 let settingsHandlersInstalled = false;
@@ -605,6 +607,10 @@ async function render() {
   const clickFocusColorRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="click-focus-color"]')));
   const clickFocusColorCustom = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-color-custom'));
   const clickOverlayFill = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill'));
+  const clickOverlayFillMaxWidthRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill-max-width-range'));
+  const clickOverlayFillMaxWidthNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill-max-width-number'));
+  const clickOverlayFillMaxHeightRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill-max-height-range'));
+  const clickOverlayFillMaxHeightNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill-max-height-number'));
   const clickOverlayShadow = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-shadow'));
   const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-rect-thickness-range'));
   const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-rect-thickness-number'));
@@ -789,6 +795,21 @@ async function render() {
     if (clickOverlayFill) {
       clickOverlayFill.checked = cm?.overlayFillEnabled === true;
     }
+    const overlayFillOn = cm?.overlayFillEnabled === true;
+    const overlayFillMaxWidth = cm?.overlayFillMaxWidth ?? DEFAULT_SETTINGS.clickMode.overlayFillMaxWidth;
+    const overlayFillMaxHeight = cm?.overlayFillMaxHeight ?? DEFAULT_SETTINGS.clickMode.overlayFillMaxHeight;
+    setInputValue(clickOverlayFillMaxWidthRange, overlayFillMaxWidth);
+    setInputValue(clickOverlayFillMaxWidthNumber, overlayFillMaxWidth);
+    setInputValue(clickOverlayFillMaxHeightRange, overlayFillMaxHeight);
+    setInputValue(clickOverlayFillMaxHeightNumber, overlayFillMaxHeight);
+    for (const el of [
+      clickOverlayFillMaxWidthRange,
+      clickOverlayFillMaxWidthNumber,
+      clickOverlayFillMaxHeightRange,
+      clickOverlayFillMaxHeightNumber
+    ]) {
+      if (el) el.disabled = !overlayFillOn;
+    }
     if (clickOverlayShadow) {
       clickOverlayShadow.checked = cm?.overlayShadowEnabled === true;
     }
@@ -958,7 +979,7 @@ async function render() {
     setInputValue(deferredCloseWindowMaxRange, closeWindow.maxMinutes);
     setInputValue(deferredCloseWindowMaxNumber, closeWindow.maxMinutes);
     setInputValue(deferredOpenTarget, value.target === 'originalWindow' ? 'originalWindow' : 'activeWindow');
-    if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
+    if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling === true;
   };
 
   const applyAllSettings = (settings) => {
@@ -1028,6 +1049,13 @@ async function render() {
     withViewTransition: withOptionalViewTransition,
     applyState: applyAllSettings
   });
+
+  settingsEl('open-deferred-opening')?.addEventListener('click', () => {
+    try {
+      const kp = window.__KeyPilotInstance || window.keyPilot;
+      kp?.handleOpenDeferredOpenPopover?.();
+    } catch { /* ignore */ }
+  }, listenOpts);
 
   const commitFocusColor = (raw) => {
     void settingsController.update('clickMode.focusColor', normalizeFocusColor(raw));

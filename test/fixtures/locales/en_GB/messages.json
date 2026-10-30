@@ -6500,11 +6500,11 @@
   },
   "settings_static_249": { "message": "[GB] Deferred tab opening" },
   "settings_static_250": { "message": "[GB] Press Alt+Shift with an Open URLs or Random Bookmarks key to schedule it at a random time." },
-  "settings_static_251": { "message": "[GB] Delay Open URLs" },
+  "settings_static_251": { "message": "[GB] Feature: Delay Open URLs" },
   "settings_static_252": { "message": "[GB] Enable Alt+Shift scheduling for every Open URLs key." },
   "settings_static_253": { "message": "[GB] Open URLs minimum (minutes)" },
   "settings_static_254": { "message": "[GB] Open URLs maximum (minutes)" },
-  "settings_static_255": { "message": "[GB] Delay Random Bookmarks" },
+  "settings_static_255": { "message": "[GB] Feature: Delay Random Bookmarks" },
   "settings_static_256": { "message": "[GB] Enable Alt+Shift scheduling for every Random Bookmarks key." },
   "settings_static_257": { "message": "[GB] Random Bookmarks minimum (minutes)" },
   "settings_static_258": { "message": "[GB] Random Bookmarks maximum (minutes)" },
@@ -6563,19 +6563,96 @@
   },
   "settings_static_263": { "message": "[GB] Silent random scheduling" },
   "settings_static_264": { "message": "[GB] Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead." },
-  "settings_static_265": { "message": "[GB] Delay Click Element" },
+  "settings_static_265": { "message": "[GB] Feature: Delay Click Element" },
   "settings_static_266": { "message": "[GB] Alt+Shift with the Click Element key schedules the link under the cursor." },
   "settings_static_267": { "message": "[GB] Click Element minimum (minutes)" },
   "settings_static_268": { "message": "[GB] Click Element maximum (minutes)" },
   "deferred_open_dialog_title_click_element": { "message": "[GB] Schedule this link" },
-  "settings_static_269": { "message": "[GB] Delay Close Tab" },
+  "settings_static_269": { "message": "[GB] Feature: Delay Close Tab" },
   "settings_static_270": { "message": "[GB] Alt+Shift with Close Tab schedules closing the tab that is current when you press the chord." },
   "settings_static_271": { "message": "[GB] Close Tab minimum (minutes)" },
   "settings_static_272": { "message": "[GB] Close Tab maximum (minutes)" },
-  "settings_static_273": { "message": "[GB] Delay Close Window" },
+  "settings_static_273": { "message": "[GB] Feature: Delay Close Window" },
   "settings_static_274": { "message": "[GB] Alt+Shift with Close Window schedules closing the window that is current when you press the chord." },
   "settings_static_275": { "message": "[GB] Close Window minimum (minutes)" },
   "settings_static_276": { "message": "[GB] Close Window maximum (minutes)" },
+  "settings_static_277": { "message": "[GB] time frame" },
+  "settings_static_278": {
+    "message": "[GB] Max width",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_279": {
+    "message": "[GB] Hide the fill when the target is wider than this (20–2000px).",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_280": {
+    "message": "[GB] Max height",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_281": {
+    "message": "[GB] Hide the fill when the target is taller than this (20–2000px).",
+    "description": "Localized settings page chrome."
+  },
+  "deferred_open_window_title": {
+    "message": "[GB] Deferred opening",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "[GB] Optional. Shortcuts stay as they are until you turn this on.",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "[GB] Deferred opening",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "[GB] Schedule Open URLs, bookmarks, clicks, and closes for later. On browsing layouts, keys 1, 2, and 4 schedule a link.",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "[GB] Deferred opening",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "[GB] Optional scheduling for URLs, bookmarks, clicks, and closes.",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "[GB] Open",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "[GB] Assign number-row keys",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "[GB] These number keys are already assigned",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "[GB] Deferred opening can place scheduling on keys 1, 2, and 4.",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "[GB] Replace these keys",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "[GB] Keep current keys",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "[GB] Cancel",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "[GB] $1 is $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "[GB] Schedule closing this tab" },
   "deferred_open_dialog_title_close_window": { "message": "[GB] Schedule closing this window" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

@@ -19,7 +19,7 @@ Start with [**Keyboard**](kp://settings/keyboard) (layout + handedness) and [**S
 | --- | --- |
 | [**Overview**](kp://settings/overview) | Hub linking into each category |
 | [**Appearance**](kp://settings/appearance) | Theme and visual chrome |
-| [**Keyboard**](kp://settings/keyboard) | Layout family, left-handed, number row, pressed-key feedback |
+| [**Keyboard**](kp://settings/keyboard) | Layout family, left-handed, number row, pressed-key feedback. Deferred opening opens its own window and stays off until you turn it on |
 | [**Click Mode**](kp://settings/click-mode) | Cursor style, crosshair geometry, focus rectangle look, link-hover hints, activation effects |
 | [**Text Mode**](kp://settings/text-mode) | Cursor, focus style (pulsing edge / tint), edge width, labels, outline |
 | [**Scrolling**](kp://settings/scrolling) | Page Up / Page Down distance, smooth vs instant jumps, carousel skip, middle-click Scroll Line |

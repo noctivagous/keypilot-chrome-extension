@@ -60,10 +60,12 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.clickMode.paintStrategy, DEFAULT_SETTINGS.clickMode.paintStrategy);
     assert.equal(settings.scroll.middleClickScrollLine, false);
     assert.equal(settings.controlStrip.collapsed, true);
+    assert.equal(settings.deferredOpen.enabled, false);
+    assert.equal(settings.deferredOpen.numberRowKeys, 'auto');
     assert.equal(settings.deferredOpen.openUrls.enabled, true);
     assert.equal(settings.deferredOpen.randomBookmarks.enabled, true);
     assert.equal(settings.deferredOpen.target, 'activeWindow');
-    assert.equal(settings.deferredOpen.silentRandomScheduling, true);
+    assert.equal(settings.deferredOpen.silentRandomScheduling, false);
     assert.equal(settings.deferredOpen.clickElement.enabled, true);
     assert.equal(settings.deferredOpen.clickElement.minMinutes, 1);
     assert.equal(settings.deferredOpen.clickElement.maxMinutes, 60);
@@ -73,6 +75,8 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.deferredOpen.closeWindow.enabled, true);
     assert.equal(settings.deferredOpen.closeWindow.minMinutes, 1);
     assert.equal(settings.deferredOpen.closeWindow.maxMinutes, 60);
+    assert.equal(settings.clickMode.overlayFillMaxWidth, 250);
+    assert.equal(settings.clickMode.overlayFillMaxHeight, 250);
     assert.ok(!mock.syncStore.has(SETTINGS_STORAGE_KEY));
   });
 
@@ -146,6 +150,27 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.textMode.focusStyle, DEFAULT_SETTINGS.textMode.focusStyle);
   });
 
+  it('clamps overlay fill max size and skips fill when either axis exceeds it', async () => {
+    const {
+      getSettings,
+      overlayFillExceedsMaxSize,
+      SETTINGS_STORAGE_KEY,
+      DEFAULT_SETTINGS
+    } = await import('../extension/src/modules/settings-manager.js');
+    mock.seed(
+      SETTINGS_STORAGE_KEY,
+      { clickMode: { overlayFillMaxWidth: 1, overlayFillMaxHeight: 99999 } },
+      'sync'
+    );
+    const settings = await getSettings();
+    assert.equal(settings.clickMode.overlayFillMaxWidth, 20);
+    assert.equal(settings.clickMode.overlayFillMaxHeight, 2000);
+    assert.equal(DEFAULT_SETTINGS.clickMode.overlayFillMaxWidth, 250);
+    assert.equal(overlayFillExceedsMaxSize({ width: 251, height: 40 }, 250, 250), true);
+    assert.equal(overlayFillExceedsMaxSize({ width: 40, height: 251 }, 250, 250), true);
+    assert.equal(overlayFillExceedsMaxSize({ width: 250, height: 250 }, 250, 250), false);
+  });
+
   it('normalizes deferred-open ranges and preserves independent action settings', async () => {
     const { getSettings, setSettings, SETTINGS_STORAGE_KEY } =
       await import('../extension/src/modules/settings-manager.js');
@@ -169,6 +194,8 @@ describe('getSettings / setSettings / resetAllSettings', () => {
       minMinutes: 1,
       maxMinutes: 2880
     });
+    assert.equal(normalized.deferredOpen.enabled, false);
+    assert.equal(normalized.deferredOpen.numberRowKeys, 'auto');
     assert.equal(normalized.deferredOpen.target, 'originalWindow');
     assert.equal(normalized.deferredOpen.silentRandomScheduling, false);
 

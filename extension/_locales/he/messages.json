@@ -6542,6 +6542,71 @@
   "settings_static_274": { "message": "Alt+Shift עם סגירת חלון מתזמן את סגירת החלון שהיה נוכחי בעת לחיצת הצירוף." },
   "settings_static_275": { "message": "סגירת חלון מינימום (דקות)" },
   "settings_static_276": { "message": "סגירת חלון מקסימום (דקות)" },
+  "settings_static_277": { "message": "מסגרת זמן" },
+  "settings_static_278": { "message": "רוחב מרבי" },
+  "settings_static_279": { "message": "הסתר את המילוי כשהיעד רחב יותר מערך זה (20–2000 פיקסלים)." },
+  "settings_static_280": { "message": "גובה מרבי" },
+  "settings_static_281": { "message": "הסתר את המילוי כשהיעד גבוה יותר מערך זה (20–2000 פיקסלים)." },
+  "deferred_open_window_title": {
+    "message": "פתיחה מושהית",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "אופציונלי. קיצורי הדרך נשארים כפי שהם עד שתפעילו את זה.",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "פתיחה מושהית",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "תזמנו פתיחת כתובות, סימניות, לחיצות וסגירות למועד מאוחר יותר. בפריסות הגלישה, המקשים 1, 2 ו-4 מתזמנים קישור.",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "פתיחה מושהית",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "תזמון אופציונלי לכתובות, סימניות, לחיצות וסגירות.",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "פתיחה",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "שיבוץ מקשי שורת המספרים",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "מקשי המספרים האלה כבר משויכים",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "פתיחה מושהית יכולה לשים תזמון על המקשים 1, 2 ו-4.",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "החלפת המקשים האלה",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "שמירה על המקשים הנוכחיים",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "ביטול",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 הוא $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "תזמן סגירת כרטיסייה זו" },
   "deferred_open_dialog_title_close_window": { "message": "תזמן סגירת חלון זה" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

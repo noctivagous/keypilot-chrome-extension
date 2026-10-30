@@ -6,7 +6,13 @@
  * (`focusOverlay`, `_inTargetRing`, …) that scroll and hover code read.
  */
 import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, TEXT_FOCUS_HINT_MIN_HEIGHT_PX } from '../config/constants.js';
-import { DEFAULT_SETTINGS } from './settings-manager.js';
+import {
+  DEFAULT_SETTINGS,
+  OVERLAY_FILL_MAX_SIZE_DEFAULT,
+  OVERLAY_FILL_MAX_SIZE_MAX,
+  OVERLAY_FILL_MAX_SIZE_MIN,
+  overlayFillExceedsMaxSize
+} from './settings-manager.js';
 import { getFocusColorPalette, normalizeFocusColor } from '../config/focus-color.js';
 import {
   closestComposed,
@@ -344,9 +350,13 @@ export class FocusOverlayPainter {
     // Determine element type and colors
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
     const suppressFill = this.shouldSuppressFocusFill(element);
-    const isVeryLarge = rect.width > 512 && rect.height > 512;
-
     const clickSettings = this._getClickModeSettings();
+    const isVeryLarge = overlayFillExceedsMaxSize(
+      rect,
+      clickSettings.overlayFillMaxWidth,
+      clickSettings.overlayFillMaxHeight
+    );
+
     let borderColor, shadowColor, backgroundColor;
     if (isTextInput) {
       borderColor = COLORS.ORANGE;
@@ -478,9 +488,13 @@ export class FocusOverlayPainter {
     // Determine element type and colors
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
     const suppressFill = this.shouldSuppressFocusFill(element);
-    const isVeryLarge = rect.width > 512 && rect.height > 512;
-
     const clickSettings = this._getClickModeSettings();
+    const isVeryLarge = overlayFillExceedsMaxSize(
+      rect,
+      clickSettings.overlayFillMaxWidth,
+      clickSettings.overlayFillMaxHeight
+    );
+
     let borderColor, shadowColor, backgroundColor, shadowBrightColor;
     if (isTextInput) {
       borderColor = COLORS.ORANGE;
@@ -603,6 +617,20 @@ export class FocusOverlayPainter {
     // Defaults: outline only (no fill / no glow) unless explicitly enabled.
     const overlayFillEnabled = cm.overlayFillEnabled === true;
     const overlayShadowEnabled = cm.overlayShadowEnabled === true;
+    const maxWRaw = Number(cm.overlayFillMaxWidth);
+    const overlayFillMaxWidth = Number.isFinite(maxWRaw)
+      ? Math.min(Math.max(maxWRaw, OVERLAY_FILL_MAX_SIZE_MIN), OVERLAY_FILL_MAX_SIZE_MAX)
+      : Math.min(
+          Math.max(Number(def.overlayFillMaxWidth) || OVERLAY_FILL_MAX_SIZE_DEFAULT, OVERLAY_FILL_MAX_SIZE_MIN),
+          OVERLAY_FILL_MAX_SIZE_MAX
+        );
+    const maxHRaw = Number(cm.overlayFillMaxHeight);
+    const overlayFillMaxHeight = Number.isFinite(maxHRaw)
+      ? Math.min(Math.max(maxHRaw, OVERLAY_FILL_MAX_SIZE_MIN), OVERLAY_FILL_MAX_SIZE_MAX)
+      : Math.min(
+          Math.max(Number(def.overlayFillMaxHeight) || OVERLAY_FILL_MAX_SIZE_DEFAULT, OVERLAY_FILL_MAX_SIZE_MIN),
+          OVERLAY_FILL_MAX_SIZE_MAX
+        );
     const focusColor = normalizeFocusColor(cm.focusColor);
     const rawEffect = cm.clickEffect;
     const clickEffect =
@@ -624,6 +652,8 @@ export class FocusOverlayPainter {
     return {
       rectangleThickness: thickness,
       overlayFillEnabled,
+      overlayFillMaxWidth,
+      overlayFillMaxHeight,
       overlayShadowEnabled,
       focusColor,
       clickEffect,
@@ -4134,10 +4164,15 @@ export class FocusOverlayPainter {
     const {
       rectangleThickness,
       overlayFillEnabled,
+      overlayFillMaxWidth,
+      overlayFillMaxHeight,
       overlayShadowEnabled,
       focusColor
     } = this._getClickModeSettings();
     const ringWidthPx = Math.min(Math.max(Number(rectangleThickness) || 3, 1), 16);
+    let fillRect = null;
+    try { fillRect = (host || element).getBoundingClientRect(); } catch { fillRect = null; }
+    const isVeryLarge = overlayFillExceedsMaxSize(fillRect, overlayFillMaxWidth, overlayFillMaxHeight);
 
     let borderColor;
     let shadowColor;
@@ -4153,7 +4188,7 @@ export class FocusOverlayPainter {
       shadowColor = p.shadowColor;
       shadowBright = p.shadowBrightColor;
       // Fill is opt-in (same default as other backends).
-      if (!suppressFill && overlayFillEnabled === true) {
+      if (!suppressFill && overlayFillEnabled === true && !isVeryLarge) {
         backgroundColor = p.backgroundColor || 'transparent';
       }
     }
@@ -4399,6 +4434,8 @@ export class FocusOverlayPainter {
     const {
       rectangleThickness,
       overlayFillEnabled,
+      overlayFillMaxWidth,
+      overlayFillMaxHeight,
       overlayShadowEnabled,
       focusColor
     } = this._getClickModeSettings();
@@ -4408,9 +4445,12 @@ export class FocusOverlayPainter {
     const ringWidth = `${ringWidthPx}px`;
     const shadowColor = isTextInput ? COLORS.ORANGE_SHADOW : palette.shadowColor;
     const shadowBright = isTextInput ? COLORS.ORANGE_SHADOW : palette.shadowBrightColor;
+    let fillRect = null;
+    try { fillRect = stylingTarget.getBoundingClientRect(); } catch { fillRect = null; }
+    const isVeryLarge = overlayFillExceedsMaxSize(fillRect, overlayFillMaxWidth, overlayFillMaxHeight);
     // Translucent wash for thumbnails/links; none for scrubbers / when fill disabled.
     let ringBgColor = 'transparent';
-    if (!suppressFill && overlayFillEnabled !== false) {
+    if (!suppressFill && overlayFillEnabled !== false && !isVeryLarge) {
       ringBgColor = isTextInput
         ? 'rgba(255,140,0,0.2)'
         : (palette.backgroundColor || 'rgba(33,150,243,0.25)');
@@ -4973,8 +5013,17 @@ export class FocusOverlayPainter {
       }
       rect = inset;
     } catch { /* keep un-inset rect */ }
-    // If the hover target is extremely large, a filled overlay becomes distracting; keep just the frame.
-    const isVeryLarge = rect && rect.width > 512 && rect.height > 512;
+    // Settings-driven behavior for Click Mode focus rectangle.
+    const {
+      rectangleThickness,
+      overlayFillEnabled,
+      overlayFillMaxWidth,
+      overlayFillMaxHeight,
+      overlayShadowEnabled,
+      focusColor
+    } = this._getClickModeSettings();
+    // If the hover target is larger than the overlay fill limits, keep just the frame.
+    const isVeryLarge = overlayFillExceedsMaxSize(rect, overlayFillMaxWidth, overlayFillMaxHeight);
     
     // Determine overlay color based on element type
     let borderColor, shadowColor, backgroundColor;
@@ -4990,14 +5039,6 @@ export class FocusOverlayPainter {
       // Fill for thumbnails/links; suppress for scrubbers and players that have a seek bar.
       backgroundColor = (suppressFill || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
-
-    // Settings-driven behavior for Click Mode focus rectangle.
-    const {
-      rectangleThickness,
-      overlayFillEnabled,
-      overlayShadowEnabled,
-      focusColor
-    } = this._getClickModeSettings();
     if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
     }

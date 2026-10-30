@@ -1,8 +1,17 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-18T19:19:22.364Z
+ * Generated on 2026-10-30T01:11:07.764Z
  */
 
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res, err) => function __init() {
+  if (err) throw err[0];
+  try {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  } catch (e) {
+    throw err = [e], e;
+  }
+};
 
 // src/utils/i18n.js
 function isDebugBuild() {
@@ -17,7 +26,6 @@ function missingMessage(key2) {
   console.warn(`[KeyPilot i18n] Missing message: ${key2}`);
   return `[i18n:${key2}]`;
 }
-var DEFAULT_LOCALE = "en";
 function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
   const fallback = String(baseLocale || DEFAULT_LOCALE);
   const raw = String(
@@ -28,16 +36,6 @@ function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
   const alt = exact.includes("-") ? exact.replace(/-/g, "_") : exact.includes("_") ? exact.replace(/_/g, "-") : "";
   return [...new Set([exact, alt, base, fallback].filter(Boolean))];
 }
-var KEYCAP_MESSAGE_KEYS = Object.freeze({
-  Tab: "keycap_tab",
-  Caps: "keycap_caps",
-  Shift: "keycap_shift",
-  Enter: "keycap_enter",
-  Backspace: "keycap_backspace",
-  Esc: "keycap_esc",
-  Escape: "keycap_esc"
-});
-var LOCALE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$/;
 function normalizeLocaleTag(value) {
   const tag = String(value ?? "").trim().replace(/_/g, "-");
   return LOCALE_TAG_PATTERN.test(tag) ? tag : "";
@@ -81,12 +79,6 @@ function getMessage(key2, substitutions) {
     return missingMessage(messageKey);
   }
 }
-var ATTRIBUTE_BINDINGS = Object.freeze([
-  ["data-i18n", "textContent"],
-  ["data-i18n-placeholder", "placeholder"],
-  ["data-i18n-aria-label", "aria-label"],
-  ["data-i18n-title", "title"]
-]);
 function localizeElements(root = document) {
   if (!root?.querySelectorAll) return;
   for (const [attribute, property] of ATTRIBUTE_BINDINGS) {
@@ -107,12 +99,30 @@ function localizeElements(root = document) {
   } catch {
   }
 }
+var DEFAULT_LOCALE, KEYCAP_MESSAGE_KEYS, LOCALE_TAG_PATTERN, ATTRIBUTE_BINDINGS;
+var init_i18n = __esm({
+  "src/utils/i18n.js"() {
+    DEFAULT_LOCALE = "en";
+    KEYCAP_MESSAGE_KEYS = Object.freeze({
+      Tab: "keycap_tab",
+      Caps: "keycap_caps",
+      Shift: "keycap_shift",
+      Enter: "keycap_enter",
+      Backspace: "keycap_backspace",
+      Esc: "keycap_esc",
+      Escape: "keycap_esc"
+    });
+    LOCALE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$/;
+    ATTRIBUTE_BINDINGS = Object.freeze([
+      ["data-i18n", "textContent"],
+      ["data-i18n-placeholder", "placeholder"],
+      ["data-i18n-aria-label", "aria-label"],
+      ["data-i18n-title", "title"]
+    ]);
+  }
+});
 
 // src/config/keyboard-hardware-layouts.js
-var DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID = (
-  /** @type {const} */
-  "us-ansi-qwerty"
-);
 function key(code, hidUsage, base, { shift, altGr, shiftAltGr, width } = {}) {
   return Object.freeze({
     code,
@@ -136,140 +146,6 @@ function row(id, keys, { offset } = {}) {
 function referenceRow(id, codes) {
   return Object.freeze({ id, codes: Object.freeze(codes) });
 }
-var US_ANSI_QWERTY_ROWS = Object.freeze([
-  row("number", [
-    key("Backquote", "0x35", "`", { shift: "~" }),
-    key("Digit1", "0x1E", "1", { shift: "!" }),
-    key("Digit2", "0x1F", "2", { shift: "@" }),
-    key("Digit3", "0x20", "3", { shift: "#" }),
-    key("Digit4", "0x21", "4", { shift: "$" }),
-    key("Digit5", "0x22", "5", { shift: "%" }),
-    key("Digit6", "0x23", "6", { shift: "^" }),
-    key("Digit7", "0x24", "7", { shift: "&" }),
-    key("Digit8", "0x25", "8", { shift: "*" }),
-    key("Digit9", "0x26", "9", { shift: "(" }),
-    key("Digit0", "0x27", "0", { shift: ")" }),
-    key("Minus", "0x2D", "-", { shift: "_" }),
-    key("Equal", "0x2E", "=", { shift: "+" }),
-    key("Backspace", "0x2A", "Backspace", { width: 1.55 })
-  ]),
-  row("top", [
-    key("Tab", "0x2B", "Tab", { width: 1.5 }),
-    key("KeyQ", "0x14", "Q", { shift: "Q" }),
-    key("KeyW", "0x1A", "W", { shift: "W" }),
-    key("KeyE", "0x08", "E", { shift: "E" }),
-    key("KeyR", "0x15", "R", { shift: "R" }),
-    key("KeyT", "0x17", "T", { shift: "T" }),
-    key("KeyY", "0x1C", "Y", { shift: "Y" }),
-    key("KeyU", "0x18", "U", { shift: "U" }),
-    key("KeyI", "0x0C", "I", { shift: "I" }),
-    key("KeyO", "0x12", "O", { shift: "O" }),
-    key("KeyP", "0x13", "P", { shift: "P" }),
-    key("BracketLeft", "0x2F", "[", { shift: "{" }),
-    key("BracketRight", "0x30", "]", { shift: "}" }),
-    key("Backslash", "0x31", "\\", { shift: "|", width: 1.5 })
-  ]),
-  row("home", [
-    key("CapsLock", "0x39", "Caps", { width: 1.75 }),
-    key("KeyA", "0x04", "A", { shift: "A" }),
-    key("KeyS", "0x16", "S", { shift: "S" }),
-    key("KeyD", "0x07", "D", { shift: "D" }),
-    key("KeyF", "0x09", "F", { shift: "F" }),
-    key("KeyG", "0x0A", "G", { shift: "G" }),
-    key("KeyH", "0x0B", "H", { shift: "H" }),
-    key("KeyJ", "0x0D", "J", { shift: "J" }),
-    key("KeyK", "0x0E", "K", { shift: "K" }),
-    key("KeyL", "0x0F", "L", { shift: "L" }),
-    key("Semicolon", "0x33", ";", { shift: ":" }),
-    key("Quote", "0x34", "'", { shift: '"' }),
-    key("Enter", "0x28", "Enter", { width: 2 })
-  ]),
-  row("bottom", [
-    key("ShiftLeft", "0xE1", "Shift", { width: 2.15 }),
-    key("KeyZ", "0x1D", "Z", { shift: "Z" }),
-    key("KeyX", "0x1B", "X", { shift: "X" }),
-    key("KeyC", "0x06", "C", { shift: "C" }),
-    key("KeyV", "0x19", "V", { shift: "V" }),
-    key("KeyB", "0x05", "B", { shift: "B" }),
-    key("KeyN", "0x11", "N", { shift: "N" }),
-    key("KeyM", "0x10", "M", { shift: "M" }),
-    key("Comma", "0x36", ",", { shift: "<" }),
-    key("Period", "0x37", ".", { shift: ">" }),
-    key("Slash", "0x38", "/", { shift: "?" }),
-    key("ShiftRight", "0xE5", "Shift", { width: 2.15 })
-  ]),
-  row("modifier", [
-    key("ControlLeft", "0xE0", "Ctrl", { width: 1.25 }),
-    key("MetaLeft", "0xE3", "Meta", { width: 1.25 }),
-    key("AltLeft", "0xE2", "Alt", { width: 1.25 }),
-    key("Space", "0x2C", "Space", { width: 6.25 }),
-    key("AltRight", "0xE6", "Alt", { width: 1.25 }),
-    key("MetaRight", "0xE7", "Meta", { width: 1.25 }),
-    key("ContextMenu", "0x65", "Menu", { width: 1.25 }),
-    key("ControlRight", "0xE4", "Ctrl", { width: 1.25 })
-  ])
-]);
-var US_ANSI_QWERTY_KEYBOARD_REFERENCE = Object.freeze({
-  rows: Object.freeze([
-    referenceRow("top", [
-      "Tab",
-      "KeyQ",
-      "KeyW",
-      "KeyE",
-      "KeyR",
-      "KeyT",
-      "KeyY",
-      "KeyU",
-      "KeyI",
-      "KeyO",
-      "KeyP",
-      "BracketLeft",
-      "BracketRight",
-      "Backspace"
-    ]),
-    referenceRow("home", [
-      "CapsLock",
-      "KeyA",
-      "KeyS",
-      "KeyD",
-      "KeyF",
-      "KeyG",
-      "KeyH",
-      "KeyJ",
-      "KeyK",
-      "KeyL",
-      "Semicolon",
-      "Quote",
-      "Enter"
-    ]),
-    referenceRow("bottom", [
-      "ShiftLeft",
-      "KeyZ",
-      "KeyX",
-      "KeyC",
-      "KeyV",
-      "KeyB",
-      "KeyN",
-      "KeyM",
-      "Comma",
-      "Period",
-      "Slash",
-      "ShiftRight"
-    ])
-  ]),
-  numberRowCodes: Object.freeze([
-    "Digit1",
-    "Digit2",
-    "Digit3",
-    "Digit4",
-    "Digit5",
-    "Digit6",
-    "Digit7",
-    "Digit8",
-    "Digit9",
-    "Digit0"
-  ])
-});
 function cloneRowsWithLegends(baseRows, overrides = {}, extraBottomKey = null) {
   return Object.freeze(baseRows.map((physicalRow) => {
     const keys = physicalRow.keys.flatMap((physicalKey) => {
@@ -296,167 +172,307 @@ function cloneReferenceGeometry(base, { extraBottomCode = "", extraTopCode = "" 
     numberRowCodes: base.numberRowCodes
   });
 }
-var ISO_INTL_BACKSLASH = key("IntlBackslash", "0x64", "<", { shift: ">" });
-var GERMAN_ISO_QWERTZ_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
-  KeyY: { base: "Z", shift: "Z" },
-  KeyZ: { base: "Y", shift: "Y" },
-  BracketLeft: { base: "\xDC", shift: "\xDC" },
-  BracketRight: { base: "+", shift: "*", altGr: "~" },
-  Semicolon: { base: "\xD6", shift: "\xD6" },
-  Quote: { base: "\xC4", shift: "\xC4" }
-}, ISO_INTL_BACKSLASH);
-var SPAIN_ISO_QWERTY_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
-  Semicolon: { base: "\xD1", shift: "\xD1" },
-  Quote: { base: "\xB4", shift: "\xA8", altGr: "{" },
-  Backslash: { base: "\xC7", shift: "\xC7", altGr: "}" }
-}, ISO_INTL_BACKSLASH);
-var SLOVAK_ISO_QWERTZ_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
-  KeyY: { base: "Z", shift: "Z" },
-  KeyZ: { base: "Y", shift: "Y" },
-  BracketLeft: { base: "\xDA", shift: "/" },
-  BracketRight: { base: "\xC4", shift: "(" },
-  Semicolon: { base: "\xD4", shift: '"' },
-  Quote: { base: "\xA7", shift: "!" }
-}, ISO_INTL_BACKSLASH);
-var JIS_INTL_YEN = key("IntlYen", "0x89", "\xA5", { shift: "|" });
-var JIS_INTL_RO = key("IntlRo", "0x87", "\u308D", { shift: "\u30ED" });
-var JIS_NON_CONVERT = key("NonConvert", "0x8B", "\u7121\u5909\u63DB", { width: 1.25 });
-var JIS_CONVERT = key("Convert", "0x8A", "\u5909\u63DB", { width: 1.25 });
-var JIS_KANA_MODE = key("KanaMode", "0x88", "\u304B\u306A", { width: 1.25 });
-var JAPANESE_JIS_ROWS = Object.freeze([
-  ...US_ANSI_QWERTY_ROWS.slice(0, 1).map((physicalRow) => row(
-    physicalRow.id,
-    physicalRow.keys.flatMap((physicalKey) => physicalKey.code === "Backspace" ? [JIS_INTL_YEN, physicalKey] : [physicalKey]),
-    { offset: physicalRow.offset }
-  )),
-  ...US_ANSI_QWERTY_ROWS.slice(1, 3),
-  row("bottom", US_ANSI_QWERTY_ROWS.find((physicalRow) => physicalRow.id === "bottom").keys.flatMap((physicalKey) => physicalKey.code === "ShiftRight" ? [JIS_INTL_RO, physicalKey] : [physicalKey])),
-  row("modifier", [
-    key("ControlLeft", "0xE0", "Ctrl", { width: 1.25 }),
-    key("MetaLeft", "0xE3", "\u82F1\u6570", { width: 1.25 }),
-    key("AltLeft", "0xE2", "Alt", { width: 1.25 }),
-    JIS_NON_CONVERT,
-    key("Space", "0x2C", "Space", { width: 3 }),
-    JIS_CONVERT,
-    JIS_KANA_MODE,
-    key("AltRight", "0xE6", "Alt", { width: 1.25 }),
-    key("ControlRight", "0xE4", "Ctrl", { width: 1.25 })
-  ])
-]);
-var JAPANESE_JIS_KEYBOARD_REFERENCE = Object.freeze({
-  rows: Object.freeze([
-    referenceRow("top", [
-      "Tab",
-      "KeyQ",
-      "KeyW",
-      "KeyE",
-      "KeyR",
-      "KeyT",
-      "KeyY",
-      "KeyU",
-      "KeyI",
-      "KeyO",
-      "KeyP",
-      "BracketLeft",
-      "BracketRight",
-      "Backspace"
-    ]),
-    referenceRow("home", [
-      "CapsLock",
-      "KeyA",
-      "KeyS",
-      "KeyD",
-      "KeyF",
-      "KeyG",
-      "KeyH",
-      "KeyJ",
-      "KeyK",
-      "KeyL",
-      "Semicolon",
-      "Quote",
-      "Enter"
-    ]),
-    referenceRow("bottom", [
-      "ShiftLeft",
-      "KeyZ",
-      "KeyX",
-      "KeyC",
-      "KeyV",
-      "KeyB",
-      "KeyN",
-      "KeyM",
-      "Comma",
-      "Period",
-      "Slash",
-      "IntlRo",
-      "ShiftRight"
-    ])
-  ]),
-  numberRowCodes: Object.freeze([
-    "Digit1",
-    "Digit2",
-    "Digit3",
-    "Digit4",
-    "Digit5",
-    "Digit6",
-    "Digit7",
-    "Digit8",
-    "Digit9",
-    "Digit0"
-  ])
-});
-var KEYBOARD_HARDWARE_LAYOUTS = Object.freeze({
-  "us-ansi-qwerty": Object.freeze({
-    id: "us-ansi-qwerty",
-    labelKey: "keyboard_hardware_layout_us_ansi_qwerty",
-    formFactor: "ANSI",
-    rows: US_ANSI_QWERTY_ROWS,
-    keyboardReference: US_ANSI_QWERTY_KEYBOARD_REFERENCE
-  }),
-  "de-de-qwertz-iso": Object.freeze({
-    id: "de-de-qwertz-iso",
-    labelKey: "keyboard_hardware_layout_de_de_qwertz_iso",
-    formFactor: "ISO",
-    rows: GERMAN_ISO_QWERTZ_ROWS,
-    keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
-  }),
-  "es-es-qwerty-iso": Object.freeze({
-    id: "es-es-qwerty-iso",
-    labelKey: "keyboard_hardware_layout_es_es_qwerty_iso",
-    formFactor: "ISO",
-    rows: SPAIN_ISO_QWERTY_ROWS,
-    keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
-  }),
-  "sk-sk-qwertz-iso": Object.freeze({
-    id: "sk-sk-qwertz-iso",
-    labelKey: "keyboard_hardware_layout_sk_sk_qwertz_iso",
-    formFactor: "ISO",
-    rows: SLOVAK_ISO_QWERTZ_ROWS,
-    keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
-  }),
-  "ja-jis-106": Object.freeze({
-    id: "ja-jis-106",
-    labelKey: "keyboard_hardware_layout_ja_jis_106",
-    formFactor: "JIS",
-    rows: JAPANESE_JIS_ROWS,
-    keyboardReference: JAPANESE_JIS_KEYBOARD_REFERENCE
-  })
-});
 function normalizeKeyboardHardwareLayoutId(rawId) {
   const id = String(rawId || "").trim();
   return KEYBOARD_HARDWARE_LAYOUTS[id] ? id : DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID;
 }
-var KEYBOARD_REFERENCE_SPECIAL_CLASS_BY_CODE = Object.freeze({
-  Tab: "key key-tab",
-  CapsLock: "key key-caps",
-  Enter: "key key-enter",
-  ShiftLeft: "key key-shift",
-  ShiftRight: "key key-shift",
-  Backspace: "key key-backspace"
+var DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID, US_ANSI_QWERTY_ROWS, US_ANSI_QWERTY_KEYBOARD_REFERENCE, ISO_INTL_BACKSLASH, GERMAN_ISO_QWERTZ_ROWS, SPAIN_ISO_QWERTY_ROWS, SLOVAK_ISO_QWERTZ_ROWS, JIS_INTL_YEN, JIS_INTL_RO, JIS_NON_CONVERT, JIS_CONVERT, JIS_KANA_MODE, JAPANESE_JIS_ROWS, JAPANESE_JIS_KEYBOARD_REFERENCE, KEYBOARD_HARDWARE_LAYOUTS, KEYBOARD_REFERENCE_SPECIAL_CLASS_BY_CODE;
+var init_keyboard_hardware_layouts = __esm({
+  "src/config/keyboard-hardware-layouts.js"() {
+    DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID = /** @type {const} */
+    "us-ansi-qwerty";
+    US_ANSI_QWERTY_ROWS = Object.freeze([
+      row("number", [
+        key("Backquote", "0x35", "`", { shift: "~" }),
+        key("Digit1", "0x1E", "1", { shift: "!" }),
+        key("Digit2", "0x1F", "2", { shift: "@" }),
+        key("Digit3", "0x20", "3", { shift: "#" }),
+        key("Digit4", "0x21", "4", { shift: "$" }),
+        key("Digit5", "0x22", "5", { shift: "%" }),
+        key("Digit6", "0x23", "6", { shift: "^" }),
+        key("Digit7", "0x24", "7", { shift: "&" }),
+        key("Digit8", "0x25", "8", { shift: "*" }),
+        key("Digit9", "0x26", "9", { shift: "(" }),
+        key("Digit0", "0x27", "0", { shift: ")" }),
+        key("Minus", "0x2D", "-", { shift: "_" }),
+        key("Equal", "0x2E", "=", { shift: "+" }),
+        key("Backspace", "0x2A", "Backspace", { width: 1.55 })
+      ]),
+      row("top", [
+        key("Tab", "0x2B", "Tab", { width: 1.5 }),
+        key("KeyQ", "0x14", "Q", { shift: "Q" }),
+        key("KeyW", "0x1A", "W", { shift: "W" }),
+        key("KeyE", "0x08", "E", { shift: "E" }),
+        key("KeyR", "0x15", "R", { shift: "R" }),
+        key("KeyT", "0x17", "T", { shift: "T" }),
+        key("KeyY", "0x1C", "Y", { shift: "Y" }),
+        key("KeyU", "0x18", "U", { shift: "U" }),
+        key("KeyI", "0x0C", "I", { shift: "I" }),
+        key("KeyO", "0x12", "O", { shift: "O" }),
+        key("KeyP", "0x13", "P", { shift: "P" }),
+        key("BracketLeft", "0x2F", "[", { shift: "{" }),
+        key("BracketRight", "0x30", "]", { shift: "}" }),
+        key("Backslash", "0x31", "\\", { shift: "|", width: 1.5 })
+      ]),
+      row("home", [
+        key("CapsLock", "0x39", "Caps", { width: 1.75 }),
+        key("KeyA", "0x04", "A", { shift: "A" }),
+        key("KeyS", "0x16", "S", { shift: "S" }),
+        key("KeyD", "0x07", "D", { shift: "D" }),
+        key("KeyF", "0x09", "F", { shift: "F" }),
+        key("KeyG", "0x0A", "G", { shift: "G" }),
+        key("KeyH", "0x0B", "H", { shift: "H" }),
+        key("KeyJ", "0x0D", "J", { shift: "J" }),
+        key("KeyK", "0x0E", "K", { shift: "K" }),
+        key("KeyL", "0x0F", "L", { shift: "L" }),
+        key("Semicolon", "0x33", ";", { shift: ":" }),
+        key("Quote", "0x34", "'", { shift: '"' }),
+        key("Enter", "0x28", "Enter", { width: 2 })
+      ]),
+      row("bottom", [
+        key("ShiftLeft", "0xE1", "Shift", { width: 2.15 }),
+        key("KeyZ", "0x1D", "Z", { shift: "Z" }),
+        key("KeyX", "0x1B", "X", { shift: "X" }),
+        key("KeyC", "0x06", "C", { shift: "C" }),
+        key("KeyV", "0x19", "V", { shift: "V" }),
+        key("KeyB", "0x05", "B", { shift: "B" }),
+        key("KeyN", "0x11", "N", { shift: "N" }),
+        key("KeyM", "0x10", "M", { shift: "M" }),
+        key("Comma", "0x36", ",", { shift: "<" }),
+        key("Period", "0x37", ".", { shift: ">" }),
+        key("Slash", "0x38", "/", { shift: "?" }),
+        key("ShiftRight", "0xE5", "Shift", { width: 2.15 })
+      ]),
+      row("modifier", [
+        key("ControlLeft", "0xE0", "Ctrl", { width: 1.25 }),
+        key("MetaLeft", "0xE3", "Meta", { width: 1.25 }),
+        key("AltLeft", "0xE2", "Alt", { width: 1.25 }),
+        key("Space", "0x2C", "Space", { width: 6.25 }),
+        key("AltRight", "0xE6", "Alt", { width: 1.25 }),
+        key("MetaRight", "0xE7", "Meta", { width: 1.25 }),
+        key("ContextMenu", "0x65", "Menu", { width: 1.25 }),
+        key("ControlRight", "0xE4", "Ctrl", { width: 1.25 })
+      ])
+    ]);
+    US_ANSI_QWERTY_KEYBOARD_REFERENCE = Object.freeze({
+      rows: Object.freeze([
+        referenceRow("top", [
+          "Tab",
+          "KeyQ",
+          "KeyW",
+          "KeyE",
+          "KeyR",
+          "KeyT",
+          "KeyY",
+          "KeyU",
+          "KeyI",
+          "KeyO",
+          "KeyP",
+          "BracketLeft",
+          "BracketRight",
+          "Backspace"
+        ]),
+        referenceRow("home", [
+          "CapsLock",
+          "KeyA",
+          "KeyS",
+          "KeyD",
+          "KeyF",
+          "KeyG",
+          "KeyH",
+          "KeyJ",
+          "KeyK",
+          "KeyL",
+          "Semicolon",
+          "Quote",
+          "Enter"
+        ]),
+        referenceRow("bottom", [
+          "ShiftLeft",
+          "KeyZ",
+          "KeyX",
+          "KeyC",
+          "KeyV",
+          "KeyB",
+          "KeyN",
+          "KeyM",
+          "Comma",
+          "Period",
+          "Slash",
+          "ShiftRight"
+        ])
+      ]),
+      numberRowCodes: Object.freeze([
+        "Digit1",
+        "Digit2",
+        "Digit3",
+        "Digit4",
+        "Digit5",
+        "Digit6",
+        "Digit7",
+        "Digit8",
+        "Digit9",
+        "Digit0"
+      ])
+    });
+    ISO_INTL_BACKSLASH = key("IntlBackslash", "0x64", "<", { shift: ">" });
+    GERMAN_ISO_QWERTZ_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
+      KeyY: { base: "Z", shift: "Z" },
+      KeyZ: { base: "Y", shift: "Y" },
+      BracketLeft: { base: "\xDC", shift: "\xDC" },
+      BracketRight: { base: "+", shift: "*", altGr: "~" },
+      Semicolon: { base: "\xD6", shift: "\xD6" },
+      Quote: { base: "\xC4", shift: "\xC4" }
+    }, ISO_INTL_BACKSLASH);
+    SPAIN_ISO_QWERTY_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
+      Semicolon: { base: "\xD1", shift: "\xD1" },
+      Quote: { base: "\xB4", shift: "\xA8", altGr: "{" },
+      Backslash: { base: "\xC7", shift: "\xC7", altGr: "}" }
+    }, ISO_INTL_BACKSLASH);
+    SLOVAK_ISO_QWERTZ_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
+      KeyY: { base: "Z", shift: "Z" },
+      KeyZ: { base: "Y", shift: "Y" },
+      BracketLeft: { base: "\xDA", shift: "/" },
+      BracketRight: { base: "\xC4", shift: "(" },
+      Semicolon: { base: "\xD4", shift: '"' },
+      Quote: { base: "\xA7", shift: "!" }
+    }, ISO_INTL_BACKSLASH);
+    JIS_INTL_YEN = key("IntlYen", "0x89", "\xA5", { shift: "|" });
+    JIS_INTL_RO = key("IntlRo", "0x87", "\u308D", { shift: "\u30ED" });
+    JIS_NON_CONVERT = key("NonConvert", "0x8B", "\u7121\u5909\u63DB", { width: 1.25 });
+    JIS_CONVERT = key("Convert", "0x8A", "\u5909\u63DB", { width: 1.25 });
+    JIS_KANA_MODE = key("KanaMode", "0x88", "\u304B\u306A", { width: 1.25 });
+    JAPANESE_JIS_ROWS = Object.freeze([
+      ...US_ANSI_QWERTY_ROWS.slice(0, 1).map((physicalRow) => row(
+        physicalRow.id,
+        physicalRow.keys.flatMap((physicalKey) => physicalKey.code === "Backspace" ? [JIS_INTL_YEN, physicalKey] : [physicalKey]),
+        { offset: physicalRow.offset }
+      )),
+      ...US_ANSI_QWERTY_ROWS.slice(1, 3),
+      row("bottom", US_ANSI_QWERTY_ROWS.find((physicalRow) => physicalRow.id === "bottom").keys.flatMap((physicalKey) => physicalKey.code === "ShiftRight" ? [JIS_INTL_RO, physicalKey] : [physicalKey])),
+      row("modifier", [
+        key("ControlLeft", "0xE0", "Ctrl", { width: 1.25 }),
+        key("MetaLeft", "0xE3", "\u82F1\u6570", { width: 1.25 }),
+        key("AltLeft", "0xE2", "Alt", { width: 1.25 }),
+        JIS_NON_CONVERT,
+        key("Space", "0x2C", "Space", { width: 3 }),
+        JIS_CONVERT,
+        JIS_KANA_MODE,
+        key("AltRight", "0xE6", "Alt", { width: 1.25 }),
+        key("ControlRight", "0xE4", "Ctrl", { width: 1.25 })
+      ])
+    ]);
+    JAPANESE_JIS_KEYBOARD_REFERENCE = Object.freeze({
+      rows: Object.freeze([
+        referenceRow("top", [
+          "Tab",
+          "KeyQ",
+          "KeyW",
+          "KeyE",
+          "KeyR",
+          "KeyT",
+          "KeyY",
+          "KeyU",
+          "KeyI",
+          "KeyO",
+          "KeyP",
+          "BracketLeft",
+          "BracketRight",
+          "Backspace"
+        ]),
+        referenceRow("home", [
+          "CapsLock",
+          "KeyA",
+          "KeyS",
+          "KeyD",
+          "KeyF",
+          "KeyG",
+          "KeyH",
+          "KeyJ",
+          "KeyK",
+          "KeyL",
+          "Semicolon",
+          "Quote",
+          "Enter"
+        ]),
+        referenceRow("bottom", [
+          "ShiftLeft",
+          "KeyZ",
+          "KeyX",
+          "KeyC",
+          "KeyV",
+          "KeyB",
+          "KeyN",
+          "KeyM",
+          "Comma",
+          "Period",
+          "Slash",
+          "IntlRo",
+          "ShiftRight"
+        ])
+      ]),
+      numberRowCodes: Object.freeze([
+        "Digit1",
+        "Digit2",
+        "Digit3",
+        "Digit4",
+        "Digit5",
+        "Digit6",
+        "Digit7",
+        "Digit8",
+        "Digit9",
+        "Digit0"
+      ])
+    });
+    KEYBOARD_HARDWARE_LAYOUTS = Object.freeze({
+      "us-ansi-qwerty": Object.freeze({
+        id: "us-ansi-qwerty",
+        labelKey: "keyboard_hardware_layout_us_ansi_qwerty",
+        formFactor: "ANSI",
+        rows: US_ANSI_QWERTY_ROWS,
+        keyboardReference: US_ANSI_QWERTY_KEYBOARD_REFERENCE
+      }),
+      "de-de-qwertz-iso": Object.freeze({
+        id: "de-de-qwertz-iso",
+        labelKey: "keyboard_hardware_layout_de_de_qwertz_iso",
+        formFactor: "ISO",
+        rows: GERMAN_ISO_QWERTZ_ROWS,
+        keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
+      }),
+      "es-es-qwerty-iso": Object.freeze({
+        id: "es-es-qwerty-iso",
+        labelKey: "keyboard_hardware_layout_es_es_qwerty_iso",
+        formFactor: "ISO",
+        rows: SPAIN_ISO_QWERTY_ROWS,
+        keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
+      }),
+      "sk-sk-qwertz-iso": Object.freeze({
+        id: "sk-sk-qwertz-iso",
+        labelKey: "keyboard_hardware_layout_sk_sk_qwertz_iso",
+        formFactor: "ISO",
+        rows: SLOVAK_ISO_QWERTZ_ROWS,
+        keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
+      }),
+      "ja-jis-106": Object.freeze({
+        id: "ja-jis-106",
+        labelKey: "keyboard_hardware_layout_ja_jis_106",
+        formFactor: "JIS",
+        rows: JAPANESE_JIS_ROWS,
+        keyboardReference: JAPANESE_JIS_KEYBOARD_REFERENCE
+      })
+    });
+    KEYBOARD_REFERENCE_SPECIAL_CLASS_BY_CODE = Object.freeze({
+      Tab: "key key-tab",
+      CapsLock: "key key-caps",
+      Enter: "key key-enter",
+      ShiftLeft: "key key-shift",
+      ShiftRight: "key key-shift",
+      Backspace: "key key-backspace"
+    });
+  }
 });
 
 // src/utils/open-url-list.js
-var OPEN_URLS_MAX = 20;
 function canonicalizeHttpUrl(value) {
   let raw = String(value ?? "").trim();
   if (!raw || /\s/.test(raw)) return "";
@@ -484,29 +500,34 @@ function normalizeOpenUrlList(raw, max = OPEN_URLS_MAX) {
   }
   return out;
 }
+var OPEN_URLS_MAX;
+var init_open_url_list = __esm({
+  "src/utils/open-url-list.js"() {
+    OPEN_URLS_MAX = 20;
+  }
+});
 
 // src/config/region-defaults-data.js
-var regionDefaultFiles = {
-  de: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.de/", "searchUrlPrefix": "https://www.google.de/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.de" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
-  en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
-  es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
-  es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
-  he: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.il/", "searchUrlPrefix": "https://www.google.co.il/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.il" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
-  hi: { "stockSocialMedia": { "urls": ["youtube.com", "instagram.com", "facebook.com", "whatsapp.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.in/", "searchUrlPrefix": "https://www.google.co.in/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.in" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
-  ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
-  sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
-  zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
-  zh_HK: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.hk/", "searchUrlPrefix": "https://www.google.com.hk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.hk" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
-  zh_TW: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "line.me"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.tw/", "searchUrlPrefix": "https://www.google.com.tw/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.tw" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] }
-};
+var regionDefaultFiles;
+var init_region_defaults_data = __esm({
+  "src/config/region-defaults-data.js"() {
+    regionDefaultFiles = {
+      de: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.de/", "searchUrlPrefix": "https://www.google.de/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.de" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+      en: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://google.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+      es: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.es/", "searchUrlPrefix": "https://www.google.es/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.es" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+      es_419: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.mx/", "searchUrlPrefix": "https://www.google.com.mx/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.mx" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+      he: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "x.com", "whatsapp.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.il/", "searchUrlPrefix": "https://www.google.co.il/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.il" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+      hi: { "stockSocialMedia": { "urls": ["youtube.com", "instagram.com", "facebook.com", "whatsapp.com", "x.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.in/", "searchUrlPrefix": "https://www.google.co.in/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.in" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }, { "title": "Yandex", "url": "https://yandex.com" }] },
+      ja: { "stockSocialMedia": { "urls": ["youtube.com", "x.com", "instagram.com", "line.me", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.co.jp/", "searchUrlPrefix": "https://www.google.co.jp/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.co.jp" }, { "title": "Yahoo Japan", "url": "https://www.yahoo.co.jp" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+      sk: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "tiktok.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.sk/", "searchUrlPrefix": "https://www.google.sk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.sk" }, { "title": "Seznam", "url": "https://www.seznam.cz" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+      zh_CN: { "stockSocialMedia": { "urls": ["weibo.com", "douyin.com", "bilibili.com", "xiaohongshu.com", "weixin.qq.com"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com/", "searchUrlPrefix": "https://www.google.com/search?q=" } }, "launcherSearchSites": [{ "title": "Baidu", "url": "https://www.baidu.com" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Sogou", "url": "https://www.sogou.com" }, { "title": "Google", "url": "https://www.google.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }] },
+      zh_HK: { "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.hk/", "searchUrlPrefix": "https://www.google.com.hk/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.hk" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] },
+      zh_TW: { "stockSocialMedia": { "urls": ["facebook.com", "instagram.com", "youtube.com", "line.me"] }, "searchEngineUrls": { "google": { "homeUrl": "https://www.google.com.tw/", "searchUrlPrefix": "https://www.google.com.tw/search?q=" } }, "launcherSearchSites": [{ "title": "Google", "url": "https://www.google.com.tw" }, { "title": "Bing", "url": "https://bing.com" }, { "title": "Yahoo", "url": "https://yahoo.com" }, { "title": "DuckDuckGo", "url": "https://duckduckgo.com" }, { "title": "Brave Search", "url": "https://search.brave.com" }, { "title": "Ecosia", "url": "https://ecosia.org" }, { "title": "Startpage", "url": "https://startpage.com" }] }
+    };
+  }
+});
 
 // src/config/region-defaults.js
-var REGION_FILES = regionDefaultFiles;
-var en = REGION_FILES.en;
-var REGION_PARENT = Object.freeze({
-  es_419: "es",
-  zh_HK: "zh_TW"
-});
 function catalogId(tag) {
   return String(tag || "").trim().replace(/-/g, "_");
 }
@@ -556,44 +577,21 @@ function getLauncherSearchSites(uiLanguage) {
   if (!Array.isArray(rows)) return [];
   return rows.filter((row2) => row2 && typeof row2.title === "string" && typeof row2.url === "string").map((row2) => ({ title: row2.title, url: row2.url, isDefault: true }));
 }
+var REGION_FILES, en, REGION_PARENT;
+var init_region_defaults = __esm({
+  "src/config/region-defaults.js"() {
+    init_i18n();
+    init_region_defaults_data();
+    REGION_FILES = regionDefaultFiles;
+    en = REGION_FILES.en;
+    REGION_PARENT = Object.freeze({
+      es_419: "es",
+      zh_HK: "zh_TW"
+    });
+  }
+});
 
 // src/config/stock-actions.js
-var STOCK_SOCIAL_MEDIA_ACTION_ID = "stock:social-media";
-var STOCK_RANDOM_BOOKMARK_ACTION_ID = "stock:random-bookmark";
-var STOCK_ACTIONS = Object.freeze([
-  Object.freeze({
-    id: STOCK_SOCIAL_MEDIA_ACTION_ID,
-    functionId: "OPEN_URLS",
-    handler: "handleOpenUrlsKey",
-    keyboardClass: "key-open-urls",
-    labelKey: "fn_stock_social_media_label",
-    descriptionKey: "fn_stock_social_media_description",
-    label: "Social media",
-    description: "Open several social media sites in new tabs",
-    parameters: Object.freeze({
-      urls: Object.freeze(normalizeOpenUrlList([
-        "facebook.com",
-        "instagram.com",
-        "youtube.com",
-        "x.com"
-      ]))
-    })
-  }),
-  Object.freeze({
-    id: STOCK_RANDOM_BOOKMARK_ACTION_ID,
-    functionId: "RANDOM_BOOKMARK",
-    handler: "handleRandomBookmarkKey",
-    keyboardClass: "key-open-urls",
-    labelKey: "fn_stock_random_bookmark_label",
-    descriptionKey: "fn_stock_random_bookmark_description",
-    label: "Random Bookmark",
-    description: "Open one random bookmark",
-    parameters: Object.freeze({
-      folderId: "",
-      count: 1
-    })
-  })
-]);
 function getStockActionById(id) {
   const key2 = String(id || "");
   const found = STOCK_ACTIONS.find((action) => action && action.id === key2);
@@ -609,154 +607,56 @@ function getStockActionById(id) {
     description: found.descriptionKey && getMessage(found.descriptionKey) || found.description || ""
   };
 }
+var STOCK_SOCIAL_MEDIA_ACTION_ID, STOCK_RANDOM_BOOKMARK_ACTION_ID, STOCK_ACTIONS;
+var init_stock_actions = __esm({
+  "src/config/stock-actions.js"() {
+    init_i18n();
+    init_open_url_list();
+    init_region_defaults();
+    STOCK_SOCIAL_MEDIA_ACTION_ID = "stock:social-media";
+    STOCK_RANDOM_BOOKMARK_ACTION_ID = "stock:random-bookmark";
+    STOCK_ACTIONS = Object.freeze([
+      Object.freeze({
+        id: STOCK_SOCIAL_MEDIA_ACTION_ID,
+        functionId: "OPEN_URLS",
+        handler: "handleOpenUrlsKey",
+        keyboardClass: "key-open-urls",
+        labelKey: "fn_stock_social_media_label",
+        descriptionKey: "fn_stock_social_media_description",
+        label: "Social media",
+        description: "Open several social media sites in new tabs",
+        parameters: Object.freeze({
+          urls: Object.freeze(normalizeOpenUrlList([
+            "facebook.com",
+            "instagram.com",
+            "youtube.com",
+            "x.com"
+          ]))
+        })
+      }),
+      Object.freeze({
+        id: STOCK_RANDOM_BOOKMARK_ACTION_ID,
+        functionId: "RANDOM_BOOKMARK",
+        handler: "handleRandomBookmarkKey",
+        keyboardClass: "key-open-urls",
+        labelKey: "fn_stock_random_bookmark_label",
+        descriptionKey: "fn_stock_random_bookmark_description",
+        label: "Random Bookmark",
+        description: "Open one random bookmark",
+        parameters: Object.freeze({
+          folderId: "",
+          count: 1
+        })
+      })
+    ]);
+  }
+});
 
 // src/config/keyboard-layouts.js
-var DEFAULT_KEYBOARD_LAYOUT_ID = (
-  /** @type {const} */
-  "browsing-right"
-);
-var DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = (
-  /** @type {const} */
-  "browsing"
-);
-var DEFAULT_KEYBOARD_HANDEDNESS = (
-  /** @type {const} */
-  "right"
-);
-var SOURCE_BUILD_ENABLE_MACRO_BUILDER = false;
-var BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== "undefined" ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__ : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
-var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
-  "COLS_TOGGLE",
-  // Type — "Type saved text into the focused field."
-  "TYPE_CHARACTERS",
-  // Data — "Read text or media under the cursor, or from a highlight."
-  "GET_TEXT_AT_CURSOR",
-  "GET_TEXT_RANGE",
-  "GET_MEDIA_AT_CURSOR",
-  // Script — "Run a user-authored JavaScript snippet against page state."
-  "EXECUTE_JS",
-  // Create built-in Macro Key — "Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place."
-  "SEND_HOTKEY",
-  "SEND_BURST",
-  "CYCLE_ROUND_ROBIN",
-  "HOLD_CONTINUOUS",
-  "CLICK_MOUSE_BUTTON",
-  "REMAP_KEY",
-  // Translate — "Translate highlighted or under-cursor text."
-  "TRANSLATE",
-  // AI — "Send selected text to AI with a prompt and result destination."
-  "SEND_TEXT_TO_AI"
-]);
-var BUILD_EXCLUDED_KEY_ACTION_SET = new Set(BUILD_EXCLUDED_KEY_ACTIONS);
 function isBuildExcludedKeyAction(actionId) {
   const id = String(actionId || "");
   return !!id && BUILD_EXCLUDED_KEY_ACTION_SET.has(id);
 }
-var BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "browsing-right"
-    ),
-    label: "Browsing: right-handed",
-    description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left."
-  }),
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "browsing-left"
-    ),
-    label: "Browsing: left-handed",
-    description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right."
-  }),
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "basic-navigation-right"
-    ),
-    label: "Basic Navigation: right-handed",
-    description: "Page scroll, click, tab switch, back/forward only."
-  }),
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "basic-navigation-left"
-    ),
-    label: "Basic Navigation: left-handed",
-    description: "Page scroll, click, tab switch, back/forward only."
-  }),
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "click-history-right"
-    ),
-    label: "Navigation: right-handed",
-    description: "Click element, go back, and go forward only."
-  }),
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "click-history-left"
-    ),
-    label: "Navigation: left-handed",
-    description: "Click element, go back, and go forward only."
-  })
-]);
-var BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "browsing"
-    ),
-    labelKey: "layout_family_browsing_label",
-    builtIn: true,
-    descriptionKey: "layout_family_browsing_description",
-    variants: Object.freeze({
-      right: (
-        /** @type {const} */
-        "browsing-right"
-      ),
-      left: (
-        /** @type {const} */
-        "browsing-left"
-      )
-    })
-  }),
-  Object.freeze({
-    id: (
-      /** @type {const} */
-      "click-history"
-    ),
-    labelKey: "layout_family_navigation_label",
-    builtIn: true,
-    descriptionKey: "layout_family_navigation_description",
-    variants: Object.freeze({
-      right: (
-        /** @type {const} */
-        "click-history-right"
-      ),
-      left: (
-        /** @type {const} */
-        "click-history-left"
-      )
-    })
-  })
-]);
-var LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS = Object.freeze({
-  "basic-navigation": Object.freeze({
-    right: (
-      /** @type {const} */
-      "basic-navigation-right"
-    ),
-    left: (
-      /** @type {const} */
-      "basic-navigation-left"
-    )
-  })
-});
-var KNOWN_BUILTIN_LAYOUT_IDS = new Set(
-  BUILTIN_KEYBOARD_LAYOUT_META.map((m) => m && m.id).filter(Boolean)
-);
 function normalizeKeyboardLayoutId(raw) {
   const v = String(raw || "").trim();
   if (KNOWN_BUILTIN_LAYOUT_IDS.has(v)) return (
@@ -813,548 +713,6 @@ function inferFamilyAndHandednessFromLayoutId(rawLayoutId) {
   }
   return { familyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID, handedness: DEFAULT_KEYBOARD_HANDEDNESS };
 }
-var KEYBINDING_ACTION_DEFS = Object.freeze({
-  ACTIVATE: Object.freeze({
-    handler: "handleActivateKey",
-    label: "Click Element",
-    description: "Click the hovered element",
-    details: "Activates the clickable under the cursor \u2014 the same as a left mouse click on that element. Works with links, buttons, and other interactive targets KeyPilot highlights.",
-    keyboardClass: "key-activate",
-    row: 2
-  }),
-  ACTIVATE_DEFERRED_RANDOM: Object.freeze({
-    handler: "handleActivateDeferredRandomKey",
-    label: "Click Element Deferred Random",
-    description: "Schedule the hovered link for a random time",
-    details: "Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.",
-    keyboardClass: "key-activate",
-    row: 0
-  }),
-  ACTIVATE_DEFERRED_SCHEDULED: Object.freeze({
-    handler: "handleActivateDeferredScheduledKey",
-    label: "Click Element Deferred Scheduled",
-    description: "Schedule the hovered link for an exact time",
-    details: "Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.",
-    keyboardClass: "key-activate",
-    row: 0
-  }),
-  SCHEDULE_LINK_MANUAL: Object.freeze({
-    handler: "handleScheduleLinkManualKey",
-    label: "Schedule Link Manual",
-    description: "Schedule a typed URL for an exact time",
-    details: "Opens the time dialog with a URL field. The address you type is opened at the time you choose.",
-    keyboardClass: "key-activate",
-    row: 0
-  }),
-  // Foreground new tab (switch to the new tab).
-  ACTIVATE_NEW_TAB: Object.freeze({
-    handler: "handleActivateNewTabKey",
-    label: "Click New Tab",
-    description: "Open link in a new foreground tab",
-    details: "Opens the hovered link in a new tab and switches to it immediately. Use when you want to follow a link without leaving your place permanently, but still jump to the new page right away.",
-    keyboardClass: "key-activate-new",
-    row: 2
-  }),
-  // Background new tab (middle-click style; do not switch focus).
-  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({
-    handler: "handleActivateNewTabBackgroundKey",
-    label: "Click New Tab Background",
-    description: "Open link in a new background tab",
-    details: "Opens the hovered link in a new tab without switching focus \u2014 like a middle-click. Useful for queueing several links while you keep reading the current page.",
-    keyboardClass: "key-activate-new-over",
-    row: 2
-  }),
-  BACK: Object.freeze({
-    handler: "handleBackKey",
-    label: "Go Back",
-    description: "Browser history back",
-    details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button.",
-    keyboardClass: "key-back",
-    row: 2
-  }),
-  BACK2: Object.freeze({
-    handler: "handleBackKey",
-    label: "Go Back",
-    description: "Browser history back",
-    details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button. Duplicate id for layouts that expose a second Back binding.",
-    keyboardClass: "key-back",
-    row: 2
-  }),
-  FORWARD: Object.freeze({
-    handler: "handleForwardKey",
-    label: "Go Forward",
-    description: "Browser history forward",
-    details: "Navigates one step forward in the current tab\u2019s history, equivalent to the browser Forward button.",
-    keyboardClass: "key-forward",
-    row: 1
-  }),
-  DELETE: Object.freeze({
-    handler: "handleDeleteKey",
-    label: "Delete Mode",
-    description: "Hide elements under the cursor",
-    details: "Toggles Delete Mode: hover elements and remove (hide) them from the page so you can declutter layouts. Exit with Exit Focus or by toggling again.",
-    keyboardClass: "key-delete",
-    row: 2
-  }),
-  COLS_TOGGLE: Object.freeze({
-    handler: "handleColsToggleKey",
-    label: "Cols Toggle",
-    description: "Multi-column layout under cursor",
-    details: "Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.",
-    keyboardClass: "key-highlight",
-    row: 3
-  }),
-  TAB_LEFT: Object.freeze({
-    handler: "handleTabLeftKey",
-    label: "Tab Left",
-    description: "Switch to the previous tab",
-    details: "Activates the tab to the left of the current one in the window\u2019s tab strip.",
-    keyboardClass: "key-browser-chrome",
-    row: 1
-  }),
-  TAB_RIGHT: Object.freeze({
-    handler: "handleTabRightKey",
-    label: "Tab Right",
-    description: "Switch to the next tab",
-    details: "Activates the tab to the right of the current one in the window\u2019s tab strip.",
-    keyboardClass: "key-browser-chrome",
-    row: 1
-  }),
-  ROOT: Object.freeze({
-    handler: "handleRootKey",
-    label: "Go to Site Root",
-    description: "Navigate to the site origin",
-    details: "Jumps to the site root (scheme + host) of the current page \u2014 useful for escaping deep paths without typing a URL.",
-    keyboardClass: "key-open-urls",
-    row: 2
-  }),
-  LAUNCHER: Object.freeze({
-    handler: "handleLauncherKey",
-    label: "Launcher",
-    description: "Quick-access site launcher",
-    details: "Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.",
-    keyboardClass: "key-kp-ui",
-    row: 2
-  }),
-  TOP_SITES: Object.freeze({
-    handler: "handleTopSitesKey",
-    label: "Top Sites",
-    description: "Toolbar, visits, and bookmarks",
-    details: "Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.",
-    keyboardClass: "key-kp-ui",
-    row: 2
-  }),
-  CLOSE_TAB: Object.freeze({
-    handler: "handleCloseTabKey",
-    label: "Close Tab",
-    description: "Close the current tab",
-    details: "Closes the active tab. Behavior matches the browser\u2019s close-tab action for the current window.",
-    keyboardClass: "key-close-tab",
-    row: 3
-  }),
-  CLOSE_WINDOW: Object.freeze({
-    handler: "handleCloseWindowKey",
-    label: "Close Window",
-    description: "Close the current window",
-    details: "Closes the browser window that contains the current tab, including its other tabs.",
-    keyboardClass: "key-close-tab",
-    row: 3
-  }),
-  CANCEL: Object.freeze({
-    handler: "cancelModes",
-    label: "Exit Focus",
-    description: "Leave modes and overlays",
-    details: "Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.",
-    keyboardClass: "key-gray",
-    row: null
-  }),
-  PAGE_UP_INSTANT: Object.freeze({
-    handler: "handleInstantPageUp",
-    label: "Page Up",
-    description: "Jump one page up instantly",
-    details: "Scrolls the current scroll target up by roughly one viewport without animation \u2014 faster than a smooth page-up when you need to move quickly.",
-    keyboardClass: "key-page-scroll",
-    row: 3
-  }),
-  PAGE_DOWN_INSTANT: Object.freeze({
-    handler: "handleInstantPageDown",
-    label: "Page Down",
-    description: "Jump one page down instantly",
-    details: "Scrolls the current scroll target down by roughly one viewport without animation \u2014 faster than a smooth page-down when you need to move quickly.",
-    keyboardClass: "key-page-scroll",
-    row: 3
-  }),
-  PAGE_TOP: Object.freeze({
-    handler: "handlePageTop",
-    label: "Scroll To Top",
-    description: "Jump to top of scroll target",
-    details: "Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
-    keyboardClass: "key-page-scroll",
-    row: 3
-  }),
-  PAGE_BOTTOM: Object.freeze({
-    handler: "handlePageBottom",
-    label: "Scroll To Bottom",
-    description: "Jump to bottom of scroll target",
-    details: "Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
-    keyboardClass: "key-page-scroll",
-    row: 3
-  }),
-  SCROLL_LINE: Object.freeze({
-    handler: "handleScrollLineKey",
-    label: "Scroll Line",
-    description: "Origin-based continuous scroll",
-    details: "Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings \u2192 Scrolling.",
-    keyboardClass: "key-page-scroll",
-    row: 3,
-    mode: "scroll_line",
-    cancelOnPointerDown: true,
-    pointerBinding: Object.freeze({
-      button: "middle",
-      yieldToClickables: true,
-      yieldToTextEntry: true,
-      yieldToModes: Object.freeze(["text_focus", "popover", "omnibox"]),
-      enabledSetting: "scroll.middleClickScrollLine"
-    })
-  }),
-  ZOOM_OUT: Object.freeze({
-    handler: "handleZoomOutKey",
-    label: "Zoom Out",
-    description: "Zoom the page out at the cursor",
-    details: "Zooms the tab out one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-out gesture.",
-    keyboardClass: "key-browser-chrome",
-    row: 1
-  }),
-  ZOOM_IN: Object.freeze({
-    handler: "handleZoomInKey",
-    label: "Zoom In",
-    description: "Zoom the page in at the cursor",
-    details: "Zooms the tab in one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-in gesture.",
-    keyboardClass: "key-browser-chrome",
-    row: 1
-  }),
-  NEW_TAB: Object.freeze({
-    handler: "handleNewTabKey",
-    label: "New Tab",
-    description: "Open the KeyPilot new tab",
-    details: "Opens a KeyPilot new tab with your bookmarks bar, top sites, and search. The browser\u2019s own new tab stays unchanged.",
-    keyboardClass: "key-browser-chrome",
-    row: 1
-  }),
-  OPEN_POPOVER: Object.freeze({
-    handler: "handleOpenPopover",
-    label: "Open Popover",
-    description: "Open link in a popup window",
-    details: "Opens the hovered link in a KeyPilot popup window so you can peek or work in a separate chrome without a full new tab.",
-    keyboardClass: "key-open-popover",
-    row: 2
-  }),
-  PREVIEW_LINK_POPOVER: Object.freeze({
-    handler: "handlePreviewLinkPopover",
-    label: "Preview Link",
-    description: "Preview link in a popup",
-    details: "Opens Link Preview for the hovered URL in a popup window \u2014 skim the destination without committing a full navigation in the main tab.",
-    keyboardClass: "key-preview-popover",
-    row: 2
-  }),
-  POI_WEBSITE: Object.freeze({
-    handler: "handlePoiWebsiteKey",
-    label: "POI Website",
-    description: "Open map place website",
-    details: "When a map place (POI) is under the cursor, opens that place\u2019s website in Link Preview so you can visit the business or location page without leaving the map.",
-    keyboardClass: "key-preview-popover",
-    row: null
-  }),
-  POI_ADDRESS: Object.freeze({
-    handler: "handlePoiAddressKey",
-    label: "POI Address",
-    description: "Copy map place address",
-    details: "When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.",
-    keyboardClass: "key-page-media",
-    row: null
-  }),
-  OPEN_SETTINGS_POPOVER: Object.freeze({
-    handler: "handleToggleSettingsPopover",
-    label: "Settings",
-    description: "Open KeyPilot Settings",
-    details: "Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.",
-    keyboardClass: "key-kp-ui",
-    row: null
-  }),
-  OMNIBOX: Object.freeze({
-    handler: "handleOpenOmnibox",
-    label: "Omnibox",
-    description: "Address bar overlay",
-    details: "Opens KeyPilot\u2019s omnibox overlay so you can type a URL or search without clicking the browser address bar.",
-    keyboardClass: "key-kp-ui",
-    row: 2
-  }),
-  TAB_HISTORY: Object.freeze({
-    handler: "handleToggleTabHistoryPopover",
-    label: "Tab History",
-    description: "Browse this tab\u2019s history",
-    details: "Opens Tab History for the current tab so you can jump to a previously visited page in this tab\u2019s session without using the browser\u2019s native history UI.",
-    keyboardClass: "key-kp-ui",
-    row: 2
-  }),
-  TABS_OVERVIEW: Object.freeze({
-    handler: "handleToggleTabsOverview",
-    label: "Tabs Overview",
-    description: "Show every window and tab",
-    details: "Opens an overlay of every browser window with its tabs listed inside. Key-click a tab to switch to it, or key-click a window header to focus that window and keep its active tab. The current window is listed first, and the current tab is highlighted.",
-    keyboardClass: "key-kp-ui",
-    row: 3
-  }),
-  TOGGLE_KEYBOARD_HELP: Object.freeze({
-    handler: "handleToggleKeyboardHelp",
-    label: "KB Reference",
-    description: "Show or hide the keyboard map",
-    details: "Toggles the floating Keyboard Reference window that shows your current layout\u2019s keycaps and bindings.",
-    keyboardClass: "key-kp-ui",
-    row: 2
-  }),
-  // Text select: default character-level (H on right-handed layout).
-  HIGHLIGHT: Object.freeze({
-    handler: "handleHighlightKey",
-    label: "Text Select",
-    description: "Select text and copy rich text",
-    details: "Enters character-level text selection under the cursor. By default, the selection is copied as rich text so formatting is preserved when you paste.",
-    keyboardClass: "key-highlight",
-    row: 2
-  }),
-  // Rectangle region select (Y on right-handed; Q on left-handed — R is Lookup Word).
-  RECTANGLE_HIGHLIGHT: Object.freeze({
-    handler: "handleRectangleHighlightKey",
-    label: "Element Select",
-    description: "Rectangle or cumulative element pick",
-    details: "Selects HTML elements that intersect a dragged rectangle, or pick elements cumulatively. Useful for grabbing structure (not just plain text) from a page region.",
-    keyboardClass: "key-rect-highlight",
-    row: 1
-  }),
-  // Copy image under cursor — Clipboard category (I on right-handed; E on left-handed — I is READER_MODE there).
-  COPY_HOVERED_IMAGE: Object.freeze({
-    handler: "handleCopyHoveredImageKey",
-    label: "Copy Image",
-    description: "Copy hovered image",
-    details: "Copies the image under the cursor to the clipboard, Media Library, or both \u2014 configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.",
-    keyboardClass: "key-page-media",
-    row: 1
-  }),
-  // Copy hyperlink under cursor — Clipboard category; Actions Library only (no built-in layout key).
-  COPY_HOVERED_URL: Object.freeze({
-    handler: "handleCopyHoveredUrlKey",
-    label: "Copy URL",
-    description: "Copy hovered link URL",
-    details: "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource. No default layout key \u2014 bind it in Layout Editor if you need it.",
-    keyboardClass: "key-page-media",
-    row: null
-  }),
-  // Dictionary for the word under the cursor (U on right-handed; R on left-handed, the KeyU mirror).
-  LOOKUP_WORD: Object.freeze({
-    handler: "handleLookupWordKey",
-    label: "Lookup Word",
-    description: "Look up the word under the cursor",
-    details: "Opens a Wiktionary popover for the word directly under the cursor. Shows a brief notice if there is no word there.",
-    keyboardClass: "key-page-media",
-    row: 1
-  }),
-  // Copy video under cursor — Clipboard category; Actions Library only (no built-in layout key).
-  COPY_HOVERED_VIDEO: Object.freeze({
-    handler: "handleCopyHoveredVideoKey",
-    label: "Copy Video",
-    description: "Copy hovered video",
-    details: "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key \u2014 bind it in Layout Editor if you need it.",
-    keyboardClass: "key-page-media",
-    row: null
-  }),
-  // Font under cursor — Actions Library only (no built-in layout key).
-  FONT_INFO: Object.freeze({
-    handler: "handleFontInfoKey",
-    label: "Font Info",
-    description: "Inspect font under the cursor",
-    details: "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key \u2014 bind it in Layout Editor if you need it.",
-    keyboardClass: "key-page-media",
-    row: null
-  }),
-  // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
-  PAGE_MEDIA: Object.freeze({
-    handler: "handlePageMediaKey",
-    label: "Page Media",
-    description: "Browse media found on this page",
-    details: "Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.",
-    keyboardClass: "key-page-media",
-    row: 1
-  }),
-  READER_MODE: Object.freeze({
-    handler: "handleReaderModeKey",
-    label: "Reader Mode",
-    description: "Read this page without clutter",
-    details: "Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.",
-    keyboardClass: "key-reader-mode",
-    row: 1
-  }),
-  // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
-  // so this doesn't get a default binding there yet).
-  OPEN_MEDIA_LIBRARY: Object.freeze({
-    handler: "handleOpenMediaLibraryKey",
-    label: "Media Library",
-    description: "Open saved Media Library",
-    details: "Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.",
-    keyboardClass: "key-media-library",
-    row: 1
-  }),
-  // Clipboard commands (Functions palette — Clipboard category).
-  CLIPBOARD_COPY: Object.freeze({
-    handler: "handleClipboardCopyKey",
-    label: "Copy",
-    description: "Copy selection to clipboard",
-    details: "Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.",
-    keyboardClass: "key-clipboard",
-    row: null
-  }),
-  CLIPBOARD_CUT: Object.freeze({
-    handler: "handleClipboardCutKey",
-    label: "Cut",
-    description: "Cut selection to clipboard",
-    details: "Cuts the current text selection to the system clipboard from the focused field or editable region.",
-    keyboardClass: "key-clipboard",
-    row: null
-  }),
-  CLIPBOARD_PASTE: Object.freeze({
-    handler: "handleClipboardPasteKey",
-    label: "Paste",
-    description: "Paste into the focused field",
-    details: "Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.",
-    keyboardClass: "key-clipboard",
-    row: null
-  }),
-  CLIPBOARD_SELECT_ALL: Object.freeze({
-    handler: "handleClipboardSelectAllKey",
-    label: "Select All",
-    description: "Select all in field or page",
-    details: "Selects all text in the focused field, or the page content when nothing editable is focused \u2014 same idea as the usual Select All shortcut.",
-    keyboardClass: "key-clipboard",
-    row: null
-  }),
-  SELECT_WORD: Object.freeze({
-    handler: "handleSelectWordKey",
-    label: "Select Word",
-    description: "Select the word under the cursor",
-    details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy reads this selection.",
-    keyboardClass: "key-highlight",
-    row: null
-  }),
-  SELECT_SENTENCE: Object.freeze({
-    handler: "handleSelectSentenceKey",
-    label: "Select Sentence",
-    description: "Select the sentence under the cursor",
-    details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
-    keyboardClass: "key-highlight",
-    row: null
-  }),
-  SELECT_PARAGRAPH: Object.freeze({
-    handler: "handleSelectParagraphKey",
-    label: "Select Paragraph",
-    description: "Select the paragraph under the cursor",
-    details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
-    keyboardClass: "key-highlight",
-    row: null
-  }),
-  SELECT_IMAGE: Object.freeze({
-    handler: "handleSelectImageKey",
-    label: "Select Image",
-    description: "Select the image under the cursor",
-    details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy can copy selected images.",
-    keyboardClass: "key-highlight",
-    row: null
-  }),
-  // AI (Functions palette — AI category).
-  SEND_TEXT_TO_AI: Object.freeze({
-    handler: "handleSendTextToAiKey",
-    label: "Send Text To AI",
-    description: "Run AI on selected text",
-    details: "Sends the selected text to AI with a configurable instruction, then routes the result to the clipboard and/or a popover. Configure the prompt and destination on the action instance.",
-    keyboardClass: "key-purple",
-    row: null
-  })
-});
-var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
-  // Navigation — click / link preview / history
-  ACTIVATE: "Navigation",
-  ACTIVATE_DEFERRED_RANDOM: "Deferred Open URLs",
-  ACTIVATE_DEFERRED_SCHEDULED: "Deferred Open URLs",
-  SCHEDULE_LINK_MANUAL: "Deferred Open URLs",
-  ACTIVATE_NEW_TAB: "Navigation",
-  ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
-  PREVIEW_LINK_POPOVER: "Navigation",
-  POI_WEBSITE: "Maps",
-  POI_ADDRESS: "Maps",
-  OPEN_POPOVER: "Navigation",
-  FORWARD: "Navigation",
-  BACK: "Navigation",
-  BACK2: "Navigation",
-  ROOT: "Navigation",
-  // Tab Control
-  CLOSE_TAB: "Tab Control",
-  CLOSE_WINDOW: "Tab Control",
-  TAB_LEFT: "Tab Control",
-  TAB_RIGHT: "Tab Control",
-  NEW_TAB: "Tab Control",
-  TAB_HISTORY: "Tab Control",
-  TABS_OVERVIEW: "Tab Control",
-  PAGE_UP_INSTANT: "Scroll",
-  PAGE_DOWN_INSTANT: "Scroll",
-  PAGE_TOP: "Scroll",
-  PAGE_BOTTOM: "Scroll",
-  SCROLL_LINE: "Scroll",
-  ZOOM_OUT: "Scroll",
-  ZOOM_IN: "Scroll",
-  HIGHLIGHT: "Get Page Data",
-  RECTANGLE_HIGHLIGHT: "Get Page Data",
-  FONT_INFO: "Get Page Data",
-  LOOKUP_WORD: "Lookup",
-  PAGE_MEDIA: "Get Page Data",
-  READER_MODE: "Get Page Data",
-  DELETE: "Select",
-  COLS_TOGGLE: "Select",
-  OPEN_MEDIA_LIBRARY: "Media Library",
-  CLIPBOARD_COPY: "Clipboard",
-  CLIPBOARD_CUT: "Clipboard",
-  CLIPBOARD_PASTE: "Clipboard",
-  CLIPBOARD_SELECT_ALL: "Clipboard",
-  COPY_HOVERED_IMAGE: "Clipboard",
-  COPY_HOVERED_URL: "Clipboard",
-  COPY_HOVERED_VIDEO: "Clipboard",
-  SELECT_WORD: "Clipboard",
-  SELECT_SENTENCE: "Clipboard",
-  SELECT_PARAGRAPH: "Clipboard",
-  SELECT_IMAGE: "Clipboard",
-  SEND_TEXT_TO_AI: "AI",
-  LAUNCHER: "Begin URL",
-  TOP_SITES: "Begin URL",
-  OMNIBOX: "Begin URL",
-  TOGGLE_KEYBOARD_HELP: "KeyPilot",
-  OPEN_SETTINGS_POPOVER: "KeyPilot",
-  CANCEL: "System"
-});
-var KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
-  "Navigation",
-  "Deferred Open URLs",
-  "Tab Control",
-  "Begin URL",
-  "Get Page Data",
-  "Maps",
-  "Scroll",
-  "Select",
-  "Media Library",
-  "Clipboard",
-  "Lookup",
-  "AI",
-  "KeyPilot",
-  "Tools",
-  "System",
-  "Other"
-]);
 function upperLetter(s) {
   const ch = String(s || "");
   if (!ch) return "";
@@ -1383,13 +741,21 @@ function localizedActionCopy(actionId, def) {
     description: getMessage(`fn_${id}_description`) || def?.description || ""
   };
 }
-function buildKeybindingsForLayout(layoutId) {
+function isBrowsingKeyboardLayoutId(layoutId) {
+  const id = normalizeKeyboardLayoutId(layoutId);
+  return id === "browsing-right" || id === "browsing-left";
+}
+function buildKeybindingsForLayout(layoutId, opts = {}) {
   const id = normalizeKeyboardLayoutId(layoutId);
   const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
   const out = {};
+  const assignments = {
+    ...layout?.assignments || {},
+    ...opts?.deferredNumberRow && isBrowsingKeyboardLayoutId(id) ? DEFERRED_NUMBER_ROW_ASSIGNMENTS : {}
+  };
   for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
     if (isBuildExcludedKeyAction(actionId)) continue;
-    const assign = layout?.assignments?.[actionId];
+    const assign = assignments[actionId];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
     const copy = localizedActionCopy(actionId, def);
@@ -1407,7 +773,7 @@ function buildKeybindingsForLayout(layoutId) {
     };
   }
   for (const stock of STOCK_ACTIONS) {
-    const assign = layout?.assignments?.[stock.id];
+    const assign = assignments[stock.id];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
     const localized = getStockActionById(stock.id);
@@ -1429,24 +795,6 @@ function buildKeybindingsForLayout(layoutId) {
   }
   return out;
 }
-var CATALOG_KEYBINDINGS = (() => {
-  const out = {};
-  for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
-    if (isBuildExcludedKeyAction(actionId)) continue;
-    const copy = localizedActionCopy(actionId, def);
-    out[actionId] = Object.freeze({
-      keys: Object.freeze([]),
-      handler: def.handler,
-      label: copy.label,
-      description: copy.description,
-      keyboardClass: def.keyboardClass ?? null,
-      row: def.row ?? null,
-      displayKey: "",
-      keyLabel: ""
-    });
-  }
-  return Object.freeze(out);
-})();
 function physicalAssignment(code, displayKey) {
   return Object.freeze({
     bindingType: "physical",
@@ -1456,110 +804,6 @@ function physicalAssignment(code, displayKey) {
     keyLabel: displayKey
   });
 }
-var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
-  TAB_LEFT: physicalAssignment("KeyQ", "Q"),
-  TAB_RIGHT: physicalAssignment("KeyW", "W"),
-  READER_MODE: physicalAssignment("KeyP", "P"),
-  PREVIEW_LINK_POPOVER: physicalAssignment("KeyE", "E"),
-  FORWARD: physicalAssignment("KeyR", "R"),
-  NEW_TAB: physicalAssignment("KeyT", "T"),
-  CLOSE_TAB: physicalAssignment("KeyA", "A"),
-  ROOT: physicalAssignment("KeyS", "S"),
-  BACK: physicalAssignment("KeyD", "D"),
-  ACTIVATE: physicalAssignment("KeyF", "F"),
-  ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
-  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
-  SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4"),
-  ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyG", "G"),
-  HIGHLIGHT: physicalAssignment("KeyH", "H"),
-  TAB_HISTORY: physicalAssignment("KeyJ", "J"),
-  OMNIBOX: physicalAssignment("KeyL", "L"),
-  TOP_SITES: physicalAssignment("Semicolon", ";"),
-  PAGE_TOP: physicalAssignment("KeyZ", "Z"),
-  PAGE_BOTTOM: physicalAssignment("KeyX", "X"),
-  PAGE_UP_INSTANT: physicalAssignment("KeyC", "C"),
-  PAGE_DOWN_INSTANT: physicalAssignment("KeyV", "V"),
-  SCROLL_LINE: physicalAssignment("KeyB", "B"),
-  ZOOM_OUT: physicalAssignment("BracketLeft", "["),
-  ZOOM_IN: physicalAssignment("BracketRight", "]"),
-  ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
-  RECTANGLE_HIGHLIGHT: physicalAssignment("KeyY", "Y"),
-  COPY_HOVERED_IMAGE: physicalAssignment("KeyI", "I"),
-  LOOKUP_WORD: physicalAssignment("KeyU", "U"),
-  PAGE_MEDIA: physicalAssignment("KeyO", "O"),
-  // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
-  OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
-  // Period mirrors to KeyX on the left-handed layout.
-  [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("Period", "."),
-  // Comma is free on the right-handed layout. Left-handed mirror is KeyC.
-  [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("Comma", ","),
-  DELETE: physicalAssignment("Backspace", "Backspace"),
-  // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-  // Slash mirrors to KeyZ on the left-handed layout.
-  TABS_OVERVIEW: physicalAssignment("Slash", "/")
-});
-var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
-  // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
-  TAB_LEFT: physicalAssignment("KeyP", "P"),
-  TAB_RIGHT: physicalAssignment("KeyO", "O"),
-  PREVIEW_LINK_POPOVER: physicalAssignment("KeyW", "W"),
-  FORWARD: physicalAssignment("KeyU", "U"),
-  READER_MODE: physicalAssignment("KeyI", "I"),
-  NEW_TAB: physicalAssignment("KeyY", "Y"),
-  SCROLL_LINE: physicalAssignment("KeyT", "T"),
-  ZOOM_OUT: physicalAssignment("BracketLeft", "["),
-  ZOOM_IN: physicalAssignment("BracketRight", "]"),
-  // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
-  CLOSE_TAB: physicalAssignment("Semicolon", ";"),
-  ROOT: physicalAssignment("KeyL", "L"),
-  BACK: physicalAssignment("KeyK", "K"),
-  ACTIVATE: physicalAssignment("KeyJ", "J"),
-  ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
-  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
-  SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4"),
-  ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
-  // H is background-tab open on left; G is text select.
-  HIGHLIGHT: physicalAssignment("KeyG", "G"),
-  // Mirror of right-handed KeyU (Lookup Word). Rectangle moves to KeyQ (free on left).
-  LOOKUP_WORD: physicalAssignment("KeyR", "R"),
-  RECTANGLE_HIGHLIGHT: physicalAssignment("KeyQ", "Q"),
-  // Utility actions on the left avoid colliding with J/K/L cluster.
-  // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
-  TAB_HISTORY: physicalAssignment("KeyF", "F"),
-  OMNIBOX: physicalAssignment("KeyS", "S"),
-  TOP_SITES: physicalAssignment("KeyA", "A"),
-  // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
-  // Mirror of right-handed Period.
-  [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("KeyX", "X"),
-  PAGE_TOP: physicalAssignment("Slash", "/"),
-  ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
-  PAGE_UP_INSTANT: physicalAssignment("Comma", ","),
-  // Mirror of right-handed Comma. KeyC is free here (PAGE_UP sits on Comma).
-  [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("KeyC", "C"),
-  PAGE_DOWN_INSTANT: physicalAssignment("KeyM", "M"),
-  PAGE_BOTTOM: physicalAssignment("KeyN", "N"),
-  // I is READER_MODE on left-handed; E is free.
-  COPY_HOVERED_IMAGE: physicalAssignment("KeyE", "E"),
-  // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-  DELETE: physicalAssignment("Backspace", "Backspace"),
-  // Mirror of right-handed Slash. KeyZ is free here (PAGE_TOP sits on Slash).
-  TABS_OVERVIEW: physicalAssignment("KeyZ", "Z")
-});
-var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
-  "CANCEL",
-  "TOGGLE_KEYBOARD_HELP",
-  "OPEN_SETTINGS_POPOVER"
-]);
-var SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
-  CANCEL: physicalAssignment("Escape", "Esc"),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyK", "K"),
-  OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
-});
-var SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
-  CANCEL: physicalAssignment("Escape", "Esc"),
-  TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyD", "D"),
-  OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
-});
 function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
   const hand = normalizeKeyboardHandedness(handedness);
   const assignments = hand === "left" ? SYSTEM_LAYER_ASSIGNMENTS_LEFT : SYSTEM_LAYER_ASSIGNMENTS_RIGHT;
@@ -1586,38 +830,12 @@ function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
   }
   return out;
 }
-function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS, opts = {}) {
   return {
-    ...buildKeybindingsForLayout(layoutId),
+    ...buildKeybindingsForLayout(layoutId, opts),
     ...buildSystemKeybindings(handedness)
   };
 }
-var BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
-  "ACTIVATE",
-  "TAB_LEFT",
-  "TAB_RIGHT",
-  "FORWARD",
-  "BACK",
-  "ROOT",
-  "PAGE_TOP",
-  "PAGE_BOTTOM",
-  "PAGE_UP_INSTANT",
-  "PAGE_DOWN_INSTANT"
-]);
-var CLICK_HISTORY_ACTION_IDS = Object.freeze([
-  "ACTIVATE",
-  "BACK",
-  "ROOT",
-  "FORWARD"
-]);
-var BASIC_NAVIGATION_UI_ACTION_IDS = Object.freeze([
-  ...BASIC_NAVIGATION_ACTION_IDS,
-  ...SYSTEM_LAYER_ACTION_IDS
-]);
-var CLICK_HISTORY_UI_ACTION_IDS = Object.freeze([
-  ...CLICK_HISTORY_ACTION_IDS,
-  ...SYSTEM_LAYER_ACTION_IDS
-]);
 function pickAssignments(source, allowedIds) {
   const allowed = new Set(allowedIds);
   const out = {};
@@ -1696,437 +914,1258 @@ function projectKeyboardUiLayout(baseLayout, fullAssignments, allowedIds) {
     )
   );
 }
-var ASSIGNMENTS_BASIC_NAVIGATION_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, BASIC_NAVIGATION_ACTION_IDS);
-var ASSIGNMENTS_BASIC_NAVIGATION_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, BASIC_NAVIGATION_ACTION_IDS);
-var ASSIGNMENTS_CLICK_HISTORY_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, CLICK_HISTORY_ACTION_IDS);
-var ASSIGNMENTS_CLICK_HISTORY_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, CLICK_HISTORY_ACTION_IDS);
-var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
-  [
-    { type: "special", text: "Tab", className: "key key-tab" },
-    { type: "action", id: "TAB_LEFT", fallbackText: "Tab Left" },
-    { type: "action", id: "TAB_RIGHT", fallbackText: "Tab Right" },
-    { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
-    { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
-    { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
-    { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
-    { type: "action", id: "LOOKUP_WORD", fallbackText: "Lookup Word" },
-    { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
-    { type: "action", id: "PAGE_MEDIA", fallbackText: "Page Media" },
-    { type: "action", id: "READER_MODE", fallbackText: "Reader Mode" },
-    { type: "key", text: "[" },
-    { type: "key", text: "]" },
-    { type: "action", id: "DELETE", fallbackText: "Delete Mode", className: "key key-backspace" }
-  ],
-  [
-    { type: "special", text: "Caps", className: "key key-caps" },
-    { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
-    { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
-    { type: "action", id: "BACK", fallbackText: "Go Back" },
-    { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
-    { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
-    { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
-    { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
-    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
-    { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
-    { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
-    { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
-    { type: "special", text: "Enter", className: "key key-enter" }
-  ],
-  [
-    { type: "special", text: "Shift", className: "key key-shift" },
-    { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
-    { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
-    { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up" },
-    { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down" },
-    { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
-    { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
-    { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
-    { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
-    { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
-    { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
-    { type: "special", text: "Shift", className: "key key-shift" }
-  ]
-]);
-var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
-  [
-    { type: "special", text: "Tab", className: "key key-tab" },
-    { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
-    // Q (Y's true mirror is T)
-    { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
-    // W
-    { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
-    // E
-    { type: "action", id: "LOOKUP_WORD", fallbackText: "Lookup Word" },
-    // R, mirror of U
-    { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
-    // T
-    { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
-    // Y
-    { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
-    // U
-    { type: "action", id: "READER_MODE", fallbackText: "Reader Mode" },
-    // I
-    { type: "action", id: "TAB_RIGHT", fallbackText: "Tab Right" },
-    // O
-    { type: "action", id: "TAB_LEFT", fallbackText: "Tab Left" },
-    // P
-    { type: "key", text: "[" },
-    { type: "key", text: "]" },
-    { type: "action", id: "DELETE", fallbackText: "Delete Mode", className: "key key-backspace" }
-  ],
-  [
-    { type: "special", text: "Caps", className: "key key-caps" },
-    { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
-    // Utility keys on the left (to avoid colliding with right-hand cluster)
-    { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
-    // S
-    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
-    // D
-    { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
-    // F
-    { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
-    // G
-    { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
-    // H
-    { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
-    // J
-    { type: "action", id: "BACK", fallbackText: "Go Back" },
-    // K
-    { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
-    // L
-    { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
-    // ;
-    { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
-    // '
-    { type: "special", text: "Enter", className: "key key-enter" }
-  ],
-  [
-    { type: "special", text: "Shift", className: "key key-shift" },
-    { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
-    // Z, mirror of /
-    { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
-    // X, mirror of .
-    { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
-    // C, mirror of ,
-    { type: "key", text: "V" },
-    { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
-    // B
-    { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
-    // N
-    { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down" },
-    // M
-    { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up" },
-    // ,
-    { type: "key", text: "." },
-    { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
-    // /
-    { type: "special", text: "Shift", className: "key key-shift" }
-  ]
-]);
-var BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
-  "browsing-right": Object.freeze({
-    id: "browsing-right",
-    label: "Browsing: right-handed",
-    description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left.",
-    assignments: ASSIGNMENTS_BROWSING_RIGHT,
-    keyboardLayout: KEYBOARD_UI_LAYOUT_RIGHT
-  }),
-  "browsing-left": Object.freeze({
-    id: "browsing-left",
-    label: "Browsing: left-handed",
-    description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right.",
-    assignments: ASSIGNMENTS_BROWSING_LEFT,
-    keyboardLayout: KEYBOARD_UI_LAYOUT_LEFT
-  }),
-  "basic-navigation-right": Object.freeze({
-    id: "basic-navigation-right",
-    label: "Basic Navigation: right-handed",
-    description: "Page scroll, click, tab switch, back/forward only.",
-    assignments: ASSIGNMENTS_BASIC_NAVIGATION_RIGHT,
-    keyboardLayout: projectKeyboardUiLayout(
-      KEYBOARD_UI_LAYOUT_RIGHT,
-      { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
-      BASIC_NAVIGATION_UI_ACTION_IDS
-    )
-  }),
-  "basic-navigation-left": Object.freeze({
-    id: "basic-navigation-left",
-    label: "Basic Navigation: left-handed",
-    description: "Page scroll, click, tab switch, back/forward only.",
-    assignments: ASSIGNMENTS_BASIC_NAVIGATION_LEFT,
-    keyboardLayout: projectKeyboardUiLayout(
-      KEYBOARD_UI_LAYOUT_LEFT,
-      { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
-      BASIC_NAVIGATION_UI_ACTION_IDS
-    )
-  }),
-  "click-history-right": Object.freeze({
-    id: "click-history-right",
-    label: "Navigation: right-handed",
-    description: "Click element, go back, and go forward only.",
-    assignments: ASSIGNMENTS_CLICK_HISTORY_RIGHT,
-    keyboardLayout: projectKeyboardUiLayout(
-      KEYBOARD_UI_LAYOUT_RIGHT,
-      { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
-      CLICK_HISTORY_UI_ACTION_IDS
-    )
-  }),
-  "click-history-left": Object.freeze({
-    id: "click-history-left",
-    label: "Navigation: left-handed",
-    description: "Click element, go back, and go forward only.",
-    assignments: ASSIGNMENTS_CLICK_HISTORY_LEFT,
-    keyboardLayout: projectKeyboardUiLayout(
-      KEYBOARD_UI_LAYOUT_LEFT,
-      { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
-      CLICK_HISTORY_UI_ACTION_IDS
-    )
-  })
+var DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID, DEFAULT_KEYBOARD_HANDEDNESS, SOURCE_BUILD_ENABLE_MACRO_BUILDER, BUILD_ENABLE_MACRO_BUILDER, BUILD_EXCLUDED_KEY_ACTIONS, BUILD_EXCLUDED_KEY_ACTION_SET, BUILTIN_KEYBOARD_LAYOUT_META, BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META, LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS, KNOWN_BUILTIN_LAYOUT_IDS, KEYBINDING_ACTION_DEFS, KEYBINDING_ACTION_CATEGORY_BY_ID, KEYBINDING_ACTION_CATEGORY_ORDER, DEFERRED_NUMBER_ROW_ASSIGNMENTS, CATALOG_KEYBINDINGS, ASSIGNMENTS_BROWSING_RIGHT, ASSIGNMENTS_BROWSING_LEFT, SYSTEM_LAYER_ACTION_IDS, SYSTEM_LAYER_ASSIGNMENTS_RIGHT, SYSTEM_LAYER_ASSIGNMENTS_LEFT, BASIC_NAVIGATION_ACTION_IDS, CLICK_HISTORY_ACTION_IDS, BASIC_NAVIGATION_UI_ACTION_IDS, CLICK_HISTORY_UI_ACTION_IDS, ASSIGNMENTS_BASIC_NAVIGATION_RIGHT, ASSIGNMENTS_BASIC_NAVIGATION_LEFT, ASSIGNMENTS_CLICK_HISTORY_RIGHT, ASSIGNMENTS_CLICK_HISTORY_LEFT, KEYBOARD_UI_LAYOUT_RIGHT, KEYBOARD_UI_LAYOUT_LEFT, BUILTIN_KEYBOARD_LAYOUTS;
+var init_keyboard_layouts = __esm({
+  "src/config/keyboard-layouts.js"() {
+    init_i18n();
+    init_keyboard_hardware_layouts();
+    init_stock_actions();
+    DEFAULT_KEYBOARD_LAYOUT_ID = /** @type {const} */
+    "browsing-right";
+    DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = /** @type {const} */
+    "browsing";
+    DEFAULT_KEYBOARD_HANDEDNESS = /** @type {const} */
+    "right";
+    SOURCE_BUILD_ENABLE_MACRO_BUILDER = false;
+    BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== "undefined" ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__ : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
+    BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
+      "COLS_TOGGLE",
+      // Type — "Type saved text into the focused field."
+      "TYPE_CHARACTERS",
+      // Data — "Read text or media under the cursor, or from a highlight."
+      "GET_TEXT_AT_CURSOR",
+      "GET_TEXT_RANGE",
+      "GET_MEDIA_AT_CURSOR",
+      // Script — "Run a user-authored JavaScript snippet against page state."
+      "EXECUTE_JS",
+      // Create built-in Macro Key — "Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place."
+      "SEND_HOTKEY",
+      "SEND_BURST",
+      "CYCLE_ROUND_ROBIN",
+      "HOLD_CONTINUOUS",
+      "CLICK_MOUSE_BUTTON",
+      "REMAP_KEY",
+      // Translate — "Translate highlighted or under-cursor text."
+      "TRANSLATE",
+      // AI — "Send selected text to AI with a prompt and result destination."
+      "SEND_TEXT_TO_AI"
+    ]);
+    BUILD_EXCLUDED_KEY_ACTION_SET = new Set(BUILD_EXCLUDED_KEY_ACTIONS);
+    BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "browsing-right"
+        ),
+        label: "Browsing: right-handed",
+        description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left."
+      }),
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "browsing-left"
+        ),
+        label: "Browsing: left-handed",
+        description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right."
+      }),
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "basic-navigation-right"
+        ),
+        label: "Basic Navigation: right-handed",
+        description: "Page scroll, click, tab switch, back/forward only."
+      }),
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "basic-navigation-left"
+        ),
+        label: "Basic Navigation: left-handed",
+        description: "Page scroll, click, tab switch, back/forward only."
+      }),
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "click-history-right"
+        ),
+        label: "Navigation: right-handed",
+        description: "Click element, go back, and go forward only."
+      }),
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "click-history-left"
+        ),
+        label: "Navigation: left-handed",
+        description: "Click element, go back, and go forward only."
+      })
+    ]);
+    BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "browsing"
+        ),
+        labelKey: "layout_family_browsing_label",
+        builtIn: true,
+        descriptionKey: "layout_family_browsing_description",
+        variants: Object.freeze({
+          right: (
+            /** @type {const} */
+            "browsing-right"
+          ),
+          left: (
+            /** @type {const} */
+            "browsing-left"
+          )
+        })
+      }),
+      Object.freeze({
+        id: (
+          /** @type {const} */
+          "click-history"
+        ),
+        labelKey: "layout_family_navigation_label",
+        builtIn: true,
+        descriptionKey: "layout_family_navigation_description",
+        variants: Object.freeze({
+          right: (
+            /** @type {const} */
+            "click-history-right"
+          ),
+          left: (
+            /** @type {const} */
+            "click-history-left"
+          )
+        })
+      })
+    ]);
+    LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS = Object.freeze({
+      "basic-navigation": Object.freeze({
+        right: (
+          /** @type {const} */
+          "basic-navigation-right"
+        ),
+        left: (
+          /** @type {const} */
+          "basic-navigation-left"
+        )
+      })
+    });
+    KNOWN_BUILTIN_LAYOUT_IDS = new Set(
+      BUILTIN_KEYBOARD_LAYOUT_META.map((m) => m && m.id).filter(Boolean)
+    );
+    KEYBINDING_ACTION_DEFS = Object.freeze({
+      ACTIVATE: Object.freeze({
+        handler: "handleActivateKey",
+        label: "Click Element",
+        description: "Click the hovered element",
+        details: "Activates the clickable under the cursor \u2014 the same as a left mouse click on that element. Works with links, buttons, and other interactive targets KeyPilot highlights.",
+        keyboardClass: "key-activate",
+        row: 2
+      }),
+      ACTIVATE_DEFERRED_RANDOM: Object.freeze({
+        handler: "handleActivateDeferredRandomKey",
+        label: "Click Element Deferred Random",
+        description: "Schedule the hovered link for a random time",
+        details: "Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.",
+        keyboardClass: "key-activate",
+        row: 0
+      }),
+      ACTIVATE_DEFERRED_SCHEDULED: Object.freeze({
+        handler: "handleActivateDeferredScheduledKey",
+        label: "Click Element Deferred Scheduled",
+        description: "Schedule the hovered link for an exact time",
+        details: "Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.",
+        keyboardClass: "key-activate",
+        row: 0
+      }),
+      SCHEDULE_LINK_MANUAL: Object.freeze({
+        handler: "handleScheduleLinkManualKey",
+        label: "Schedule Link Manual",
+        description: "Schedule a typed URL for an exact time",
+        details: "Opens the time dialog with a URL field. The address you type is opened at the time you choose.",
+        keyboardClass: "key-activate",
+        row: 0
+      }),
+      // Foreground new tab (switch to the new tab).
+      ACTIVATE_NEW_TAB: Object.freeze({
+        handler: "handleActivateNewTabKey",
+        label: "Click New Tab",
+        description: "Open link in a new foreground tab",
+        details: "Opens the hovered link in a new tab and switches to it immediately. Use when you want to follow a link without leaving your place permanently, but still jump to the new page right away.",
+        keyboardClass: "key-activate-new",
+        row: 2
+      }),
+      // Background new tab (middle-click style; do not switch focus).
+      ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({
+        handler: "handleActivateNewTabBackgroundKey",
+        label: "Click New Tab Background",
+        description: "Open link in a new background tab",
+        details: "Opens the hovered link in a new tab without switching focus \u2014 like a middle-click. Useful for queueing several links while you keep reading the current page.",
+        keyboardClass: "key-activate-new-over",
+        row: 2
+      }),
+      BACK: Object.freeze({
+        handler: "handleBackKey",
+        label: "Go Back",
+        description: "Browser history back",
+        details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button.",
+        keyboardClass: "key-back",
+        row: 2
+      }),
+      BACK2: Object.freeze({
+        handler: "handleBackKey",
+        label: "Go Back",
+        description: "Browser history back",
+        details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button. Duplicate id for layouts that expose a second Back binding.",
+        keyboardClass: "key-back",
+        row: 2
+      }),
+      FORWARD: Object.freeze({
+        handler: "handleForwardKey",
+        label: "Go Forward",
+        description: "Browser history forward",
+        details: "Navigates one step forward in the current tab\u2019s history, equivalent to the browser Forward button.",
+        keyboardClass: "key-forward",
+        row: 1
+      }),
+      DELETE: Object.freeze({
+        handler: "handleDeleteKey",
+        label: "Delete Mode",
+        description: "Hide elements under the cursor",
+        details: "Toggles Delete Mode: hover elements and remove (hide) them from the page so you can declutter layouts. Exit with Exit Focus or by toggling again.",
+        keyboardClass: "key-delete",
+        row: 2
+      }),
+      COLS_TOGGLE: Object.freeze({
+        handler: "handleColsToggleKey",
+        label: "Cols Toggle",
+        description: "Multi-column layout under cursor",
+        details: "Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.",
+        keyboardClass: "key-highlight",
+        row: 3
+      }),
+      TAB_LEFT: Object.freeze({
+        handler: "handleTabLeftKey",
+        label: "Tab Left",
+        description: "Switch to the previous tab",
+        details: "Activates the tab to the left of the current one in the window\u2019s tab strip.",
+        keyboardClass: "key-browser-chrome",
+        row: 1
+      }),
+      TAB_RIGHT: Object.freeze({
+        handler: "handleTabRightKey",
+        label: "Tab Right",
+        description: "Switch to the next tab",
+        details: "Activates the tab to the right of the current one in the window\u2019s tab strip.",
+        keyboardClass: "key-browser-chrome",
+        row: 1
+      }),
+      ROOT: Object.freeze({
+        handler: "handleRootKey",
+        label: "Go to Site Root",
+        description: "Navigate to the site origin",
+        details: "Jumps to the site root (scheme + host) of the current page \u2014 useful for escaping deep paths without typing a URL.",
+        keyboardClass: "key-open-urls",
+        row: 2
+      }),
+      LAUNCHER: Object.freeze({
+        handler: "handleLauncherKey",
+        label: "Launcher",
+        description: "Quick-access site launcher",
+        details: "Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.",
+        keyboardClass: "key-kp-ui",
+        row: 2
+      }),
+      TOP_SITES: Object.freeze({
+        handler: "handleTopSitesKey",
+        label: "Top Sites",
+        description: "Toolbar, visits, and bookmarks",
+        details: "Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.",
+        keyboardClass: "key-kp-ui",
+        row: 2
+      }),
+      CLOSE_TAB: Object.freeze({
+        handler: "handleCloseTabKey",
+        label: "Close Tab",
+        description: "Close the current tab",
+        details: "Closes the active tab. Behavior matches the browser\u2019s close-tab action for the current window.",
+        keyboardClass: "key-close-tab",
+        row: 3
+      }),
+      CLOSE_WINDOW: Object.freeze({
+        handler: "handleCloseWindowKey",
+        label: "Close Window",
+        description: "Close the current window",
+        details: "Closes the browser window that contains the current tab, including its other tabs.",
+        keyboardClass: "key-close-tab",
+        row: 3
+      }),
+      CANCEL: Object.freeze({
+        handler: "cancelModes",
+        label: "Exit Focus",
+        description: "Leave modes and overlays",
+        details: "Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.",
+        keyboardClass: "key-gray",
+        row: null
+      }),
+      PAGE_UP_INSTANT: Object.freeze({
+        handler: "handleInstantPageUp",
+        label: "Page Up",
+        description: "Jump one page up instantly",
+        details: "Scrolls the current scroll target up by roughly one viewport without animation \u2014 faster than a smooth page-up when you need to move quickly.",
+        keyboardClass: "key-page-scroll",
+        row: 3
+      }),
+      PAGE_DOWN_INSTANT: Object.freeze({
+        handler: "handleInstantPageDown",
+        label: "Page Down",
+        description: "Jump one page down instantly",
+        details: "Scrolls the current scroll target down by roughly one viewport without animation \u2014 faster than a smooth page-down when you need to move quickly.",
+        keyboardClass: "key-page-scroll",
+        row: 3
+      }),
+      PAGE_TOP: Object.freeze({
+        handler: "handlePageTop",
+        label: "Scroll To Top",
+        description: "Jump to top of scroll target",
+        details: "Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
+        keyboardClass: "key-page-scroll",
+        row: 3
+      }),
+      PAGE_BOTTOM: Object.freeze({
+        handler: "handlePageBottom",
+        label: "Scroll To Bottom",
+        description: "Jump to bottom of scroll target",
+        details: "Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
+        keyboardClass: "key-page-scroll",
+        row: 3
+      }),
+      SCROLL_LINE: Object.freeze({
+        handler: "handleScrollLineKey",
+        label: "Scroll Line",
+        description: "Origin-based continuous scroll",
+        details: "Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings \u2192 Scrolling.",
+        keyboardClass: "key-page-scroll",
+        row: 3,
+        mode: "scroll_line",
+        cancelOnPointerDown: true,
+        pointerBinding: Object.freeze({
+          button: "middle",
+          yieldToClickables: true,
+          yieldToTextEntry: true,
+          yieldToModes: Object.freeze(["text_focus", "popover", "omnibox"]),
+          enabledSetting: "scroll.middleClickScrollLine"
+        })
+      }),
+      ZOOM_OUT: Object.freeze({
+        handler: "handleZoomOutKey",
+        label: "Zoom Out",
+        description: "Zoom the page out at the cursor",
+        details: "Zooms the tab out one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-out gesture.",
+        keyboardClass: "key-browser-chrome",
+        row: 1
+      }),
+      ZOOM_IN: Object.freeze({
+        handler: "handleZoomInKey",
+        label: "Zoom In",
+        description: "Zoom the page in at the cursor",
+        details: "Zooms the tab in one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-in gesture.",
+        keyboardClass: "key-browser-chrome",
+        row: 1
+      }),
+      NEW_TAB: Object.freeze({
+        handler: "handleNewTabKey",
+        label: "New Tab",
+        description: "Open the KeyPilot new tab",
+        details: "Opens a KeyPilot new tab with your bookmarks bar, top sites, and search. The browser\u2019s own new tab stays unchanged.",
+        keyboardClass: "key-browser-chrome",
+        row: 1
+      }),
+      OPEN_POPOVER: Object.freeze({
+        handler: "handleOpenPopover",
+        label: "Open Popover",
+        description: "Open link in a popup window",
+        details: "Opens the hovered link in a KeyPilot popup window so you can peek or work in a separate chrome without a full new tab.",
+        keyboardClass: "key-open-popover",
+        row: 2
+      }),
+      PREVIEW_LINK_POPOVER: Object.freeze({
+        handler: "handlePreviewLinkPopover",
+        label: "Preview Link",
+        description: "Preview link in a popup",
+        details: "Opens Link Preview for the hovered URL in a popup window \u2014 skim the destination without committing a full navigation in the main tab.",
+        keyboardClass: "key-preview-popover",
+        row: 2
+      }),
+      POI_WEBSITE: Object.freeze({
+        handler: "handlePoiWebsiteKey",
+        label: "POI Website",
+        description: "Open map place website",
+        details: "When a map place (POI) is under the cursor, opens that place\u2019s website in Link Preview so you can visit the business or location page without leaving the map.",
+        keyboardClass: "key-preview-popover",
+        row: null
+      }),
+      POI_ADDRESS: Object.freeze({
+        handler: "handlePoiAddressKey",
+        label: "POI Address",
+        description: "Copy map place address",
+        details: "When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.",
+        keyboardClass: "key-page-media",
+        row: null
+      }),
+      OPEN_SETTINGS_POPOVER: Object.freeze({
+        handler: "handleToggleSettingsPopover",
+        label: "Settings",
+        description: "Open KeyPilot Settings",
+        details: "Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.",
+        keyboardClass: "key-kp-ui",
+        row: null
+      }),
+      OMNIBOX: Object.freeze({
+        handler: "handleOpenOmnibox",
+        label: "Omnibox",
+        description: "Address bar overlay",
+        details: "Opens KeyPilot\u2019s omnibox overlay so you can type a URL or search without clicking the browser address bar.",
+        keyboardClass: "key-kp-ui",
+        row: 2
+      }),
+      TAB_HISTORY: Object.freeze({
+        handler: "handleToggleTabHistoryPopover",
+        label: "Tab History",
+        description: "Browse this tab\u2019s history",
+        details: "Opens Tab History for the current tab so you can jump to a previously visited page in this tab\u2019s session without using the browser\u2019s native history UI.",
+        keyboardClass: "key-kp-ui",
+        row: 2
+      }),
+      TABS_OVERVIEW: Object.freeze({
+        handler: "handleToggleTabsOverview",
+        label: "Tabs Overview",
+        description: "Show every window and tab",
+        details: "Opens an overlay of every browser window with its tabs listed inside. Key-click a tab to switch to it, or key-click a window header to focus that window and keep its active tab. The current window is listed first, and the current tab is highlighted.",
+        keyboardClass: "key-kp-ui",
+        row: 3
+      }),
+      TOGGLE_KEYBOARD_HELP: Object.freeze({
+        handler: "handleToggleKeyboardHelp",
+        label: "KB Reference",
+        description: "Show or hide the keyboard map",
+        details: "Toggles the floating Keyboard Reference window that shows your current layout\u2019s keycaps and bindings.",
+        keyboardClass: "key-kp-ui",
+        row: 2
+      }),
+      // Text select: default character-level (H on right-handed layout).
+      HIGHLIGHT: Object.freeze({
+        handler: "handleHighlightKey",
+        label: "Text Select",
+        description: "Select text and copy rich text",
+        details: "Enters character-level text selection under the cursor. By default, the selection is copied as rich text so formatting is preserved when you paste.",
+        keyboardClass: "key-highlight",
+        row: 2
+      }),
+      // Rectangle region select (Y on right-handed; Q on left-handed — R is Lookup Word).
+      RECTANGLE_HIGHLIGHT: Object.freeze({
+        handler: "handleRectangleHighlightKey",
+        label: "Element Select",
+        description: "Rectangle or cumulative element pick",
+        details: "Selects HTML elements that intersect a dragged rectangle, or pick elements cumulatively. Useful for grabbing structure (not just plain text) from a page region.",
+        keyboardClass: "key-rect-highlight",
+        row: 1
+      }),
+      // Copy image under cursor — Clipboard category (I on right-handed; E on left-handed — I is READER_MODE there).
+      COPY_HOVERED_IMAGE: Object.freeze({
+        handler: "handleCopyHoveredImageKey",
+        label: "Copy Image",
+        description: "Copy hovered image",
+        details: "Copies the image under the cursor to the clipboard, Media Library, or both \u2014 configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.",
+        keyboardClass: "key-page-media",
+        row: 1
+      }),
+      // Copy hyperlink under cursor — Clipboard category; Actions Library only (no built-in layout key).
+      COPY_HOVERED_URL: Object.freeze({
+        handler: "handleCopyHoveredUrlKey",
+        label: "Copy URL",
+        description: "Copy hovered link URL",
+        details: "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource. No default layout key \u2014 bind it in Layout Editor if you need it.",
+        keyboardClass: "key-page-media",
+        row: null
+      }),
+      // Dictionary for the word under the cursor (U on right-handed; R on left-handed, the KeyU mirror).
+      LOOKUP_WORD: Object.freeze({
+        handler: "handleLookupWordKey",
+        label: "Lookup Word",
+        description: "Look up the word under the cursor",
+        details: "Opens a Wiktionary popover for the word directly under the cursor. Shows a brief notice if there is no word there.",
+        keyboardClass: "key-page-media",
+        row: 1
+      }),
+      // Copy video under cursor — Clipboard category; Actions Library only (no built-in layout key).
+      COPY_HOVERED_VIDEO: Object.freeze({
+        handler: "handleCopyHoveredVideoKey",
+        label: "Copy Video",
+        description: "Copy hovered video",
+        details: "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key \u2014 bind it in Layout Editor if you need it.",
+        keyboardClass: "key-page-media",
+        row: null
+      }),
+      // Font under cursor — Actions Library only (no built-in layout key).
+      FONT_INFO: Object.freeze({
+        handler: "handleFontInfoKey",
+        label: "Font Info",
+        description: "Inspect font under the cursor",
+        details: "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key \u2014 bind it in Layout Editor if you need it.",
+        keyboardClass: "key-page-media",
+        row: null
+      }),
+      // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
+      PAGE_MEDIA: Object.freeze({
+        handler: "handlePageMediaKey",
+        label: "Page Media",
+        description: "Browse media found on this page",
+        details: "Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.",
+        keyboardClass: "key-page-media",
+        row: 1
+      }),
+      READER_MODE: Object.freeze({
+        handler: "handleReaderModeKey",
+        label: "Reader Mode",
+        description: "Read this page without clutter",
+        details: "Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.",
+        keyboardClass: "key-reader-mode",
+        row: 1
+      }),
+      // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
+      // so this doesn't get a default binding there yet).
+      OPEN_MEDIA_LIBRARY: Object.freeze({
+        handler: "handleOpenMediaLibraryKey",
+        label: "Media Library",
+        description: "Open saved Media Library",
+        details: "Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.",
+        keyboardClass: "key-media-library",
+        row: 1
+      }),
+      // Clipboard commands (Functions palette — Clipboard category).
+      CLIPBOARD_COPY: Object.freeze({
+        handler: "handleClipboardCopyKey",
+        label: "Copy",
+        description: "Copy selection to clipboard",
+        details: "Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.",
+        keyboardClass: "key-clipboard",
+        row: null
+      }),
+      CLIPBOARD_CUT: Object.freeze({
+        handler: "handleClipboardCutKey",
+        label: "Cut",
+        description: "Cut selection to clipboard",
+        details: "Cuts the current text selection to the system clipboard from the focused field or editable region.",
+        keyboardClass: "key-clipboard",
+        row: null
+      }),
+      CLIPBOARD_PASTE: Object.freeze({
+        handler: "handleClipboardPasteKey",
+        label: "Paste",
+        description: "Paste into the focused field",
+        details: "Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.",
+        keyboardClass: "key-clipboard",
+        row: null
+      }),
+      CLIPBOARD_SELECT_ALL: Object.freeze({
+        handler: "handleClipboardSelectAllKey",
+        label: "Select All",
+        description: "Select all in field or page",
+        details: "Selects all text in the focused field, or the page content when nothing editable is focused \u2014 same idea as the usual Select All shortcut.",
+        keyboardClass: "key-clipboard",
+        row: null
+      }),
+      SELECT_WORD: Object.freeze({
+        handler: "handleSelectWordKey",
+        label: "Select Word",
+        description: "Select the word under the cursor",
+        details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy reads this selection.",
+        keyboardClass: "key-highlight",
+        row: null
+      }),
+      SELECT_SENTENCE: Object.freeze({
+        handler: "handleSelectSentenceKey",
+        label: "Select Sentence",
+        description: "Select the sentence under the cursor",
+        details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
+        keyboardClass: "key-highlight",
+        row: null
+      }),
+      SELECT_PARAGRAPH: Object.freeze({
+        handler: "handleSelectParagraphKey",
+        label: "Select Paragraph",
+        description: "Select the paragraph under the cursor",
+        details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
+        keyboardClass: "key-highlight",
+        row: null
+      }),
+      SELECT_IMAGE: Object.freeze({
+        handler: "handleSelectImageKey",
+        label: "Select Image",
+        description: "Select the image under the cursor",
+        details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy can copy selected images.",
+        keyboardClass: "key-highlight",
+        row: null
+      }),
+      // AI (Functions palette — AI category).
+      SEND_TEXT_TO_AI: Object.freeze({
+        handler: "handleSendTextToAiKey",
+        label: "Send Text To AI",
+        description: "Run AI on selected text",
+        details: "Sends the selected text to AI with a configurable instruction, then routes the result to the clipboard and/or a popover. Configure the prompt and destination on the action instance.",
+        keyboardClass: "key-purple",
+        row: null
+      })
+    });
+    KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
+      // Navigation — click / link preview / history
+      ACTIVATE: "Navigation",
+      ACTIVATE_DEFERRED_RANDOM: "Deferred Open URLs",
+      ACTIVATE_DEFERRED_SCHEDULED: "Deferred Open URLs",
+      SCHEDULE_LINK_MANUAL: "Deferred Open URLs",
+      ACTIVATE_NEW_TAB: "Navigation",
+      ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
+      PREVIEW_LINK_POPOVER: "Navigation",
+      POI_WEBSITE: "Maps",
+      POI_ADDRESS: "Maps",
+      OPEN_POPOVER: "Navigation",
+      FORWARD: "Navigation",
+      BACK: "Navigation",
+      BACK2: "Navigation",
+      ROOT: "Navigation",
+      // Tab Control
+      CLOSE_TAB: "Tab Control",
+      CLOSE_WINDOW: "Tab Control",
+      TAB_LEFT: "Tab Control",
+      TAB_RIGHT: "Tab Control",
+      NEW_TAB: "Tab Control",
+      TAB_HISTORY: "Tab Control",
+      TABS_OVERVIEW: "Tab Control",
+      PAGE_UP_INSTANT: "Scroll",
+      PAGE_DOWN_INSTANT: "Scroll",
+      PAGE_TOP: "Scroll",
+      PAGE_BOTTOM: "Scroll",
+      SCROLL_LINE: "Scroll",
+      ZOOM_OUT: "Scroll",
+      ZOOM_IN: "Scroll",
+      HIGHLIGHT: "Get Page Data",
+      RECTANGLE_HIGHLIGHT: "Get Page Data",
+      FONT_INFO: "Get Page Data",
+      LOOKUP_WORD: "Lookup",
+      PAGE_MEDIA: "Get Page Data",
+      READER_MODE: "Get Page Data",
+      DELETE: "Select",
+      COLS_TOGGLE: "Select",
+      OPEN_MEDIA_LIBRARY: "Media Library",
+      CLIPBOARD_COPY: "Clipboard",
+      CLIPBOARD_CUT: "Clipboard",
+      CLIPBOARD_PASTE: "Clipboard",
+      CLIPBOARD_SELECT_ALL: "Clipboard",
+      COPY_HOVERED_IMAGE: "Clipboard",
+      COPY_HOVERED_URL: "Clipboard",
+      COPY_HOVERED_VIDEO: "Clipboard",
+      SELECT_WORD: "Clipboard",
+      SELECT_SENTENCE: "Clipboard",
+      SELECT_PARAGRAPH: "Clipboard",
+      SELECT_IMAGE: "Clipboard",
+      SEND_TEXT_TO_AI: "AI",
+      LAUNCHER: "Begin URL",
+      TOP_SITES: "Begin URL",
+      OMNIBOX: "Begin URL",
+      TOGGLE_KEYBOARD_HELP: "KeyPilot",
+      OPEN_SETTINGS_POPOVER: "KeyPilot",
+      CANCEL: "System"
+    });
+    KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
+      "Navigation",
+      "Deferred Open URLs",
+      "Tab Control",
+      "Begin URL",
+      "Get Page Data",
+      "Maps",
+      "Scroll",
+      "Select",
+      "Media Library",
+      "Clipboard",
+      "Lookup",
+      "AI",
+      "KeyPilot",
+      "Tools",
+      "System",
+      "Other"
+    ]);
+    DEFERRED_NUMBER_ROW_ASSIGNMENTS = Object.freeze({
+      ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
+      ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
+      SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4")
+    });
+    CATALOG_KEYBINDINGS = (() => {
+      const out = {};
+      for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+        if (isBuildExcludedKeyAction(actionId)) continue;
+        const copy = localizedActionCopy(actionId, def);
+        out[actionId] = Object.freeze({
+          keys: Object.freeze([]),
+          handler: def.handler,
+          label: copy.label,
+          description: copy.description,
+          keyboardClass: def.keyboardClass ?? null,
+          row: def.row ?? null,
+          displayKey: "",
+          keyLabel: ""
+        });
+      }
+      return Object.freeze(out);
+    })();
+    ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
+      TAB_LEFT: physicalAssignment("KeyQ", "Q"),
+      TAB_RIGHT: physicalAssignment("KeyW", "W"),
+      READER_MODE: physicalAssignment("KeyP", "P"),
+      PREVIEW_LINK_POPOVER: physicalAssignment("KeyE", "E"),
+      FORWARD: physicalAssignment("KeyR", "R"),
+      NEW_TAB: physicalAssignment("KeyT", "T"),
+      CLOSE_TAB: physicalAssignment("KeyA", "A"),
+      ROOT: physicalAssignment("KeyS", "S"),
+      BACK: physicalAssignment("KeyD", "D"),
+      ACTIVATE: physicalAssignment("KeyF", "F"),
+      ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyG", "G"),
+      HIGHLIGHT: physicalAssignment("KeyH", "H"),
+      TAB_HISTORY: physicalAssignment("KeyJ", "J"),
+      OMNIBOX: physicalAssignment("KeyL", "L"),
+      TOP_SITES: physicalAssignment("Semicolon", ";"),
+      PAGE_TOP: physicalAssignment("KeyZ", "Z"),
+      PAGE_BOTTOM: physicalAssignment("KeyX", "X"),
+      PAGE_UP_INSTANT: physicalAssignment("KeyC", "C"),
+      PAGE_DOWN_INSTANT: physicalAssignment("KeyV", "V"),
+      SCROLL_LINE: physicalAssignment("KeyB", "B"),
+      ZOOM_OUT: physicalAssignment("BracketLeft", "["),
+      ZOOM_IN: physicalAssignment("BracketRight", "]"),
+      ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
+      RECTANGLE_HIGHLIGHT: physicalAssignment("KeyY", "Y"),
+      COPY_HOVERED_IMAGE: physicalAssignment("KeyI", "I"),
+      LOOKUP_WORD: physicalAssignment("KeyU", "U"),
+      PAGE_MEDIA: physicalAssignment("KeyO", "O"),
+      // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
+      OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
+      // Period mirrors to KeyX on the left-handed layout.
+      [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("Period", "."),
+      // Comma is free on the right-handed layout. Left-handed mirror is KeyC.
+      [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("Comma", ","),
+      DELETE: physicalAssignment("Backspace", "Backspace"),
+      // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
+      // Slash mirrors to KeyZ on the left-handed layout.
+      TABS_OVERVIEW: physicalAssignment("Slash", "/")
+    });
+    ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
+      // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
+      TAB_LEFT: physicalAssignment("KeyP", "P"),
+      TAB_RIGHT: physicalAssignment("KeyO", "O"),
+      PREVIEW_LINK_POPOVER: physicalAssignment("KeyW", "W"),
+      FORWARD: physicalAssignment("KeyU", "U"),
+      READER_MODE: physicalAssignment("KeyI", "I"),
+      NEW_TAB: physicalAssignment("KeyY", "Y"),
+      SCROLL_LINE: physicalAssignment("KeyT", "T"),
+      ZOOM_OUT: physicalAssignment("BracketLeft", "["),
+      ZOOM_IN: physicalAssignment("BracketRight", "]"),
+      // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
+      CLOSE_TAB: physicalAssignment("Semicolon", ";"),
+      ROOT: physicalAssignment("KeyL", "L"),
+      BACK: physicalAssignment("KeyK", "K"),
+      ACTIVATE: physicalAssignment("KeyJ", "J"),
+      ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
+      // H is background-tab open on left; G is text select.
+      HIGHLIGHT: physicalAssignment("KeyG", "G"),
+      // Mirror of right-handed KeyU (Lookup Word). Rectangle moves to KeyQ (free on left).
+      LOOKUP_WORD: physicalAssignment("KeyR", "R"),
+      RECTANGLE_HIGHLIGHT: physicalAssignment("KeyQ", "Q"),
+      // Utility actions on the left avoid colliding with J/K/L cluster.
+      // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
+      TAB_HISTORY: physicalAssignment("KeyF", "F"),
+      OMNIBOX: physicalAssignment("KeyS", "S"),
+      TOP_SITES: physicalAssignment("KeyA", "A"),
+      // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
+      // Mirror of right-handed Period.
+      [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("KeyX", "X"),
+      PAGE_TOP: physicalAssignment("Slash", "/"),
+      ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
+      PAGE_UP_INSTANT: physicalAssignment("Comma", ","),
+      // Mirror of right-handed Comma. KeyC is free here (PAGE_UP sits on Comma).
+      [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("KeyC", "C"),
+      PAGE_DOWN_INSTANT: physicalAssignment("KeyM", "M"),
+      PAGE_BOTTOM: physicalAssignment("KeyN", "N"),
+      // I is READER_MODE on left-handed; E is free.
+      COPY_HOVERED_IMAGE: physicalAssignment("KeyE", "E"),
+      // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
+      DELETE: physicalAssignment("Backspace", "Backspace"),
+      // Mirror of right-handed Slash. KeyZ is free here (PAGE_TOP sits on Slash).
+      TABS_OVERVIEW: physicalAssignment("KeyZ", "Z")
+    });
+    SYSTEM_LAYER_ACTION_IDS = Object.freeze([
+      "CANCEL",
+      "TOGGLE_KEYBOARD_HELP",
+      "OPEN_SETTINGS_POPOVER"
+    ]);
+    SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
+      CANCEL: physicalAssignment("Escape", "Esc"),
+      TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyK", "K"),
+      OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
+    });
+    SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
+      CANCEL: physicalAssignment("Escape", "Esc"),
+      TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyD", "D"),
+      OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
+    });
+    BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
+      "ACTIVATE",
+      "TAB_LEFT",
+      "TAB_RIGHT",
+      "FORWARD",
+      "BACK",
+      "ROOT",
+      "PAGE_TOP",
+      "PAGE_BOTTOM",
+      "PAGE_UP_INSTANT",
+      "PAGE_DOWN_INSTANT"
+    ]);
+    CLICK_HISTORY_ACTION_IDS = Object.freeze([
+      "ACTIVATE",
+      "BACK",
+      "ROOT",
+      "FORWARD"
+    ]);
+    BASIC_NAVIGATION_UI_ACTION_IDS = Object.freeze([
+      ...BASIC_NAVIGATION_ACTION_IDS,
+      ...SYSTEM_LAYER_ACTION_IDS
+    ]);
+    CLICK_HISTORY_UI_ACTION_IDS = Object.freeze([
+      ...CLICK_HISTORY_ACTION_IDS,
+      ...SYSTEM_LAYER_ACTION_IDS
+    ]);
+    ASSIGNMENTS_BASIC_NAVIGATION_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, BASIC_NAVIGATION_ACTION_IDS);
+    ASSIGNMENTS_BASIC_NAVIGATION_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, BASIC_NAVIGATION_ACTION_IDS);
+    ASSIGNMENTS_CLICK_HISTORY_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, CLICK_HISTORY_ACTION_IDS);
+    ASSIGNMENTS_CLICK_HISTORY_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, CLICK_HISTORY_ACTION_IDS);
+    KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
+      [
+        { type: "special", text: "Tab", className: "key key-tab" },
+        { type: "action", id: "TAB_LEFT", fallbackText: "Tab Left" },
+        { type: "action", id: "TAB_RIGHT", fallbackText: "Tab Right" },
+        { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
+        { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
+        { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
+        { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
+        { type: "action", id: "LOOKUP_WORD", fallbackText: "Lookup Word" },
+        { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
+        { type: "action", id: "PAGE_MEDIA", fallbackText: "Page Media" },
+        { type: "action", id: "READER_MODE", fallbackText: "Reader Mode" },
+        { type: "key", text: "[" },
+        { type: "key", text: "]" },
+        { type: "action", id: "DELETE", fallbackText: "Delete Mode", className: "key key-backspace" }
+      ],
+      [
+        { type: "special", text: "Caps", className: "key key-caps" },
+        { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
+        { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
+        { type: "action", id: "BACK", fallbackText: "Go Back" },
+        { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
+        { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
+        { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
+        { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
+        { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
+        { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
+        { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
+        { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
+        { type: "special", text: "Enter", className: "key key-enter" }
+      ],
+      [
+        { type: "special", text: "Shift", className: "key key-shift" },
+        { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
+        { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
+        { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up" },
+        { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down" },
+        { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
+        { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
+        { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
+        { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
+        { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
+        { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
+        { type: "special", text: "Shift", className: "key key-shift" }
+      ]
+    ]);
+    KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
+      [
+        { type: "special", text: "Tab", className: "key key-tab" },
+        { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
+        // Q (Y's true mirror is T)
+        { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
+        // W
+        { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
+        // E
+        { type: "action", id: "LOOKUP_WORD", fallbackText: "Lookup Word" },
+        // R, mirror of U
+        { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
+        // T
+        { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
+        // Y
+        { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
+        // U
+        { type: "action", id: "READER_MODE", fallbackText: "Reader Mode" },
+        // I
+        { type: "action", id: "TAB_RIGHT", fallbackText: "Tab Right" },
+        // O
+        { type: "action", id: "TAB_LEFT", fallbackText: "Tab Left" },
+        // P
+        { type: "key", text: "[" },
+        { type: "key", text: "]" },
+        { type: "action", id: "DELETE", fallbackText: "Delete Mode", className: "key key-backspace" }
+      ],
+      [
+        { type: "special", text: "Caps", className: "key key-caps" },
+        { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
+        // Utility keys on the left (to avoid colliding with right-hand cluster)
+        { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
+        // S
+        { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
+        // D
+        { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
+        // F
+        { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
+        // G
+        { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
+        // H
+        { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
+        // J
+        { type: "action", id: "BACK", fallbackText: "Go Back" },
+        // K
+        { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
+        // L
+        { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
+        // ;
+        { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
+        // '
+        { type: "special", text: "Enter", className: "key key-enter" }
+      ],
+      [
+        { type: "special", text: "Shift", className: "key key-shift" },
+        { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
+        // Z, mirror of /
+        { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
+        // X, mirror of .
+        { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
+        // C, mirror of ,
+        { type: "key", text: "V" },
+        { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
+        // B
+        { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
+        // N
+        { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down" },
+        // M
+        { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up" },
+        // ,
+        { type: "key", text: "." },
+        { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
+        // /
+        { type: "special", text: "Shift", className: "key key-shift" }
+      ]
+    ]);
+    BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
+      "browsing-right": Object.freeze({
+        id: "browsing-right",
+        label: "Browsing: right-handed",
+        description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left.",
+        assignments: ASSIGNMENTS_BROWSING_RIGHT,
+        keyboardLayout: KEYBOARD_UI_LAYOUT_RIGHT
+      }),
+      "browsing-left": Object.freeze({
+        id: "browsing-left",
+        label: "Browsing: left-handed",
+        description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right.",
+        assignments: ASSIGNMENTS_BROWSING_LEFT,
+        keyboardLayout: KEYBOARD_UI_LAYOUT_LEFT
+      }),
+      "basic-navigation-right": Object.freeze({
+        id: "basic-navigation-right",
+        label: "Basic Navigation: right-handed",
+        description: "Page scroll, click, tab switch, back/forward only.",
+        assignments: ASSIGNMENTS_BASIC_NAVIGATION_RIGHT,
+        keyboardLayout: projectKeyboardUiLayout(
+          KEYBOARD_UI_LAYOUT_RIGHT,
+          { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
+          BASIC_NAVIGATION_UI_ACTION_IDS
+        )
+      }),
+      "basic-navigation-left": Object.freeze({
+        id: "basic-navigation-left",
+        label: "Basic Navigation: left-handed",
+        description: "Page scroll, click, tab switch, back/forward only.",
+        assignments: ASSIGNMENTS_BASIC_NAVIGATION_LEFT,
+        keyboardLayout: projectKeyboardUiLayout(
+          KEYBOARD_UI_LAYOUT_LEFT,
+          { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
+          BASIC_NAVIGATION_UI_ACTION_IDS
+        )
+      }),
+      "click-history-right": Object.freeze({
+        id: "click-history-right",
+        label: "Navigation: right-handed",
+        description: "Click element, go back, and go forward only.",
+        assignments: ASSIGNMENTS_CLICK_HISTORY_RIGHT,
+        keyboardLayout: projectKeyboardUiLayout(
+          KEYBOARD_UI_LAYOUT_RIGHT,
+          { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
+          CLICK_HISTORY_UI_ACTION_IDS
+        )
+      }),
+      "click-history-left": Object.freeze({
+        id: "click-history-left",
+        label: "Navigation: left-handed",
+        description: "Click element, go back, and go forward only.",
+        assignments: ASSIGNMENTS_CLICK_HISTORY_LEFT,
+        keyboardLayout: projectKeyboardUiLayout(
+          KEYBOARD_UI_LAYOUT_LEFT,
+          { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
+          CLICK_HISTORY_UI_ACTION_IDS
+        )
+      })
+    });
+  }
 });
 
 // src/config/constants.js
-var KEYBINDINGS = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS);
-var SCROLL = Object.freeze({
-  /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */
-  PAGE_PX: 800,
-  /** C / V: smaller step (default = prior 400px × 1.25) */
-  HALF_PAGE_PX: 500,
-  /**
-   * Hold C / V: continuous rAF scroll speed (px/s). Instant per-frame deltas —
-   * not CSS smooth — so overlapping animations cannot jitter.
-   */
-  HOLD_PX_PER_SEC: 1400,
-  /**
-   * Delay before continuous rAF starts after the first keydown. Keeps a quick
-   * tap as a single configured step; holding past this (or first OS repeat)
-   * engages continuous motion.
-   */
-  HOLD_RAF_START_MS: 120,
-  /** Default CSS scroll-behavior for keyboard scrolling */
-  BEHAVIOR: "smooth",
-  /** Blur-in duration for Scroll To Top / Bottom "Fade" jump style */
-  EDGE_JUMP_BLUR_MS: 140,
-  /** Opaque cover transition before the instant jump */
-  EDGE_JUMP_COVER_MS: 90,
-  /** Soft destination reveal duration after the jump */
-  EDGE_JUMP_REVEAL_MS: 160,
-  /** Clear the veil after the destination reveal */
-  EDGE_JUMP_CLEAR_MS: 140,
-  /**
-   * After the instant jump, keep the veil opaque until scroll position is
-   * stable (or this timeout). Covers CSS `scroll-behavior: smooth` and
-   * Lenis-style hijacks that keep interpolating after scrollTo returns.
-   */
-  EDGE_JUMP_SETTLE_MS: 480,
-  /** Scroll Line: no scroll inside this radius from the origin dot */
-  LINE_DEADZONE_PX: 12,
-  /**
-   * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
-   * dot, ramps harder toward the edge of the range).
-   */
-  LINE_CURVE_EXPONENT: 1.75,
-  /** Scroll Line: offset beyond the dead zone that maps to max speed */
-  LINE_CURVE_RANGE_PX: 360,
-  /** Scroll Line: cap on each axis */
-  LINE_MAX_PX_PER_SEC: 2400
+var KEYBINDINGS, SCROLL, INSPECTOR_KIND, ELEMENT_SELECT_AGGREGATES, ELEMENT_SELECT_LANDMARKS, ELEMENT_SELECT_ATOMS, ELEMENT_SELECT_FRAGMENTS, ELEMENT_SELECT_TAGS, CURSOR_MODE, COLORS;
+var init_constants = __esm({
+  "src/config/constants.js"() {
+    init_keyboard_layouts();
+    KEYBINDINGS = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS);
+    SCROLL = Object.freeze({
+      /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */
+      PAGE_PX: 800,
+      /** C / V: smaller step (default = prior 400px × 1.25) */
+      HALF_PAGE_PX: 500,
+      /**
+       * Hold C / V: continuous rAF scroll speed (px/s). Instant per-frame deltas —
+       * not CSS smooth — so overlapping animations cannot jitter.
+       */
+      HOLD_PX_PER_SEC: 1400,
+      /**
+       * Delay before continuous rAF starts after the first keydown. Keeps a quick
+       * tap as a single configured step; holding past this (or first OS repeat)
+       * engages continuous motion.
+       */
+      HOLD_RAF_START_MS: 120,
+      /** Default CSS scroll-behavior for keyboard scrolling */
+      BEHAVIOR: "smooth",
+      /** Blur-in duration for Scroll To Top / Bottom "Fade" jump style */
+      EDGE_JUMP_BLUR_MS: 140,
+      /** Opaque cover transition before the instant jump */
+      EDGE_JUMP_COVER_MS: 90,
+      /** Soft destination reveal duration after the jump */
+      EDGE_JUMP_REVEAL_MS: 160,
+      /** Clear the veil after the destination reveal */
+      EDGE_JUMP_CLEAR_MS: 140,
+      /**
+       * After the instant jump, keep the veil opaque until scroll position is
+       * stable (or this timeout). Covers CSS `scroll-behavior: smooth` and
+       * Lenis-style hijacks that keep interpolating after scrollTo returns.
+       */
+      EDGE_JUMP_SETTLE_MS: 480,
+      /** Scroll Line: no scroll inside this radius from the origin dot */
+      LINE_DEADZONE_PX: 12,
+      /**
+       * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
+       * dot, ramps harder toward the edge of the range).
+       */
+      LINE_CURVE_EXPONENT: 1.75,
+      /** Scroll Line: offset beyond the dead zone that maps to max speed */
+      LINE_CURVE_RANGE_PX: 360,
+      /** Scroll Line: cap on each axis */
+      LINE_MAX_PX_PER_SEC: 2400
+    });
+    INSPECTOR_KIND = Object.freeze({
+      DELETE: "delete",
+      COLS: "cols",
+      /** Cumulative element pick for Rectangle Select (Y) alternate mode */
+      RECTANGLE_PICK: "rectangle_pick"
+    });
+    ELEMENT_SELECT_AGGREGATES = Object.freeze([
+      "table",
+      "figure",
+      "picture",
+      "ul",
+      "ol",
+      "dl"
+    ]);
+    ELEMENT_SELECT_LANDMARKS = Object.freeze([
+      "article",
+      "section",
+      "aside",
+      "header",
+      "footer",
+      "main",
+      "nav"
+    ]);
+    ELEMENT_SELECT_ATOMS = Object.freeze([
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "p",
+      "blockquote",
+      "pre",
+      "li",
+      "img",
+      "video",
+      "audio",
+      "svg"
+    ]);
+    ELEMENT_SELECT_FRAGMENTS = Object.freeze([
+      "a",
+      "code",
+      "label",
+      "td",
+      "th",
+      "caption",
+      "figcaption",
+      "dt",
+      "dd",
+      "summary"
+    ]);
+    ELEMENT_SELECT_TAGS = Object.freeze([
+      ...ELEMENT_SELECT_AGGREGATES,
+      ...ELEMENT_SELECT_LANDMARKS,
+      ...ELEMENT_SELECT_ATOMS,
+      ...ELEMENT_SELECT_FRAGMENTS
+    ]);
+    CURSOR_MODE = Object.freeze({
+      NO_CUSTOM_CURSORS: "NO-CUSTOM-CURSORS",
+      CUSTOM_CURSORS: "CUSTOM-CURSORS"
+    });
+    COLORS = {
+      // Primary cursor colors
+      FOCUS_GREEN: "rgba(0,180,0,0.95)",
+      FOCUS_GREEN_BRIGHT: "rgba(0,128,0,0.95)",
+      DELETE_RED: "rgba(220,0,0,0.95)",
+      /** Cols Toggle accent (purple, distinct from delete red / highlight blue) */
+      COLS_PURPLE: "rgba(156,39,176,0.95)",
+      COLS_PURPLE_BRIGHT: "rgba(186,104,200,0.95)",
+      HIGHLIGHT_BLUE: "rgba(0,120,255,0.95)",
+      ORANGE: "#ff8c00",
+      // Focus overlay (alternate) colors (used to visually distinguish DOM-hover targeting mode)
+      FOCUS_BLUE: "rgba(33,150,243,0.95)",
+      // Text and background colors
+      TEXT_WHITE_PRIMARY: "rgba(255,255,255,0.95)",
+      TEXT_WHITE_SECONDARY: "rgba(255,255,255,0.8)",
+      TEXT_GREEN_BRIGHT: "#6ced2b",
+      // Background colors
+      MESSAGE_BG_BROWN: "#ad6007",
+      MESSAGE_BG_GREEN: "#10911b",
+      // Border and shadow colors
+      ORANGE_BORDER: "rgba(255,140,0,0.4)",
+      ORANGE_SHADOW: "rgba(255,140,0,0.45)",
+      ORANGE_SHADOW_DARK: "rgba(255,140,0,0.8)",
+      ORANGE_SHADOW_LIGHT: "rgba(255,140,0,0.3)",
+      GREEN_SHADOW: "rgba(0,180,0,0.45)",
+      GREEN_SHADOW_BRIGHT: "rgba(0,180,0,0.5)",
+      BLUE_SHADOW: "rgba(33,150,243,0.35)",
+      BLUE_SHADOW_BRIGHT: "rgba(33,150,243,0.45)",
+      DELETE_SHADOW: "rgba(220,0,0,0.35)",
+      DELETE_SHADOW_BRIGHT: "rgba(220,0,0,0.45)",
+      COLS_SHADOW: "rgba(156,39,176,0.35)",
+      COLS_SHADOW_BRIGHT: "rgba(156,39,176,0.5)",
+      HIGHLIGHT_SHADOW: "rgba(0,120,255,0.35)",
+      HIGHLIGHT_SHADOW_BRIGHT: "rgba(0,120,255,0.45)",
+      BLACK_SHADOW: "rgba(40, 40, 40, 0.7)",
+      // Ripple effect colors
+      RIPPLE_GREEN: "rgba(0,200,0,0.35)",
+      RIPPLE_GREEN_MID: "rgba(0,200,0,0.22)",
+      RIPPLE_GREEN_TRANSPARENT: "rgba(0,200,0,0)",
+      // Flash animation colors
+      FLASH_GREEN: "rgba(0,255,0,1)",
+      FLASH_GREEN_SHADOW: "rgba(0,255,0,0.8)",
+      FLASH_GREEN_GLOW: "rgba(0,255,0,0.9)",
+      /** URL actions (new tab, preview, popover) when the hover target has no URL */
+      FLASH_DENIED: "rgba(255,140,0,1)",
+      FLASH_DENIED_SHADOW: "rgba(255,140,0,0.85)",
+      FLASH_DENIED_GLOW: "rgba(255,140,0,0.7)",
+      // Image-copy pulse (distinct from green F-click pulse)
+      IMAGE_COPY_FRAME: "rgba(33,150,243,0.95)",
+      IMAGE_COPY_FRAME_SHADOW: "rgba(33,150,243,0.55)",
+      IMAGE_COPY_FRAME_GLOW: "rgba(100,180,255,0.75)",
+      IMAGE_COPY_FILL: "rgba(33,150,243,0.14)",
+      IMAGE_COPY_FLASH: "rgba(255,255,255,0.45)",
+      // Notification colors
+      NOTIFICATION_SUCCESS: "#4CAF50",
+      NOTIFICATION_ERROR: "#f44336",
+      NOTIFICATION_WARNING: "#ff9800",
+      NOTIFICATION_INFO: "#2196F3",
+      NOTIFICATION_SHADOW: "rgba(0, 0, 0, 0.15)",
+      // Text field glow
+      TEXT_FIELD_GLOW: "rgba(255,165,0,0.8)",
+      // Highlight selection colors
+      HIGHLIGHT_SELECTION_BG: "rgba(0,120,255,0.3)",
+      HIGHLIGHT_SELECTION_BORDER: "rgba(0,120,255,0.6)",
+      // Font Info inspected-run outline (stroke, not Text Select fill)
+      FONT_INFO_OUTLINE: "rgba(255, 193, 7, 0.95)",
+      FONT_INFO_OUTLINE_SHADOW: "rgba(255, 193, 7, 0.45)",
+      FONT_INFO_OUTLINE_FILL: "rgba(255, 193, 7, 0.08)",
+      // Solid accents for ESC exit labels (distinct from translucent overlay borders)
+      ORANGE_BG: "rgba(255, 165, 0, 0.9)",
+      ORANGE_TEXT: "#fff",
+      ORANGE_BORDER_SOLID: "#d35400",
+      FOCUS_GREEN_BG: "rgba(46, 204, 113, 0.9)",
+      FOCUS_GREEN_BG_T2: "rgba(46, 204, 113, 0.4)",
+      FOCUS_GREEN_TEXT: "#fff",
+      FOCUS_GREEN_SOLID: "#27ae60",
+      FOCUS_BLUE_BG_T2: "rgba(33,150,243,0.25)"
+    };
+  }
 });
-var INSPECTOR_KIND = Object.freeze({
-  DELETE: "delete",
-  COLS: "cols",
-  /** Cumulative element pick for Rectangle Select (Y) alternate mode */
-  RECTANGLE_PICK: "rectangle_pick"
-});
-var ELEMENT_SELECT_AGGREGATES = Object.freeze([
-  "table",
-  "figure",
-  "picture",
-  "ul",
-  "ol",
-  "dl"
-]);
-var ELEMENT_SELECT_LANDMARKS = Object.freeze([
-  "article",
-  "section",
-  "aside",
-  "header",
-  "footer",
-  "main",
-  "nav"
-]);
-var ELEMENT_SELECT_ATOMS = Object.freeze([
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "p",
-  "blockquote",
-  "pre",
-  "li",
-  "img",
-  "video",
-  "audio",
-  "svg"
-]);
-var ELEMENT_SELECT_FRAGMENTS = Object.freeze([
-  "a",
-  "code",
-  "label",
-  "td",
-  "th",
-  "caption",
-  "figcaption",
-  "dt",
-  "dd",
-  "summary"
-]);
-var ELEMENT_SELECT_TAGS = Object.freeze([
-  ...ELEMENT_SELECT_AGGREGATES,
-  ...ELEMENT_SELECT_LANDMARKS,
-  ...ELEMENT_SELECT_ATOMS,
-  ...ELEMENT_SELECT_FRAGMENTS
-]);
-var CURSOR_MODE = Object.freeze({
-  NO_CUSTOM_CURSORS: "NO-CUSTOM-CURSORS",
-  CUSTOM_CURSORS: "CUSTOM-CURSORS"
-});
-var COLORS = {
-  // Primary cursor colors
-  FOCUS_GREEN: "rgba(0,180,0,0.95)",
-  FOCUS_GREEN_BRIGHT: "rgba(0,128,0,0.95)",
-  DELETE_RED: "rgba(220,0,0,0.95)",
-  /** Cols Toggle accent (purple, distinct from delete red / highlight blue) */
-  COLS_PURPLE: "rgba(156,39,176,0.95)",
-  COLS_PURPLE_BRIGHT: "rgba(186,104,200,0.95)",
-  HIGHLIGHT_BLUE: "rgba(0,120,255,0.95)",
-  ORANGE: "#ff8c00",
-  // Focus overlay (alternate) colors (used to visually distinguish DOM-hover targeting mode)
-  FOCUS_BLUE: "rgba(33,150,243,0.95)",
-  // Text and background colors
-  TEXT_WHITE_PRIMARY: "rgba(255,255,255,0.95)",
-  TEXT_WHITE_SECONDARY: "rgba(255,255,255,0.8)",
-  TEXT_GREEN_BRIGHT: "#6ced2b",
-  // Background colors
-  MESSAGE_BG_BROWN: "#ad6007",
-  MESSAGE_BG_GREEN: "#10911b",
-  // Border and shadow colors
-  ORANGE_BORDER: "rgba(255,140,0,0.4)",
-  ORANGE_SHADOW: "rgba(255,140,0,0.45)",
-  ORANGE_SHADOW_DARK: "rgba(255,140,0,0.8)",
-  ORANGE_SHADOW_LIGHT: "rgba(255,140,0,0.3)",
-  GREEN_SHADOW: "rgba(0,180,0,0.45)",
-  GREEN_SHADOW_BRIGHT: "rgba(0,180,0,0.5)",
-  BLUE_SHADOW: "rgba(33,150,243,0.35)",
-  BLUE_SHADOW_BRIGHT: "rgba(33,150,243,0.45)",
-  DELETE_SHADOW: "rgba(220,0,0,0.35)",
-  DELETE_SHADOW_BRIGHT: "rgba(220,0,0,0.45)",
-  COLS_SHADOW: "rgba(156,39,176,0.35)",
-  COLS_SHADOW_BRIGHT: "rgba(156,39,176,0.5)",
-  HIGHLIGHT_SHADOW: "rgba(0,120,255,0.35)",
-  HIGHLIGHT_SHADOW_BRIGHT: "rgba(0,120,255,0.45)",
-  BLACK_SHADOW: "rgba(40, 40, 40, 0.7)",
-  // Ripple effect colors
-  RIPPLE_GREEN: "rgba(0,200,0,0.35)",
-  RIPPLE_GREEN_MID: "rgba(0,200,0,0.22)",
-  RIPPLE_GREEN_TRANSPARENT: "rgba(0,200,0,0)",
-  // Flash animation colors
-  FLASH_GREEN: "rgba(0,255,0,1)",
-  FLASH_GREEN_SHADOW: "rgba(0,255,0,0.8)",
-  FLASH_GREEN_GLOW: "rgba(0,255,0,0.9)",
-  /** URL actions (new tab, preview, popover) when the hover target has no URL */
-  FLASH_DENIED: "rgba(255,140,0,1)",
-  FLASH_DENIED_SHADOW: "rgba(255,140,0,0.85)",
-  FLASH_DENIED_GLOW: "rgba(255,140,0,0.7)",
-  // Image-copy pulse (distinct from green F-click pulse)
-  IMAGE_COPY_FRAME: "rgba(33,150,243,0.95)",
-  IMAGE_COPY_FRAME_SHADOW: "rgba(33,150,243,0.55)",
-  IMAGE_COPY_FRAME_GLOW: "rgba(100,180,255,0.75)",
-  IMAGE_COPY_FILL: "rgba(33,150,243,0.14)",
-  IMAGE_COPY_FLASH: "rgba(255,255,255,0.45)",
-  // Notification colors
-  NOTIFICATION_SUCCESS: "#4CAF50",
-  NOTIFICATION_ERROR: "#f44336",
-  NOTIFICATION_WARNING: "#ff9800",
-  NOTIFICATION_INFO: "#2196F3",
-  NOTIFICATION_SHADOW: "rgba(0, 0, 0, 0.15)",
-  // Text field glow
-  TEXT_FIELD_GLOW: "rgba(255,165,0,0.8)",
-  // Highlight selection colors
-  HIGHLIGHT_SELECTION_BG: "rgba(0,120,255,0.3)",
-  HIGHLIGHT_SELECTION_BORDER: "rgba(0,120,255,0.6)",
-  // Font Info inspected-run outline (stroke, not Text Select fill)
-  FONT_INFO_OUTLINE: "rgba(255, 193, 7, 0.95)",
-  FONT_INFO_OUTLINE_SHADOW: "rgba(255, 193, 7, 0.45)",
-  FONT_INFO_OUTLINE_FILL: "rgba(255, 193, 7, 0.08)",
-  // Solid accents for ESC exit labels (distinct from translucent overlay borders)
-  ORANGE_BG: "rgba(255, 165, 0, 0.9)",
-  ORANGE_TEXT: "#fff",
-  ORANGE_BORDER_SOLID: "#d35400",
-  FOCUS_GREEN_BG: "rgba(46, 204, 113, 0.9)",
-  FOCUS_GREEN_BG_T2: "rgba(46, 204, 113, 0.4)",
-  FOCUS_GREEN_TEXT: "#fff",
-  FOCUS_GREEN_SOLID: "#27ae60",
-  FOCUS_BLUE_BG_T2: "rgba(33,150,243,0.25)"
-};
 
 // src/config/search-engines.js
-var SEARCH_ENGINE_META = Object.freeze({
-  brave: Object.freeze({
-    id: "brave",
-    label: "Brave",
-    homeUrl: "https://search.brave.com/",
-    searchUrlPrefix: "https://search.brave.com/search?q="
-  }),
-  google: Object.freeze({
-    id: "google",
-    label: "Google",
-    homeUrl: "https://www.google.com/",
-    searchUrlPrefix: "https://www.google.com/search?q="
-  }),
-  duckduckgo: Object.freeze({
-    id: "duckduckgo",
-    label: "DuckDuckGo",
-    homeUrl: "https://duckduckgo.com/",
-    searchUrlPrefix: "https://duckduckgo.com/?q="
-  })
-});
-var DEFAULT_SEARCH_ENGINE_ID = (
-  /** @type {SearchEngineId} */
-  "brave"
-);
-var LAUNCHER_SEARCH_SITES = Object.freeze(
-  getLauncherSearchSites("en").map((row2) => Object.freeze(row2))
-);
 function normalizeSearchEngineId(raw) {
   if (raw === "google" || raw === "duckduckgo" || raw === "brave") return raw;
   return DEFAULT_SEARCH_ENGINE_ID;
 }
+var SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, LAUNCHER_SEARCH_SITES;
+var init_search_engines = __esm({
+  "src/config/search-engines.js"() {
+    init_region_defaults();
+    init_region_defaults();
+    SEARCH_ENGINE_META = Object.freeze({
+      brave: Object.freeze({
+        id: "brave",
+        label: "Brave",
+        homeUrl: "https://search.brave.com/",
+        searchUrlPrefix: "https://search.brave.com/search?q="
+      }),
+      google: Object.freeze({
+        id: "google",
+        label: "Google",
+        homeUrl: "https://www.google.com/",
+        searchUrlPrefix: "https://www.google.com/search?q="
+      }),
+      duckduckgo: Object.freeze({
+        id: "duckduckgo",
+        label: "DuckDuckGo",
+        homeUrl: "https://duckduckgo.com/",
+        searchUrlPrefix: "https://duckduckgo.com/?q="
+      })
+    });
+    DEFAULT_SEARCH_ENGINE_ID = /** @type {SearchEngineId} */
+    "brave";
+    LAUNCHER_SEARCH_SITES = Object.freeze(
+      getLauncherSearchSites("en").map((row2) => Object.freeze(row2))
+    );
+  }
+});
 
 // themes/schema.js
-var DEFAULT_THEME_ID = "dark-pro";
-var THEME_IDS = Object.freeze([
-  "dark-pro",
-  "gray-metal-pro",
-  "gx-er"
-]);
-var THEME_META = Object.freeze({
-  "dark-pro": { name: "Dark Pro" },
-  "gray-metal-pro": { name: "Gray Metal Pro" },
-  "gx-er": { name: "GX-er" }
-});
-var PRO_SANS = "Helvetica, Arial, sans-serif";
-var PRO_MONO = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
-var TYPE_ROLES = Object.freeze([
-  "display",
-  "heading",
-  "subhead",
-  "body",
-  "ui",
-  "kbd",
-  "mono",
-  "caption"
-]);
 function createProTypeTokens(stacks = {}) {
   return {
     stacks: {
@@ -2199,8 +2238,6 @@ function createProRadiusTokens(overrides = {}) {
     ...overrides
   };
 }
-var KEY_CLIP_NONE = "none";
-var KEY_SHADE_BEVEL = "linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)";
 function createKeyChromeTokens(overrides = {}) {
   return {
     shading: "bevel",
@@ -2685,6 +2722,36 @@ function normalizeThemeId(raw) {
 function hasThemeOverrides(raw) {
   return !!(raw && typeof raw === "object" && !Array.isArray(raw) && Object.keys(raw).length > 0);
 }
+var DEFAULT_THEME_ID, THEME_IDS, THEME_META, PRO_SANS, PRO_MONO, TYPE_ROLES, KEY_CLIP_NONE, KEY_SHADE_BEVEL;
+var init_schema = __esm({
+  "themes/schema.js"() {
+    DEFAULT_THEME_ID = "dark-pro";
+    THEME_IDS = Object.freeze([
+      "dark-pro",
+      "gray-metal-pro",
+      "gx-er"
+    ]);
+    THEME_META = Object.freeze({
+      "dark-pro": { name: "Dark Pro" },
+      "gray-metal-pro": { name: "Gray Metal Pro" },
+      "gx-er": { name: "GX-er" }
+    });
+    PRO_SANS = "Helvetica, Arial, sans-serif";
+    PRO_MONO = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+    TYPE_ROLES = Object.freeze([
+      "display",
+      "heading",
+      "subhead",
+      "body",
+      "ui",
+      "kbd",
+      "mono",
+      "caption"
+    ]);
+    KEY_CLIP_NONE = "none";
+    KEY_SHADE_BEVEL = "linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)";
+  }
+});
 
 // src/utils/storage.js
 function pickNewerStoredValue(syncVal, localVal) {
@@ -2760,6 +2827,10 @@ async function storageSetValue(key2, value, opts = {}) {
   }
   return wroteSync;
 }
+var init_storage = __esm({
+  "src/utils/storage.js"() {
+  }
+});
 
 // src/utils/platform.js
 function isMacPlatform() {
@@ -2785,23 +2856,12 @@ function formatAltShortcut(key2, options = {}) {
   const joiner = options.joiner ?? "+";
   return `${altModifierLabel()}${joiner}${key2}`;
 }
+var init_platform = __esm({
+  "src/utils/platform.js"() {
+  }
+});
 
 // src/config/focus-color.js
-var FOCUS_COLOR_PRESET_IDS = Object.freeze([
-  "blue",
-  "green",
-  "orange",
-  "red",
-  "purple"
-]);
-var FOCUS_COLOR_PRESET_HEX = Object.freeze({
-  blue: "#2196f3",
-  green: "#00b400",
-  orange: "#ff8c00",
-  red: "#e53935",
-  purple: "#9c27b0"
-});
-var DEFAULT_FOCUS_COLOR = "blue";
 function parseFocusColorHex(raw) {
   const s = String(raw || "").trim();
   if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
@@ -2853,175 +2913,28 @@ function getFocusColorPalette(raw) {
 function hexForFocusColor(raw) {
   return getFocusColorPalette(raw).hex;
 }
+var FOCUS_COLOR_PRESET_IDS, FOCUS_COLOR_PRESET_HEX, DEFAULT_FOCUS_COLOR;
+var init_focus_color = __esm({
+  "src/config/focus-color.js"() {
+    FOCUS_COLOR_PRESET_IDS = Object.freeze([
+      "blue",
+      "green",
+      "orange",
+      "red",
+      "purple"
+    ]);
+    FOCUS_COLOR_PRESET_HEX = Object.freeze({
+      blue: "#2196f3",
+      green: "#00b400",
+      orange: "#ff8c00",
+      red: "#e53935",
+      purple: "#9c27b0"
+    });
+    DEFAULT_FOCUS_COLOR = "blue";
+  }
+});
 
 // src/modules/settings-manager.js
-var SETTINGS_STORAGE_KEY = "kp_settings_v1";
-var DEFERRED_OPEN_MIN_MINUTES = 1;
-var DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
-var TEXT_FOCUS_STYLE_IDS = Object.freeze(
-  /** @type {const} */
-  [
-    "left_edge",
-    "background_tint"
-  ]
-);
-var CLICK_EFFECT_IDS = Object.freeze(
-  /** @type {const} */
-  [
-    "flash",
-    "dash",
-    "marquee",
-    "scale",
-    "none"
-  ]
-);
-var DEFAULT_SETTINGS = Object.freeze({
-  themeId: DEFAULT_THEME_ID,
-  themeOverrides: Object.freeze({}),
-  // Last theme whose clickDefaults were written into clickMode/cursorMode.
-  // Empty means never synced (adopt the active theme's click defaults once).
-  clickModeThemeId: "",
-  searchEngine: DEFAULT_SEARCH_ENGINE_ID,
-  cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
-  // New model:
-  // - keyboardLayoutFamilyId + keyboardHandedness are the user-facing selection.
-  // - keyboardLayoutId is the resolved concrete implementation (kept for back-compat + early-inject).
-  keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
-  keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
-  keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
-  // Physical keycap model for Keyboard Reference. This remains independent
-  // from Chrome UI language and OS input-source selection.
-  keyboardHardwareLayoutId: DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID,
-  // Active layout selection for runtime + keyboard reference:
-  // - 'builtin' uses the current built-in family + handedness selection.
-  // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
-  currentKeyboardLayoutId: "builtin",
-  // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
-  keyboardReferenceKeyFeedback: true,
-  // When true, the floating keyboard reference panel includes the number row (1–0).
-  // Default is off to keep the panel compact.
-  keyboardReferenceShowNumberRow: false,
-  // When true, the floating keyboard reference panel is titlebar-only (body hidden).
-  keyboardReferenceCollapsed: false,
-  // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
-  topSitesPersistent: false,
-  // Verbose console.log / debug / info in extension isolated worlds. Off in store builds.
-  debugLogging: false,
-  // Actions Library hierarchical table: expanded group keys (top-level open by default;
-  // nested categories / parents start collapsed until the user opens them).
-  actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
-  // Actions Library placement instructions section (between titlebar and cards).
-  actionsLibraryInstructionsExpanded: true,
-  // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
-  controlStrip: Object.freeze({
-    visible: true,
-    collapsed: true
-  }),
-  // Dock / free positions for movable chrome (keyboard reference, control strip, …).
-  // Anchors re-resolve on resize; free left/top reclamps inside the viewport margin.
-  panelPositions: Object.freeze({
-    keyboardReference: Object.freeze({ anchor: "bottom-left" }),
-    controlStrip: Object.freeze({ anchor: "top-left" }),
-    keyboardLayoutConfig: Object.freeze({ anchor: "middle-right" }),
-    // Empty: first open stays viewport-centered until the user moves/resizes.
-    topSites: Object.freeze({})
-  }),
-  // Per-key action settings (Keyboard Reference mode switches / config params).
-  actionSettings: Object.freeze({
-    RECTANGLE_HIGHLIGHT: Object.freeze({
-      mode: "element",
-      parameters: Object.freeze({})
-    })
-  }),
-  clickMode: Object.freeze({
-    cursor: Object.freeze({
-      type: "crosshair",
-      // Cursor SVG stroke width. Slider range: 1–12.
-      lineWidth: 4,
-      // Cursor size in pixels. Default is half of previous (was ~30px, now 15px).
-      sizePixels: 10,
-      // Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars.
-      gap: 6
-    }),
-    // Hover focus ring color (DOM-hover mode default is blue).
-    focusColor: "blue",
-    // When true, the focus rectangle can include a translucent fill (where applicable).
-    overlayFillEnabled: true,
-    // When true, draw a soft outer glow/shadow on the focus rectangle.
-    overlayShadowEnabled: false,
-    // Focus rectangle border thickness in px.
-    rectangleThickness: 3,
-    // F-key activation feedback on link-style targets (flash is the default).
-    clickEffect: "flash",
-    // When true, hovering a link glows matching green keys on the Keyboard Reference.
-    // Off by default (opt-in via Settings → Click Mode).
-    keyboardLinkHoverHints: false,
-    // Default skip DOM outline (A); use in-target (B) then body-fixed (C).
-    // Matches Shadow Root Debug “Auto B→C”.
-    paintStrategy: "BC",
-    // When true, dash A/B/C hover rings differently for paint-backend recognition.
-    // Off by default (opt-in via Settings → Click Mode → Advanced).
-    paintBackendDebugDashes: false,
-    // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
-    // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
-    focusPadding: 2,
-    // When a nested control shares the parent's destination (same URL), hover
-    // the parent card instead. Different-destination children keep their own ring.
-    skipForParent: true
-  }),
-  textMode: Object.freeze({
-    cursorType: "t_square",
-    // When true, show both labels: "Active text field" + "Press ESC to close".
-    labelsEnabled: false,
-    // Stroke thickness in px for orange text-mode rectangles.
-    strokeThickness: 3,
-    // How the focused text field is styled while in text mode.
-    // left_edge: pulsating orange bar on the left inset edge (default).
-    // background_tint: full-field orange wash (legacy).
-    focusStyle: "left_edge",
-    // Width of the left-edge pulse bar in px (when focusStyle is left_edge).
-    leftEdgeWidth: 5
-  }),
-  scroll: Object.freeze({
-    // C / V scroll distance in pixels (default = prior 400 × 1.25).
-    halfPagePx: SCROLL.HALF_PAGE_PX,
-    // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
-    speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
-    // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
-    middleClickScrollLine: isMacPlatform(),
-    // Scroll Line: skip horizontal-only landscape overflow (carousels).
-    linePreferPortraitTargets: true
-  }),
-  deferredOpen: Object.freeze({
-    openUrls: Object.freeze({
-      enabled: true,
-      minMinutes: 1,
-      maxMinutes: 60
-    }),
-    randomBookmarks: Object.freeze({
-      enabled: true,
-      minMinutes: 1,
-      maxMinutes: 60
-    }),
-    clickElement: Object.freeze({
-      enabled: true,
-      minMinutes: 1,
-      maxMinutes: 60
-    }),
-    closeTab: Object.freeze({
-      enabled: true,
-      minMinutes: 1,
-      maxMinutes: 60
-    }),
-    closeWindow: Object.freeze({
-      enabled: true,
-      minMinutes: 1,
-      maxMinutes: 60
-    }),
-    target: "activeWindow",
-    silentRandomScheduling: true
-  })
-});
 function normalizeSearchEngine(raw) {
   return normalizeSearchEngineId(raw);
 }
@@ -3113,6 +3026,18 @@ function normalizeClickMode(raw) {
     overlayFillEnabled: normalizeBoolean(
       stored.overlayFillEnabled,
       DEFAULT_SETTINGS.clickMode.overlayFillEnabled
+    ),
+    overlayFillMaxWidth: normalizeNumber(
+      stored.overlayFillMaxWidth,
+      DEFAULT_SETTINGS.clickMode.overlayFillMaxWidth,
+      OVERLAY_FILL_MAX_SIZE_MIN,
+      OVERLAY_FILL_MAX_SIZE_MAX
+    ),
+    overlayFillMaxHeight: normalizeNumber(
+      stored.overlayFillMaxHeight,
+      DEFAULT_SETTINGS.clickMode.overlayFillMaxHeight,
+      OVERLAY_FILL_MAX_SIZE_MIN,
+      OVERLAY_FILL_MAX_SIZE_MAX
     ),
     overlayShadowEnabled: normalizeBoolean(
       stored.overlayShadowEnabled,
@@ -3210,9 +3135,15 @@ function normalizeDeferredOpenRange(raw, fallback) {
     maxMinutes: Math.max(minMinutes, maxMinutes)
   };
 }
+function normalizeDeferredNumberRowKeys(raw) {
+  return raw === "applied" || raw === "kept" ? raw : "auto";
+}
 function normalizeDeferredOpen(raw) {
   const stored = raw && typeof raw === "object" ? raw : {};
   return {
+    // Absent means off, including profiles saved before this flag existed.
+    enabled: normalizeBoolean(stored.enabled, false),
+    numberRowKeys: normalizeDeferredNumberRowKeys(stored.numberRowKeys),
     openUrls: normalizeDeferredOpenRange(stored.openUrls, DEFAULT_SETTINGS.deferredOpen.openUrls),
     randomBookmarks: normalizeDeferredOpenRange(
       stored.randomBookmarks,
@@ -3244,16 +3175,6 @@ function normalizeControlStrip(raw) {
     collapsed: normalizeBoolean(stored.collapsed, DEFAULT_SETTINGS.controlStrip.collapsed)
   };
 }
-var PANEL_ANCHOR_IDS = /* @__PURE__ */ new Set([
-  "top-left",
-  "top-center",
-  "top-right",
-  "middle-left",
-  "middle-right",
-  "bottom-left",
-  "bottom-center",
-  "bottom-right"
-]);
 function normalizePanelPositionEntry(raw, fallback) {
   const fb = fallback && typeof fallback === "object" ? fallback : {};
   if (!raw || typeof raw !== "object") {
@@ -3602,6 +3523,221 @@ async function resetAllSettings() {
   await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
   return getSettings();
 }
+var SETTINGS_STORAGE_KEY, DEFERRED_OPEN_MIN_MINUTES, DEFERRED_OPEN_MAX_MINUTES, OVERLAY_FILL_MAX_SIZE_MIN, OVERLAY_FILL_MAX_SIZE_MAX, OVERLAY_FILL_MAX_SIZE_DEFAULT, TEXT_FOCUS_STYLE_IDS, CLICK_EFFECT_IDS, DEFAULT_SETTINGS, PANEL_ANCHOR_IDS;
+var init_settings_manager = __esm({
+  "src/modules/settings-manager.js"() {
+    init_constants();
+    init_schema();
+    init_keyboard_layouts();
+    init_keyboard_hardware_layouts();
+    init_search_engines();
+    init_storage();
+    init_platform();
+    init_focus_color();
+    SETTINGS_STORAGE_KEY = "kp_settings_v1";
+    DEFERRED_OPEN_MIN_MINUTES = 1;
+    DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
+    OVERLAY_FILL_MAX_SIZE_MIN = 20;
+    OVERLAY_FILL_MAX_SIZE_MAX = 2e3;
+    OVERLAY_FILL_MAX_SIZE_DEFAULT = 250;
+    TEXT_FOCUS_STYLE_IDS = Object.freeze(
+      /** @type {const} */
+      [
+        "left_edge",
+        "background_tint"
+      ]
+    );
+    CLICK_EFFECT_IDS = Object.freeze(
+      /** @type {const} */
+      [
+        "flash",
+        "dash",
+        "marquee",
+        "scale",
+        "none"
+      ]
+    );
+    DEFAULT_SETTINGS = Object.freeze({
+      themeId: DEFAULT_THEME_ID,
+      themeOverrides: Object.freeze({}),
+      // Last theme whose clickDefaults were written into clickMode/cursorMode.
+      // Empty means never synced (adopt the active theme's click defaults once).
+      clickModeThemeId: "",
+      searchEngine: DEFAULT_SEARCH_ENGINE_ID,
+      cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
+      // New model:
+      // - keyboardLayoutFamilyId + keyboardHandedness are the user-facing selection.
+      // - keyboardLayoutId is the resolved concrete implementation (kept for back-compat + early-inject).
+      keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
+      keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
+      keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
+      // Physical keycap model for Keyboard Reference. This remains independent
+      // from Chrome UI language and OS input-source selection.
+      keyboardHardwareLayoutId: DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID,
+      // Active layout selection for runtime + keyboard reference:
+      // - 'builtin' uses the current built-in family + handedness selection.
+      // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
+      currentKeyboardLayoutId: "builtin",
+      // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
+      keyboardReferenceKeyFeedback: true,
+      // When true, the floating keyboard reference panel includes the number row (1–0).
+      // Default is off to keep the panel compact.
+      keyboardReferenceShowNumberRow: false,
+      // When true, the floating keyboard reference panel is titlebar-only (body hidden).
+      keyboardReferenceCollapsed: false,
+      // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
+      topSitesPersistent: false,
+      // Verbose console.log / debug / info in extension isolated worlds. Off in store builds.
+      debugLogging: false,
+      // Actions Library hierarchical table: expanded group keys (top-level open by default;
+      // nested categories / parents start collapsed until the user opens them).
+      actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
+      // Actions Library placement instructions section (between titlebar and cards).
+      actionsLibraryInstructionsExpanded: true,
+      // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
+      controlStrip: Object.freeze({
+        visible: true,
+        collapsed: true
+      }),
+      // Dock / free positions for movable chrome (keyboard reference, control strip, …).
+      // Anchors re-resolve on resize; free left/top reclamps inside the viewport margin.
+      panelPositions: Object.freeze({
+        keyboardReference: Object.freeze({ anchor: "bottom-left" }),
+        controlStrip: Object.freeze({ anchor: "top-left" }),
+        keyboardLayoutConfig: Object.freeze({ anchor: "middle-right" }),
+        // Empty: first open stays viewport-centered until the user moves/resizes.
+        topSites: Object.freeze({})
+      }),
+      // Per-key action settings (Keyboard Reference mode switches / config params).
+      actionSettings: Object.freeze({
+        RECTANGLE_HIGHLIGHT: Object.freeze({
+          mode: "element",
+          parameters: Object.freeze({})
+        })
+      }),
+      clickMode: Object.freeze({
+        cursor: Object.freeze({
+          type: "crosshair",
+          // Cursor SVG stroke width. Slider range: 1–12.
+          lineWidth: 4,
+          // Cursor size in pixels. Default is half of previous (was ~30px, now 15px).
+          sizePixels: 10,
+          // Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars.
+          gap: 6
+        }),
+        // Hover focus ring color (DOM-hover mode default is blue).
+        focusColor: "blue",
+        // When true, the focus rectangle can include a translucent fill (where applicable).
+        overlayFillEnabled: true,
+        overlayFillMaxWidth: OVERLAY_FILL_MAX_SIZE_DEFAULT,
+        overlayFillMaxHeight: OVERLAY_FILL_MAX_SIZE_DEFAULT,
+        // When true, draw a soft outer glow/shadow on the focus rectangle.
+        overlayShadowEnabled: false,
+        // Focus rectangle border thickness in px.
+        rectangleThickness: 3,
+        // F-key activation feedback on link-style targets (flash is the default).
+        clickEffect: "flash",
+        // When true, hovering a link glows matching green keys on the Keyboard Reference.
+        // Off by default (opt-in via Settings → Click Mode).
+        keyboardLinkHoverHints: false,
+        // Default skip DOM outline (A); use in-target (B) then body-fixed (C).
+        // Matches Shadow Root Debug “Auto B→C”.
+        paintStrategy: "BC",
+        // When true, dash A/B/C hover rings differently for paint-backend recognition.
+        // Off by default (opt-in via Settings → Click Mode → Advanced).
+        paintBackendDebugDashes: false,
+        // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
+        // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
+        focusPadding: 2,
+        // When a nested control shares the parent's destination (same URL), hover
+        // the parent card instead. Different-destination children keep their own ring.
+        skipForParent: true
+      }),
+      textMode: Object.freeze({
+        cursorType: "t_square",
+        // When true, show both labels: "Active text field" + "Press ESC to close".
+        labelsEnabled: false,
+        // Stroke thickness in px for orange text-mode rectangles.
+        strokeThickness: 3,
+        // How the focused text field is styled while in text mode.
+        // left_edge: pulsating orange bar on the left inset edge (default).
+        // background_tint: full-field orange wash (legacy).
+        focusStyle: "left_edge",
+        // Width of the left-edge pulse bar in px (when focusStyle is left_edge).
+        leftEdgeWidth: 5
+      }),
+      scroll: Object.freeze({
+        // C / V scroll distance in pixels (default = prior 400 × 1.25).
+        halfPagePx: SCROLL.HALF_PAGE_PX,
+        // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
+        speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
+        // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
+        middleClickScrollLine: isMacPlatform(),
+        // Scroll Line: skip horizontal-only landscape overflow (carousels).
+        linePreferPortraitTargets: true
+      }),
+      deferredOpen: Object.freeze({
+        // Bonus feature. Missing `enabled` on older stored settings stays off.
+        enabled: false,
+        // 'auto' asks on enable; 'applied' wrote 1/2/4; 'kept' left existing keys.
+        numberRowKeys: "auto",
+        openUrls: Object.freeze({
+          enabled: true,
+          minMinutes: 1,
+          maxMinutes: 60
+        }),
+        randomBookmarks: Object.freeze({
+          enabled: true,
+          minMinutes: 1,
+          maxMinutes: 60
+        }),
+        clickElement: Object.freeze({
+          enabled: true,
+          minMinutes: 1,
+          maxMinutes: 60
+        }),
+        closeTab: Object.freeze({
+          enabled: true,
+          minMinutes: 1,
+          maxMinutes: 60
+        }),
+        closeWindow: Object.freeze({
+          enabled: true,
+          minMinutes: 1,
+          maxMinutes: 60
+        }),
+        target: "activeWindow",
+        silentRandomScheduling: false
+      })
+    });
+    PANEL_ANCHOR_IDS = /* @__PURE__ */ new Set([
+      "top-left",
+      "top-center",
+      "top-right",
+      "middle-left",
+      "middle-right",
+      "bottom-left",
+      "bottom-center",
+      "bottom-right"
+    ]);
+  }
+});
+
+// pages/settings.js
+init_constants();
+init_keyboard_layouts();
+init_search_engines();
+init_settings_manager();
+init_focus_color();
+
+// src/modules/settings-controller.js
+init_settings_manager();
+
+// themes/index.js
+init_schema();
+
+// themes/dark-pro/theme.js
+init_schema();
 
 // themes/chrome-recipes.js
 var METAL_SPECULAR = "linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)";
@@ -3793,6 +3929,8 @@ var DARK_PRO_CLICK_DEFAULTS = Object.freeze({
     }),
     focusColor: "blue",
     overlayFillEnabled: true,
+    overlayFillMaxWidth: 250,
+    overlayFillMaxHeight: 250,
     overlayShadowEnabled: false,
     rectangleThickness: 3,
     clickEffect: "flash",
@@ -3813,6 +3951,8 @@ var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
     }),
     focusColor: "blue",
     overlayFillEnabled: true,
+    overlayFillMaxWidth: 250,
+    overlayFillMaxHeight: 250,
     overlayShadowEnabled: false,
     rectangleThickness: 4,
     clickEffect: "flash",
@@ -3833,6 +3973,8 @@ var GX_ER_CLICK_DEFAULTS = Object.freeze({
     }),
     focusColor: "green",
     overlayFillEnabled: false,
+    overlayFillMaxWidth: 250,
+    overlayFillMaxHeight: 250,
     overlayShadowEnabled: true,
     rectangleThickness: 3,
     clickEffect: "flash",
@@ -3883,6 +4025,7 @@ var DARK_PRO_THEME = Object.freeze({
 });
 
 // themes/gray-metal-pro/theme.js
+init_schema();
 var color2 = createMetalColor();
 var GRAY_METAL_PRO_THEME = Object.freeze({
   id: "gray-metal-pro",
@@ -3910,6 +4053,7 @@ var GRAY_METAL_PRO_THEME = Object.freeze({
 });
 
 // themes/gx-er/theme.js
+init_schema();
 var color3 = createGxColor();
 var type = createProTypeTokens({
   display: "'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif",
@@ -4147,26 +4291,26 @@ function injectStyle(root, css, attr) {
     }
   }
 }
-function applyThemeDataset(el, theme) {
-  if (!el?.setAttribute) return;
+function applyThemeDataset(el2, theme) {
+  if (!el2?.setAttribute) return;
   const id = theme?.id || DEFAULT_THEME_ID;
   try {
-    el.setAttribute("data-kp-theme", id);
+    el2.setAttribute("data-kp-theme", id);
   } catch {
   }
   const cut = theme?.shape?.cornerMode === "cut";
   try {
-    if (cut) el.setAttribute("data-kp-corner", "cut");
-    else el.removeAttribute("data-kp-corner");
+    if (cut) el2.setAttribute("data-kp-corner", "cut");
+    else el2.removeAttribute("data-kp-corner");
   } catch {
   }
 }
-function applyThemeCssVars(el, theme) {
-  if (!el?.style?.setProperty) return;
+function applyThemeCssVars(el2, theme) {
+  if (!el2?.style?.setProperty) return;
   const vars = themeToCssVars(theme);
   for (const [k, v] of Object.entries(vars)) {
     try {
-      el.style.setProperty(k, v);
+      el2.style.setProperty(k, v);
     } catch {
     }
   }
@@ -4187,12 +4331,12 @@ var CHROME_THEME_HOST_SEL = [
 ].join(", ");
 function collectChromeThemeHosts(root, out = [], seen = /* @__PURE__ */ new Set()) {
   if (!root) return out;
-  const addHost = (el) => {
-    if (!el || seen.has(el)) return;
-    seen.add(el);
-    out.push(el);
+  const addHost = (el2) => {
+    if (!el2 || seen.has(el2)) return;
+    seen.add(el2);
+    out.push(el2);
     try {
-      if (el.shadowRoot) collectChromeThemeHosts(el.shadowRoot, out, seen);
+      if (el2.shadowRoot) collectChromeThemeHosts(el2.shadowRoot, out, seen);
     } catch {
     }
   };
@@ -4212,17 +4356,17 @@ function paintShadowTheme(shadow, theme) {
 function syncThemedIconMasks(root, theme) {
   if (!root?.querySelectorAll) return;
   try {
-    root.querySelectorAll("[data-kp-theme-icon]").forEach((el) => {
-      const id = el.getAttribute("data-kp-theme-icon");
+    root.querySelectorAll("[data-kp-theme-icon]").forEach((el2) => {
+      const id = el2.getAttribute("data-kp-theme-icon");
       const url = getThemeIconUrl(id, theme);
-      if (!url || !el.style) return;
+      if (!url || !el2.style) return;
       const img = `url("${String(url).replace(/"/g, '\\"')}")`;
       try {
-        el.style.webkitMaskImage = img;
+        el2.style.webkitMaskImage = img;
       } catch {
       }
       try {
-        el.style.maskImage = img;
+        el2.style.maskImage = img;
       } catch {
       }
     });
@@ -4237,19 +4381,19 @@ function applyThemeToRoots(theme, opts = {}) {
     if (host) hostSet.add(host);
   }
   try {
-    collectChromeThemeHosts(document).forEach((el) => hostSet.add(el));
+    collectChromeThemeHosts(document).forEach((el2) => hostSet.add(el2));
   } catch {
   }
   for (const root of roots) {
-    collectChromeThemeHosts(root).forEach((el) => hostSet.add(el));
+    collectChromeThemeHosts(root).forEach((el2) => hostSet.add(el2));
   }
   for (const root of roots) {
     if (!root) continue;
     injectAllThemeMaps(root);
     injectStyle(root, getThemeCss(_activeTheme), STYLE_ATTR);
-    const el = root.nodeType === 9 ? root.documentElement : root.host || null;
-    applyThemeDataset(el, _activeTheme);
-    if (el) applyThemeCssVars(el, _activeTheme);
+    const el2 = root.nodeType === 9 ? root.documentElement : root.host || null;
+    applyThemeDataset(el2, _activeTheme);
+    if (el2) applyThemeCssVars(el2, _activeTheme);
   }
   for (const host of hostSet) {
     applyThemeDataset(host, _activeTheme);
@@ -4481,9 +4625,9 @@ var SettingsController = class {
   /**
    * @param {SettingsResetScope} scope
    */
-  async reset(scope) {
+  async reset(scope2) {
     if (this._disposed) return this.state;
-    switch (scope) {
+    switch (scope2) {
       case "all":
         this.state = await resetAllSettings();
         this._emit();
@@ -4530,6 +4674,7 @@ function createSettingsController() {
 }
 
 // src/modules/settings-binder.js
+init_settings_manager();
 var SETTINGS_CONTROLS = Object.freeze([
   { type: "radio", name: "engine", path: "searchEngine" },
   { type: "toggle", id: "keyboard-reference-key-feedback", path: "keyboardReferenceKeyFeedback" },
@@ -4572,6 +4717,20 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "rangePair", baseId: "click-cursor-size", path: "clickMode.cursor.sizePixels", min: 5, max: 60 },
   { type: "rangePair", baseId: "click-cursor-gap", path: "clickMode.cursor.gap", min: 0, max: 20 },
   { type: "toggle", id: "click-overlay-fill", path: "clickMode.overlayFillEnabled" },
+  {
+    type: "rangePair",
+    baseId: "click-overlay-fill-max-width",
+    path: "clickMode.overlayFillMaxWidth",
+    min: OVERLAY_FILL_MAX_SIZE_MIN,
+    max: OVERLAY_FILL_MAX_SIZE_MAX
+  },
+  {
+    type: "rangePair",
+    baseId: "click-overlay-fill-max-height",
+    path: "clickMode.overlayFillMaxHeight",
+    min: OVERLAY_FILL_MAX_SIZE_MIN,
+    max: OVERLAY_FILL_MAX_SIZE_MAX
+  },
   { type: "toggle", id: "click-overlay-shadow", path: "clickMode.overlayShadowEnabled" },
   { type: "rangePair", baseId: "click-rect-thickness", path: "clickMode.rectangleThickness", min: 1, max: 16 },
   { type: "toggle", id: "click-keyboard-link-hints", path: "clickMode.keyboardLinkHoverHints" },
@@ -4612,7 +4771,7 @@ var SETTINGS_CONTROLS = Object.freeze([
     id: "app-title-tracking",
     event: "change",
     overridePath: "type.letterSpacing.titlebar",
-    fromEl: (el) => String(el.value || "0.02em").trim() || "0.02em"
+    fromEl: (el2) => String(el2.value || "0.02em").trim() || "0.02em"
   },
   {
     type: "appearanceRadio",
@@ -4630,22 +4789,22 @@ var SETTINGS_CONTROLS = Object.freeze([
     id: "app-key-border",
     event: "change",
     overridePath: "keys.border",
-    fromEl: (el) => String(el.value || "").trim() || "1px solid rgba(0, 0, 0, 0.4)"
+    fromEl: (el2) => String(el2.value || "").trim() || "1px solid rgba(0, 0, 0, 0.4)"
   },
-  { type: "appearanceControl", id: "app-color-accent", event: "input", overridePath: "color.accent", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-fg", event: "input", overridePath: "color.fg", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-fg-dim", event: "input", overridePath: "color.fgDim", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-panel", event: "input", overridePath: "color.panel", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-panel-edge", event: "input", overridePath: "color.panelEdge", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-title-top", event: "input", overridePath: "color.titleTop", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-title-mid", event: "input", overridePath: "color.titleMid", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-title-bot", event: "input", overridePath: "color.titleBot", fromEl: (el) => el.value },
-  { type: "appearanceControl", id: "app-color-kbd", event: "input", overridePath: "color.kbdColor", fromEl: (el) => el.value },
+  { type: "appearanceControl", id: "app-color-accent", event: "input", overridePath: "color.accent", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-fg", event: "input", overridePath: "color.fg", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-fg-dim", event: "input", overridePath: "color.fgDim", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-panel", event: "input", overridePath: "color.panel", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-panel-edge", event: "input", overridePath: "color.panelEdge", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-title-top", event: "input", overridePath: "color.titleTop", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-title-mid", event: "input", overridePath: "color.titleMid", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-title-bot", event: "input", overridePath: "color.titleBot", fromEl: (el2) => el2.value },
+  { type: "appearanceControl", id: "app-color-kbd", event: "input", overridePath: "color.kbdColor", fromEl: (el2) => el2.value },
   { type: "appearanceRangePair", baseId: "app-type-ui", overridePath: "type.size.ui", min: 9, max: 18 },
   { type: "appearanceRangePair", baseId: "app-type-kbd", overridePath: "type.size.kbd", min: 8, max: 16 }
 ]);
 function bindSettingsControls(ctx) {
-  const { controller, el, all, setInputValue: setInputValue2, signal } = ctx;
+  const { controller: controller2, el: el2, all: all2, setInputValue: setInputValue3, signal } = ctx;
   const listenOpts = { signal, capture: true };
   const runUpdate = (spec, work) => {
     void Promise.resolve(work).then((s) => {
@@ -4658,37 +4817,37 @@ function bindSettingsControls(ctx) {
     if (spec.type === "toggle") {
       const node = (
         /** @type {HTMLInputElement|null} */
-        el(spec.id || "")
+        el2(spec.id || "")
       );
       if (!node) continue;
       node.addEventListener("change", () => {
         const raw = spec.normalize ? spec.normalize(!!node.checked) : !!node.checked;
-        runUpdate(spec, controller.update(spec.path, raw));
+        runUpdate(spec, controller2.update(spec.path, raw));
       }, listenOpts);
       continue;
     }
     if (spec.type === "select") {
       const node = (
         /** @type {HTMLSelectElement|null} */
-        el(spec.id || "")
+        el2(spec.id || "")
       );
       if (!node) continue;
       node.addEventListener("change", () => {
         const raw = spec.normalize ? spec.normalize(node.value) : node.value;
-        runUpdate(spec, controller.update(spec.path, raw));
+        runUpdate(spec, controller2.update(spec.path, raw));
       }, listenOpts);
       continue;
     }
     if (spec.type === "radio") {
       const radios = (
         /** @type {HTMLInputElement[]} */
-        Array.from(all(`input[name="${spec.name}"]`))
+        Array.from(all2(`input[name="${spec.name}"]`))
       );
       radios.forEach((radio) => {
         radio.addEventListener("change", () => {
           if (!radio.checked) return;
           const raw = spec.normalize ? spec.normalize(radio.value) : radio.value;
-          runUpdate(spec, controller.update(spec.path, raw));
+          runUpdate(spec, controller2.update(spec.path, raw));
         }, listenOpts);
       });
       continue;
@@ -4696,17 +4855,17 @@ function bindSettingsControls(ctx) {
     if (spec.type === "rangePair") {
       const range = (
         /** @type {HTMLInputElement|null} */
-        el(`${spec.baseId}-range`)
+        el2(`${spec.baseId}-range`)
       );
       const number = (
         /** @type {HTMLInputElement|null} */
-        el(`${spec.baseId}-number`)
+        el2(`${spec.baseId}-number`)
       );
       const commit = (raw) => {
         const n = clampNumber(raw, spec.min ?? 0, spec.max ?? 0);
-        setInputValue2(range, n);
-        setInputValue2(number, n);
-        void controller.update(spec.path, n);
+        setInputValue3(range, n);
+        setInputValue3(number, n);
+        void controller2.update(spec.path, n);
       };
       range?.addEventListener("input", () => commit(range.value), listenOpts);
       number?.addEventListener("input", () => commit(number.value), listenOpts);
@@ -4715,26 +4874,26 @@ function bindSettingsControls(ctx) {
     if (spec.type === "appearanceControl") {
       const node = (
         /** @type {HTMLInputElement|null} */
-        el(spec.id || "")
+        el2(spec.id || "")
       );
       if (!node) continue;
       const eventName = spec.event || "change";
       node.addEventListener(eventName, () => {
         const fromEl = spec.fromEl || ((e) => e.value);
-        void controller.updateThemeOverride(spec.overridePath, fromEl(node));
+        void controller2.updateThemeOverride(spec.overridePath, fromEl(node));
       }, listenOpts);
       continue;
     }
     if (spec.type === "appearanceRadio") {
       const radios = (
         /** @type {HTMLInputElement[]} */
-        Array.from(all(`input[name="${spec.name}"]`))
+        Array.from(all2(`input[name="${spec.name}"]`))
       );
       radios.forEach((radio) => {
         radio.addEventListener("change", () => {
           if (!radio.checked) return;
           const raw = spec.normalize ? spec.normalize(radio.value) : radio.value;
-          void controller.updateThemeOverride(spec.overridePath, raw);
+          void controller2.updateThemeOverride(spec.overridePath, raw);
         }, listenOpts);
       });
       continue;
@@ -4742,18 +4901,18 @@ function bindSettingsControls(ctx) {
     if (spec.type === "appearanceRangePair") {
       const range = (
         /** @type {HTMLInputElement|null} */
-        el(`${spec.baseId}-range`)
+        el2(`${spec.baseId}-range`)
       );
       const number = (
         /** @type {HTMLInputElement|null} */
-        el(`${spec.baseId}-number`)
+        el2(`${spec.baseId}-number`)
       );
       const format = typeof spec.formatValue === "function" ? spec.formatValue : (n) => `${n}px`;
       const commit = (raw) => {
         const n = clampNumber(raw, spec.min ?? 0, spec.max ?? 0);
-        setInputValue2(range, n);
-        setInputValue2(number, n);
-        void controller.updateThemeOverride(spec.overridePath, format(n));
+        setInputValue3(range, n);
+        setInputValue3(number, n);
+        void controller2.updateThemeOverride(spec.overridePath, format(n));
       };
       range?.addEventListener("input", () => commit(range.value), listenOpts);
       number?.addEventListener("input", () => commit(number.value), listenOpts);
@@ -4762,6 +4921,7 @@ function bindSettingsControls(ctx) {
 }
 
 // src/utils/debug.js
+init_settings_manager();
 var SOURCE_BUILD_ENABLE_DEBUG_SETTINGS = true;
 var BUILD_ENABLE_DEBUG_SETTINGS = typeof __KP_BUILD_ENABLE_DEBUG_SETTINGS__ !== "undefined" ? !!__KP_BUILD_ENABLE_DEBUG_SETTINGS__ : SOURCE_BUILD_ENABLE_DEBUG_SETTINGS;
 function applyDebugSetting(enabled) {
@@ -4770,6 +4930,10 @@ function applyDebugSetting(enabled) {
   } catch {
   }
 }
+
+// pages/settings.js
+init_i18n();
+init_platform();
 
 // src/ui/url-listing.js
 var GENERIC_FAVICON_SVG = `
@@ -4799,6 +4963,7 @@ function getExtensionFaviconUrl(pageUrl, size = 32) {
 }
 
 // src/modules/cursor.js
+init_constants();
 var CursorManager = class {
   constructor() {
     this.cursorEl = null;
@@ -5023,9 +5188,2041 @@ var KP_SETTINGS_PANEL_IDS = Object.freeze([
   "about",
   "debug"
 ]);
+function buildKpDeepLink(opts) {
+  const kind = opts?.kind === "settings" || opts?.kind === "docs" ? opts.kind : null;
+  const id = String(opts?.id || "").trim();
+  if (!kind || !id || !/^[a-z0-9][a-z0-9_-]*$/i.test(id)) return "";
+  const hash = String(opts?.hash || "").replace(/^#/, "").trim();
+  return hash ? `kp://${kind}/${id}#${hash}` : `kp://${kind}/${id}`;
+}
 function normalizeSettingsPanelId(panelId) {
   const id = String(panelId || "").trim();
   return KP_SETTINGS_PANEL_IDS.includes(id) ? id : null;
+}
+
+// src/config/function-library.js
+init_keyboard_layouts();
+
+// src/config/macro-keys.js
+init_i18n();
+init_platform();
+var MACRO_KEY_KIND_DEFS = Object.freeze([
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "hotkey"
+    ),
+    labelKey: "mk_hotkey_label",
+    descriptionKey: "mk_hotkey_description",
+    detailsKey: "mk_hotkey_details",
+    keyboardClass: "key-orange"
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "burst"
+    ),
+    labelKey: "mk_burst_label",
+    descriptionKey: "mk_burst_description",
+    detailsKey: "mk_burst_details",
+    keyboardClass: "key-purple"
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "roundRobin"
+    ),
+    labelKey: "mk_roundRobin_label",
+    descriptionKey: "mk_roundRobin_description",
+    detailsKey: "mk_roundRobin_details",
+    keyboardClass: "key-page-scroll"
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "continuous"
+    ),
+    labelKey: "mk_continuous_label",
+    descriptionKey: "mk_continuous_description",
+    detailsKey: "mk_continuous_details",
+    keyboardClass: "key-highlight"
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "mouse"
+    ),
+    labelKey: "mk_mouse_label",
+    descriptionKey: "mk_mouse_description",
+    detailsKey: "mk_mouse_details",
+    keyboardClass: "key-activate"
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "key"
+    ),
+    labelKey: "mk_key_label",
+    descriptionKey: "mk_key_description",
+    detailsKey: "mk_key_details",
+    keyboardClass: "key-gray"
+  })
+]);
+var KNOWN_KINDS = new Set(MACRO_KEY_KIND_DEFS.map((d) => d.id));
+function normalizeKeyStroke(raw) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const key2 = String(src.key || "").trim();
+  const out = { key: key2 || "" };
+  if (typeof src.code === "string" && src.code.trim()) out.code = src.code.trim();
+  if (src.ctrl === true) out.ctrl = true;
+  if (src.alt === true) out.alt = true;
+  if (src.shift === true) out.shift = true;
+  if (src.meta === true) out.meta = true;
+  return out;
+}
+function defaultMacroKeyConfig(kind) {
+  switch (kind) {
+    case "hotkey":
+      return { stroke: normalizeKeyStroke({ key: "c", ctrl: true }) };
+    case "burst":
+      return {
+        steps: [
+          normalizeKeyStroke({ key: "a" }),
+          normalizeKeyStroke({ key: "b" }),
+          normalizeKeyStroke({ key: "c" })
+        ],
+        gapMs: 40
+      };
+    case "roundRobin":
+      return {
+        items: [
+          normalizeKeyStroke({ key: "a" }),
+          normalizeKeyStroke({ key: "b" }),
+          normalizeKeyStroke({ key: "c" })
+        ]
+      };
+    case "continuous":
+      return {
+        stroke: normalizeKeyStroke({ key: "w" }),
+        intervalMs: 50
+      };
+    case "mouse":
+      return { button: "left" };
+    case "key":
+      return { stroke: normalizeKeyStroke({ key: "1" }) };
+    default:
+      return {};
+  }
+}
+function normalizeMacroKeyConfig(kind, raw) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const base = defaultMacroKeyConfig(kind);
+  switch (kind) {
+    case "hotkey":
+    case "key":
+      return { stroke: normalizeKeyStroke(src.stroke || base.stroke) };
+    case "burst": {
+      const stepsRaw = Array.isArray(src.steps) ? src.steps : base.steps;
+      const steps = stepsRaw.map((s) => normalizeKeyStroke(s)).filter((s) => s.key);
+      const gap = Number(src.gapMs);
+      return {
+        steps: steps.length ? steps : base.steps,
+        gapMs: Number.isFinite(gap) ? Math.max(0, Math.min(2e3, gap)) : 40
+      };
+    }
+    case "roundRobin": {
+      const itemsRaw = Array.isArray(src.items) ? src.items : base.items;
+      const items = itemsRaw.map((s) => normalizeKeyStroke(s)).filter((s) => s.key);
+      return { items: items.length ? items : base.items };
+    }
+    case "continuous": {
+      const interval = Number(src.intervalMs);
+      return {
+        stroke: normalizeKeyStroke(src.stroke || base.stroke),
+        intervalMs: Number.isFinite(interval) ? Math.max(10, Math.min(5e3, interval)) : 50
+      };
+    }
+    case "mouse": {
+      const button = String(src.button || "left").toLowerCase();
+      return {
+        button: button === "middle" || button === "right" || button === "left" ? button : "left"
+      };
+    }
+    default:
+      return { ...base };
+  }
+}
+var MACRO_BUILDER_STEP_TYPES = Object.freeze([
+  Object.freeze({ id: "function", labelKey: "mk_step_function_label", descriptionKey: "mk_step_function_description" }),
+  Object.freeze({ id: "wait", labelKey: "mk_step_wait_label", descriptionKey: "mk_step_wait_description" }),
+  Object.freeze({ id: "gate", labelKey: "mk_step_gate_label", descriptionKey: "mk_step_gate_description" }),
+  Object.freeze({ id: "stop", labelKey: "mk_step_stop_label", descriptionKey: "mk_step_stop_description" }),
+  Object.freeze({ id: "runMacro", labelKey: "mk_step_runMacro_label", descriptionKey: "mk_step_runMacro_description" })
+]);
+
+// src/utils/key-chord.js
+init_platform();
+
+// src/modules/action-result-delivery.js
+init_constants();
+
+// src/ui/procedure-result-popover.js
+init_i18n();
+init_constants();
+
+// src/utils/panel-position.js
+var PANEL_ANCHORS = Object.freeze([
+  "top-left",
+  "top-center",
+  "top-right",
+  "middle-left",
+  "middle-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right"
+]);
+
+// src/ui/kp-chrome-shadow.js
+init_i18n();
+
+// src/ui/locale-fonts.js
+function quoteFamily(name) {
+  return `"${name}"`;
+}
+function uiStack(families) {
+  return ["system-ui", "-apple-system", ...families.map(quoteFamily), "sans-serif"].join(", ");
+}
+var KP_CJK_UI_STACK_SC = uiStack([
+  "PingFang SC",
+  "Hiragino Sans GB",
+  "Microsoft YaHei",
+  "Noto Sans SC",
+  "Noto Sans CJK SC"
+]);
+var KP_CJK_UI_STACK_TC = uiStack([
+  "PingFang TC",
+  "Hiragino Sans CNS",
+  "Microsoft JhengHei",
+  "Noto Sans TC",
+  "Noto Sans CJK TC"
+]);
+var KP_CJK_UI_STACK_HK = uiStack([
+  "PingFang HK",
+  "PingFang TC",
+  "Hiragino Sans CNS",
+  "Microsoft JhengHei",
+  "Noto Sans HK",
+  "Noto Sans CJK HK",
+  "Noto Sans TC",
+  "Noto Sans CJK TC"
+]);
+var KP_CJK_UI_STACK_JP = uiStack([
+  "Hiragino Sans",
+  "Yu Gothic UI",
+  "Yu Gothic",
+  "Meiryo",
+  "Noto Sans JP",
+  "Noto Sans CJK JP"
+]);
+function isZhHk(tag) {
+  return tag === "zh-hk" || tag.startsWith("zh-hk-") || tag === "zh-mo" || tag.startsWith("zh-mo-") || tag === "zh-hant-hk" || tag.startsWith("zh-hant-hk-") || tag === "zh-hant-mo" || tag.startsWith("zh-hant-mo-");
+}
+function isZhTw(tag) {
+  if (isZhHk(tag)) return false;
+  return tag === "zh-tw" || tag.startsWith("zh-tw-") || tag === "zh-hant" || tag.startsWith("zh-hant-");
+}
+function isZhHans(tag) {
+  return tag === "zh" || tag === "zh-cn" || tag.startsWith("zh-cn-") || tag === "zh-sg" || tag.startsWith("zh-sg-") || tag === "zh-hans" || tag.startsWith("zh-hans-");
+}
+function isJapanese(tag) {
+  return tag === "ja" || tag.startsWith("ja-");
+}
+var CJK_FONT_RULES = [
+  {
+    id: "jp",
+    stack: () => KP_CJK_UI_STACK_JP,
+    match: isJapanese,
+    shadow: [
+      ":host(:lang(ja))"
+    ],
+    page: [
+      "html:lang(ja) body"
+    ]
+  },
+  {
+    id: "hk",
+    stack: () => KP_CJK_UI_STACK_HK,
+    match: isZhHk,
+    shadow: [
+      ":host(:lang(zh-HK))",
+      ":host(:lang(zh-MO))",
+      ":host(:lang(zh-Hant-HK))",
+      ":host(:lang(zh-Hant-MO))"
+    ],
+    page: [
+      "html:lang(zh-HK) body",
+      "html:lang(zh-MO) body",
+      "html:lang(zh-Hant-HK) body",
+      "html:lang(zh-Hant-MO) body"
+    ]
+  },
+  {
+    id: "tc",
+    stack: () => KP_CJK_UI_STACK_TC,
+    match: isZhTw,
+    shadow: [
+      ":host(:lang(zh-TW))",
+      ":host(:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)))"
+    ],
+    page: [
+      "html:lang(zh-TW) body",
+      "html:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)) body"
+    ]
+  },
+  {
+    id: "sc",
+    stack: () => KP_CJK_UI_STACK_SC,
+    match: isZhHans,
+    shadow: [
+      ":host(:lang(zh-CN))",
+      ":host(:lang(zh-SG))",
+      ":host(:lang(zh-Hans))",
+      ':host([lang="zh" i])'
+    ],
+    page: [
+      "html:lang(zh-CN) body",
+      "html:lang(zh-SG) body",
+      "html:lang(zh-Hans) body",
+      'html[lang="zh" i] body'
+    ]
+  }
+];
+function fontFamilyRule(selectors, stack) {
+  return `${selectors.join(",\n")} {
+  font-family: ${stack};
+}`;
+}
+var KP_CJK_SHADOW_CSS = CJK_FONT_RULES.map((rule) => fontFamilyRule(rule.shadow, rule.stack())).join("\n");
+
+// src/ui/nct-dark-ui.js
+var NCT_DARK_UI_COLORS = {
+  bg: "#0f0f10",
+  panel: "#232323",
+  panelEdge: "#3a3a3a",
+  panelEdgeDark: "#111",
+  titleTop: "#4c4c4c",
+  titleMid: "#353535",
+  titleBot: "#252525",
+  btnTop: "#4a4a4a",
+  btnMid: "#343434",
+  btnBot: "#2a2a2a",
+  litTop: "#5a7a9a",
+  litBot: "#3a5570",
+  litEdge: "#2a4a66",
+  accent: "#4a90c8",
+  fg: "#ddd",
+  fgDim: "#aaa",
+  fgMute: "#777",
+  fieldBg: "#141414",
+  fieldEdge: "#0a0a0a",
+  fieldInsetTop: "#333"
+};
+var NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND = `linear-gradient(180deg, rgba(255, 140, 0, 0.28) 0%, rgba(255, 140, 0, 0.14) 45%, rgba(255, 120, 0, 0.18) 100%), linear-gradient(180deg, ${NCT_DARK_UI_COLORS.titleTop} 0%, ${NCT_DARK_UI_COLORS.titleMid} 45%, ${NCT_DARK_UI_COLORS.titleBot} 100%)`;
+
+// src/messaging/types.js
+var MSG = Object.freeze({
+  // --- Extension enable / status ---
+  GET_STATE: "KP_GET_STATE",
+  SET_STATE: "KP_SET_STATE",
+  TOGGLE_STATE: "KP_TOGGLE_STATE",
+  STATE_RESPONSE: "KP_STATE_RESPONSE",
+  STATE_CHANGED: "KP_STATE_CHANGED",
+  UPDATE_STATE: "KP_UPDATE_STATE",
+  GET_STATUS: "KP_GET_STATUS",
+  STATUS: "KP_STATUS",
+  // --- Transient onboarding actions ---
+  TRANSIENT_ACTION: "KP_TRANSIENT_ACTION",
+  /** Service worker → active tab action selected from the Keyboard Reference context menu. */
+  KEYBOARD_REFERENCE_CONTEXT_ACTION: "KP_KEYBOARD_REFERENCE_CONTEXT_ACTION",
+  // --- Tab / history navigation ---
+  TAB_LEFT: "KP_TAB_LEFT",
+  TAB_RIGHT: "KP_TAB_RIGHT",
+  /** Content → SW: every normal window and its tabs. */
+  TABS_OVERVIEW_GET: "KP_TABS_OVERVIEW_GET",
+  /** SW → content: payload for TABS_OVERVIEW_GET. */
+  TABS_OVERVIEW_RESULT: "KP_TABS_OVERVIEW_RESULT",
+  /** Content → SW: focus a browser window without changing its active tab. */
+  FOCUS_WINDOW: "KP_FOCUS_WINDOW",
+  /** Content → SW: activate a tab and focus its window. */
+  ACTIVATE_TAB: "KP_ACTIVATE_TAB",
+  NEW_TAB: "KP_NEW_TAB",
+  CLOSE_TAB: "KP_CLOSE_TAB",
+  CLOSE_WINDOW: "KP_CLOSE_WINDOW",
+  GO_BACK: "KP_GO_BACK",
+  GO_FORWARD: "KP_GO_FORWARD",
+  OPEN_URL_BACKGROUND: "KP_OPEN_URL_BACKGROUND",
+  OPEN_URL_FOREGROUND: "KP_OPEN_URL_FOREGROUND",
+  /** Open several http(s) URLs as background tabs, in order, after the sender tab. */
+  OPEN_URLS: "KP_OPEN_URLS",
+  /** Content → SW: bookmark folders for the Open Bookmarks picker. */
+  LIST_BOOKMARK_FOLDERS: "KP_LIST_BOOKMARK_FOLDERS",
+  /** SW → content: `{ folders: [{ id, path }] }`. */
+  BOOKMARK_FOLDERS: "KP_BOOKMARK_FOLDERS",
+  /** Content → SW: open the first website bookmarks in a folder. */
+  OPEN_BOOKMARK_FOLDER: "KP_OPEN_BOOKMARK_FOLDER",
+  /** Content → SW: open `count` random bookmarks. Empty folderId means every bookmark. */
+  OPEN_RANDOM_BOOKMARK: "KP_OPEN_RANDOM_BOOKMARK",
+  /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
+  SCHEDULE_DEFERRED_OPEN: "KP_SCHEDULE_DEFERRED_OPEN",
+  /** SW → content: press the button or form control captured when a click was scheduled. */
+  RUN_DEFERRED_CLICK: "KP_RUN_DEFERRED_CLICK",
+  /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
+  NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
+  /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
+  ZOOM_STEP: "KP_ZOOM_STEP",
+  // --- UI open (content-script handlers; SW may forward) ---
+  OPEN_SETTINGS_POPOVER: "KP_OPEN_SETTINGS_POPOVER",
+  OPEN_GUIDE_POPOVER: "KP_OPEN_GUIDE_POPOVER",
+  /** Open Docs popover; optional topicId / hash deep-link. */
+  OPEN_DOCS_POPOVER: "KP_OPEN_DOCS_POPOVER",
+  OPEN_ONBOARDING: "KP_OPEN_ONBOARDING",
+  /** Reset walkthrough progress and open it (e.g. Guide "Launch Walkthrough"). */
+  LAUNCH_WALKTHROUGH: "KP_LAUNCH_WALKTHROUGH",
+  // --- History / bookmarks / top sites (SW APIs for content scripts) ---
+  OMNIBOX_SUGGEST: "KP_OMNIBOX_SUGGEST",
+  /** Response to OMNIBOX_SUGGEST */
+  OMNIBOX_SUGGESTIONS: "KP_OMNIBOX_SUGGESTIONS",
+  GET_BOOKMARKS: "KP_GET_BOOKMARKS",
+  BOOKMARKS_RESPONSE: "KP_BOOKMARKS_RESPONSE",
+  GET_RECENT_BOOKMARKS: "KP_GET_RECENT_BOOKMARKS",
+  RECENT_BOOKMARKS_RESPONSE: "KP_RECENT_BOOKMARKS_RESPONSE",
+  BROWSER_HISTORY_GET: "KP_BROWSER_HISTORY_GET",
+  BROWSER_HISTORY_RESULT: "KP_BROWSER_HISTORY_RESULT",
+  GET_TOP_SITES: "KP_GET_TOP_SITES",
+  TOP_SITES_RESPONSE: "KP_TOP_SITES_RESPONSE",
+  GET_MOST_VISITED: "KP_GET_MOST_VISITED",
+  MOST_VISITED_RESPONSE: "KP_MOST_VISITED_RESPONSE",
+  GET_HISTORY_FOR_DOMAINS: "KP_GET_HISTORY_FOR_DOMAINS",
+  HISTORY_FOR_DOMAINS_RESPONSE: "KP_HISTORY_FOR_DOMAINS_RESPONSE",
+  GET_RECENT_HISTORY: "KP_GET_RECENT_HISTORY",
+  RECENT_HISTORY_RESPONSE: "KP_RECENT_HISTORY_RESPONSE",
+  // --- Video thumbnails for card backgrounds (official oEmbed / sync URLs) ---
+  GET_VIDEO_THUMB: "KP_GET_VIDEO_THUMB",
+  VIDEO_THUMB_RESPONSE: "KP_VIDEO_THUMB_RESPONSE",
+  // --- Media Library (IndexedDB at extension origin; SW owns Blobs) ---
+  MEDIA_LIBRARY_ADD: "KP_MEDIA_LIBRARY_ADD",
+  MEDIA_LIBRARY_LIST: "KP_MEDIA_LIBRARY_LIST",
+  MEDIA_LIBRARY_GET: "KP_MEDIA_LIBRARY_GET",
+  MEDIA_LIBRARY_DELETE: "KP_MEDIA_LIBRARY_DELETE",
+  MEDIA_LIBRARY_ZIP: "KP_MEDIA_LIBRARY_ZIP",
+  /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
+  MEDIA_LIBRARY_CHANGED: "KP_MEDIA_LIBRARY_CHANGED",
+  // --- Dictionary lookup (localized Wiktionary parsed entry) ---
+  WIKTIONARY_LOOKUP: "KP_WIKTIONARY_LOOKUP",
+  // --- Per-tab navigation graph ---
+  NAVGRAPH_GET: "KP_NAVGRAPH_GET",
+  /** Response payload for NAVGRAPH_GET */
+  NAVGRAPH_GRAPH: "KP_NAVGRAPH_GRAPH",
+  NAVGRAPH_JUMP: "KP_NAVGRAPH_JUMP",
+  NAVGRAPH_CLEAR: "KP_NAVGRAPH_CLEAR",
+  // --- Generic ---
+  SUCCESS: "KP_SUCCESS",
+  ERROR: "KP_ERROR",
+  /** Lightweight ack (e.g. STATUS notification received) */
+  ACK: "KP_ACK",
+  // --- Separate-window Link Preview / Open Popover (chrome.windows popup) ---
+  OPEN_POPOVER_WINDOW: "KP_OPEN_POPOVER_WINDOW",
+  CLOSE_POPOVER_WINDOW: "KP_CLOSE_POPOVER_WINDOW",
+  /** SW → opener: popover window closed (OS ✕ or in-window close). */
+  POPOVER_WINDOW_CLOSED: "KP_POPOVER_WINDOW_CLOSED",
+  /** Popup tab → SW: am I a KeyPilot popover window? */
+  AM_I_POPOVER_WINDOW: "KP_AM_I_POPOVER_WINDOW",
+  // --- Parent ↔ popover iframe (window.postMessage) ---
+  POPOVER_BRIDGE_INIT: "KP_POPOVER_BRIDGE_INIT",
+  POPOVER_BRIDGE_READY: "KP_POPOVER_BRIDGE_READY",
+  POPOVER_REQUEST_CLOSE: "KP_POPOVER_REQUEST_CLOSE",
+  POPOVER_BRIDGE_KEYDOWN: "KP_POPOVER_BRIDGE_KEYDOWN",
+  POPOVER_SCROLL: "KP_POPOVER_SCROLL",
+  /** Guide iframe → parent: close guide and open walkthrough from a reset state. */
+  POPOVER_LAUNCH_WALKTHROUGH: "KP_POPOVER_LAUNCH_WALKTHROUGH",
+  // --- Parent → child frame activate (window.postMessage; third-party iframes) ---
+  // Top-frame KeyPilot posts this when F/B/G lands on a cross-origin <iframe>.
+  // Child frame-click-agent performs elementFromPoint + click in its own document.
+  // Optional topOrigin: parent tab origin for link routing (no hardcoded domains).
+  FRAME_ACTIVATE: "KP_FRAME_ACTIVATE",
+  // --- Parent → child frame scroll (window.postMessage; layout scroll keys under an iframe) ---
+  // Top-frame KeyPilot posts this when scroll keys land on an <iframe> shell. Child
+  // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
+  // (nested overflow first, then the frame document).
+  FRAME_SCROLL: "KP_FRAME_SCROLL",
+  // --- Child → parent pointer sync (window.postMessage) ---
+  // Frame agent reports local client coords so top KeyPilot can keep lastMouse fresh
+  // while the pointer is over a cross-origin (or any) iframe — parent documents do
+  // not receive mousemove inside iframes. Nested agents re-bubble with translated coords.
+  // Payload: { type, inside: boolean, clientX?: number, clientY?: number }
+  FRAME_POINTER: "KP_FRAME_POINTER",
+  // --- Child → parent: return keyboard focus to the top frame ---
+  // Sent on Esc / pointer leave when the iframe had document focus (manual click).
+  // Top blurs the focused <iframe> so KeyPilot keybinds work on the parent again.
+  FRAME_FOCUS_RECLAIM: "KP_FRAME_FOCUS_RECLAIM",
+  // --- Child → parent: typing focus inside a page iframe ---
+  // Frame agent posts these on focusin/focusout of a text field in its document
+  // (Gutenberg editor-canvas, etc.). Top FocusDetector peeks the same-origin
+  // activeElement and enters/exits text_focus. No element is sent.
+  // Payload: { type }
+  FRAME_TYPING_FOCUS: "KP_FRAME_TYPING_FOCUS",
+  FRAME_TYPING_BLUR: "KP_FRAME_TYPING_BLUR",
+  // --- Parent → child: blur the typing field (Esc from top-frame text mode) ---
+  FRAME_BLUR_TYPING: "KP_FRAME_BLUR_TYPING",
+  // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
+  // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
+  // Thin frame-agent-bundled.js does not include the full app.
+  INJECT_FULL_KEYPILOT_IN_FRAME: "KP_INJECT_FULL_KEYPILOT_IN_FRAME",
+  // --- Content → SW: inject MAIN-world map.panBy bridge into the sender frame ---
+  // Scroll Line uses this so isolated content can pan Leaflet/Mapbox/Google via
+  // page globals. Idempotent; bridge listens for CustomEvent __kp_map_pan_v1.
+  ENSURE_MAP_PAN_BRIDGE: "KP_ENSURE_MAP_PAN_BRIDGE",
+  // --- Child frame-agent → SW: seek media in the page world ---
+  // YouTube (and similar) ignore untrusted timeline clicks and overwrite
+  // isolated-world video.currentTime from player state. MAIN-world seekTo
+  // / currentTime in the sender frame commits the playhead.
+  // Payload: { type, seconds: number }
+  FRAME_MEDIA_SEEK: "KP_FRAME_MEDIA_SEEK",
+  // --- Child frame-agent → SW: set media volume in the page world ---
+  // YouTube volume popup ignores untrusted pointer on the knob. MAIN-world
+  // setVolume(0–100) / unMute in the sender frame commits the level.
+  // Payload: { type, volume: number } where volume is 0–1
+  FRAME_MEDIA_VOLUME: "KP_FRAME_MEDIA_VOLUME"
+});
+var TAB_UI_FORWARD_TYPES = Object.freeze([
+  MSG.OPEN_SETTINGS_POPOVER,
+  MSG.OPEN_GUIDE_POPOVER,
+  MSG.OPEN_DOCS_POPOVER,
+  MSG.OPEN_ONBOARDING,
+  MSG.LAUNCH_WALKTHROUGH
+]);
+
+// src/utils/video-url-utils.js
+var MAX_INLINE_VIDEO_BYTES = 8 * 1024 * 1024;
+
+// src/modules/action-result-delivery.js
+init_i18n();
+var ACTION_RESULT_DESTINATIONS = Object.freeze({
+  CLIPBOARD: "clipboard",
+  POPOVER: "popover",
+  BOTH: "both",
+  MODIFY_PAGE: "modifyPage",
+  MEDIA_LIBRARY: "mediaLibrary",
+  CLIPBOARD_AND_MEDIA_LIBRARY: "clipboardAndMediaLibrary",
+  SCRAPBOOK: "scrapbook"
+});
+var DESTINATION_LABEL_KEYS = Object.freeze({
+  [ACTION_RESULT_DESTINATIONS.CLIPBOARD]: "fn_dest_clipboard",
+  [ACTION_RESULT_DESTINATIONS.POPOVER]: "fn_dest_popover",
+  [ACTION_RESULT_DESTINATIONS.BOTH]: "fn_dest_both",
+  [ACTION_RESULT_DESTINATIONS.MODIFY_PAGE]: "fn_dest_modify_page",
+  [ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY]: "fn_dest_media_library",
+  [ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY]: "fn_dest_clipboard_and_media_library",
+  [ACTION_RESULT_DESTINATIONS.SCRAPBOOK]: "fn_dest_scrapbook"
+});
+function buildResultDestinationParameter(applicableDestinations) {
+  const ids = Array.isArray(applicableDestinations) && applicableDestinations.length ? applicableDestinations : [ACTION_RESULT_DESTINATIONS.CLIPBOARD];
+  return Object.freeze({
+    id: "destination",
+    labelKey: "fn_param_destination",
+    type: "enum",
+    defaultValue: ids[0],
+    options: Object.freeze(ids.map((id) => Object.freeze({
+      id,
+      labelKey: DESTINATION_LABEL_KEYS[id] || "fn_dest_clipboard"
+    })))
+  });
+}
+
+// src/config/function-library.js
+init_i18n();
+init_platform();
+init_open_url_list();
+
+// src/utils/bookmark-folder.js
+init_open_url_list();
+var RANDOM_BOOKMARK_MAX = 30;
+function normalizeBookmarkFolderId(raw) {
+  const id = String(raw ?? "").trim();
+  if (!id || id.length > 64 || /\s/.test(id)) return "";
+  return id;
+}
+
+// src/config/function-library.js
+var TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = /* @__PURE__ */ new Set([
+  "TYPE_CHARACTERS"
+]);
+var CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS = Object.freeze([
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+  ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY,
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY
+]);
+var VIDEO_COPY_DESTINATIONS = Object.freeze([
+  ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY,
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY,
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD
+]);
+var BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
+  COPY_HOVERED_IMAGE: Object.freeze({
+    dataSource: "underCursor",
+    dataKind: "media",
+    destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
+  }),
+  COPY_HOVERED_URL: Object.freeze({
+    dataSource: "underCursor",
+    dataKind: "text",
+    destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
+  }),
+  POI_WEBSITE: Object.freeze({
+    dataSource: "underCursor",
+    dataKind: "text"
+  }),
+  POI_ADDRESS: Object.freeze({
+    dataSource: "underCursor",
+    dataKind: "text",
+    destinations: Object.freeze([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+    ])
+  }),
+  COPY_HOVERED_VIDEO: Object.freeze({
+    dataSource: "underCursor",
+    dataKind: "media",
+    destinations: VIDEO_COPY_DESTINATIONS
+  }),
+  FONT_INFO: Object.freeze({
+    dataSource: "underCursor",
+    dataKind: "text",
+    destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER])
+  }),
+  // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
+  PAGE_MEDIA: Object.freeze({ dataSource: "none", dataKind: "media" }),
+  READER_MODE: Object.freeze({ dataSource: "none", dataKind: "text" }),
+  OPEN_MEDIA_LIBRARY: Object.freeze({ dataSource: "none" }),
+  SEND_TEXT_TO_AI: Object.freeze({
+    dataSource: "textRange",
+    dataKind: "text",
+    destinations: Object.freeze([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.POPOVER,
+      ACTION_RESULT_DESTINATIONS.BOTH
+    ])
+  }),
+  CLIPBOARD_COPY: Object.freeze({ dataSource: "none" }),
+  CLIPBOARD_CUT: Object.freeze({ dataSource: "none" }),
+  CLIPBOARD_PASTE: Object.freeze({ dataSource: "none" }),
+  CLIPBOARD_SELECT_ALL: Object.freeze({ dataSource: "none" }),
+  SELECT_WORD: Object.freeze({ dataSource: "underCursor", dataKind: "text" }),
+  SELECT_SENTENCE: Object.freeze({ dataSource: "underCursor", dataKind: "text" }),
+  SELECT_PARAGRAPH: Object.freeze({ dataSource: "underCursor", dataKind: "text" }),
+  SELECT_IMAGE: Object.freeze({ dataSource: "underCursor", dataKind: "media" })
+});
+var FIXED_KEY_FUNCTION_IDS = Object.freeze([
+  "SEND_TEXT_TO_AI",
+  "RECTANGLE_HIGHLIGHT",
+  "HIGHLIGHT",
+  "COPY_HOVERED_IMAGE",
+  "COPY_HOVERED_URL",
+  "COPY_HOVERED_VIDEO",
+  "POI_ADDRESS",
+  "PAGE_TOP",
+  "PAGE_BOTTOM",
+  "PREVIEW_LINK_POPOVER",
+  "OPEN_POPOVER"
+]);
+var UNIT_SELECT_FUNCTION_IDS = Object.freeze([
+  "SELECT_WORD",
+  "SELECT_SENTENCE",
+  "SELECT_PARAGRAPH",
+  "SELECT_IMAGE"
+]);
+var EDGE_SCROLL_PARAMETERS = Object.freeze([
+  Object.freeze({
+    id: "mode",
+    labelKey: "fn_param_jump_style",
+    type: "enum",
+    defaultValue: "fade",
+    options: Object.freeze([
+      Object.freeze({ id: "fade", labelKey: "fn_param_opt_fade" }),
+      Object.freeze({ id: "smooth", labelKey: "fn_param_opt_scroll" })
+    ])
+  })
+]);
+var UNIT_SELECT_MODE_PARAMETERS = Object.freeze([
+  Object.freeze({
+    id: "mode",
+    labelKey: "fn_param_selection_mode",
+    type: "enum",
+    defaultValue: "exclusive",
+    options: Object.freeze([
+      Object.freeze({ id: "exclusive", labelKey: "fn_param_opt_exclusive" }),
+      Object.freeze({ id: "cumulative", labelKey: "fn_param_opt_cumulative" })
+    ])
+  })
+]);
+var BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
+  PAGE_TOP: EDGE_SCROLL_PARAMETERS,
+  PAGE_BOTTOM: EDGE_SCROLL_PARAMETERS,
+  SELECT_WORD: UNIT_SELECT_MODE_PARAMETERS,
+  SELECT_SENTENCE: UNIT_SELECT_MODE_PARAMETERS,
+  SELECT_PARAGRAPH: UNIT_SELECT_MODE_PARAMETERS,
+  SELECT_IMAGE: UNIT_SELECT_MODE_PARAMETERS,
+  HIGHLIGHT: Object.freeze([
+    Object.freeze({
+      id: "mode",
+      labelKey: "fn_param_copy_as",
+      type: "enum",
+      defaultValue: "rich",
+      options: Object.freeze([
+        Object.freeze({ id: "rich", labelKey: "fn_param_opt_rich_text" }),
+        Object.freeze({ id: "plain", labelKey: "fn_param_opt_plain_text" })
+      ])
+    })
+  ]),
+  RECTANGLE_HIGHLIGHT: Object.freeze([
+    Object.freeze({
+      id: "mode",
+      labelKey: "fn_param_selection_mode",
+      type: "enum",
+      defaultValue: "element",
+      options: Object.freeze([
+        Object.freeze({ id: "element", labelKey: "fn_param_opt_element_rectangle" }),
+        Object.freeze({ id: "cumulative", labelKey: "fn_param_opt_pick_cumulative" })
+      ])
+    })
+  ]),
+  SEND_TEXT_TO_AI: Object.freeze([
+    Object.freeze({
+      id: "prompt",
+      labelKey: "fn_param_instruction",
+      type: "string",
+      multiline: true,
+      defaultValue: "Translate to English",
+      placeholderKey: "fn_param_instruction_placeholder"
+    }),
+    buildResultDestinationParameter([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.POPOVER,
+      ACTION_RESULT_DESTINATIONS.BOTH
+    ])
+  ]),
+  COPY_HOVERED_IMAGE: Object.freeze([
+    buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
+  ]),
+  COPY_HOVERED_URL: Object.freeze([
+    buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
+  ]),
+  COPY_HOVERED_VIDEO: Object.freeze([
+    buildResultDestinationParameter(VIDEO_COPY_DESTINATIONS)
+  ]),
+  POI_ADDRESS: Object.freeze([
+    Object.freeze({
+      id: "action",
+      labelKey: "fn_param_action",
+      type: "enum",
+      defaultValue: "copy",
+      options: Object.freeze([
+        Object.freeze({ id: "copy", labelKey: "fn_param_opt_copy_address" })
+      ])
+    }),
+    Object.freeze({
+      id: "format",
+      labelKey: "fn_param_format",
+      type: "enum",
+      defaultValue: "txt",
+      options: Object.freeze([
+        Object.freeze({ id: "txt", labelKey: "fn_param_opt_txt" }),
+        Object.freeze({ id: "vcard", labelKey: "fn_param_opt_vcard" })
+      ])
+    }),
+    buildResultDestinationParameter([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+    ])
+  ])
+});
+function docsUrl(topicId, hash) {
+  return buildKpDeepLink({ kind: "docs", id: topicId, ...hash ? { hash } : {} });
+}
+var FUNCTION_DOCS_URL_BY_ID = Object.freeze({
+  ACTIVATE: docsUrl("browsing-click"),
+  ACTIVATE_DEFERRED_RANDOM: docsUrl("browsing-tabs"),
+  ACTIVATE_DEFERRED_SCHEDULED: docsUrl("browsing-tabs"),
+  SCHEDULE_LINK_MANUAL: docsUrl("browsing-tabs"),
+  ACTIVATE_NEW_TAB: docsUrl("browsing-click"),
+  ACTIVATE_NEW_TAB_BACKGROUND: docsUrl("browsing-click"),
+  PREVIEW_LINK_POPOVER: docsUrl("tools-previews"),
+  OPEN_POPOVER: docsUrl("tools-previews"),
+  FORWARD: docsUrl("browsing-tabs"),
+  BACK: docsUrl("browsing-tabs"),
+  BACK2: docsUrl("browsing-tabs"),
+  ROOT: docsUrl("browsing-tabs"),
+  CLOSE_TAB: docsUrl("browsing-tabs"),
+  CLOSE_WINDOW: docsUrl("browsing-tabs"),
+  TAB_LEFT: docsUrl("browsing-tabs"),
+  TAB_RIGHT: docsUrl("browsing-tabs"),
+  NEW_TAB: docsUrl("browsing-tabs"),
+  TAB_HISTORY: docsUrl("tools-tab-history"),
+  TABS_OVERVIEW: docsUrl("browsing-tabs"),
+  PAGE_UP_INSTANT: docsUrl("browsing-scroll"),
+  PAGE_DOWN_INSTANT: docsUrl("browsing-scroll"),
+  PAGE_TOP: docsUrl("browsing-scroll"),
+  PAGE_BOTTOM: docsUrl("browsing-scroll"),
+  SCROLL_LINE: docsUrl("browsing-scroll"),
+  ZOOM_OUT: docsUrl("browsing-scroll"),
+  ZOOM_IN: docsUrl("browsing-scroll"),
+  HIGHLIGHT: docsUrl("browsing-select"),
+  RECTANGLE_HIGHLIGHT: docsUrl("browsing-select"),
+  COPY_HOVERED_IMAGE: docsUrl("media-copy"),
+  COPY_HOVERED_URL: docsUrl("media-copy"),
+  COPY_HOVERED_VIDEO: docsUrl("media-copy"),
+  FONT_INFO: docsUrl("functions", "font-info"),
+  PAGE_MEDIA: docsUrl("media-page"),
+  READER_MODE: docsUrl("tools-reader"),
+  DELETE: docsUrl("browsing-modes"),
+  COLS_TOGGLE: docsUrl("browsing-modes"),
+  OPEN_MEDIA_LIBRARY: docsUrl("media-library"),
+  CLIPBOARD_COPY: docsUrl("browsing-select"),
+  CLIPBOARD_CUT: docsUrl("browsing-select"),
+  CLIPBOARD_PASTE: docsUrl("browsing-select"),
+  CLIPBOARD_SELECT_ALL: docsUrl("browsing-select"),
+  SELECT_WORD: docsUrl("browsing-select"),
+  SELECT_SENTENCE: docsUrl("browsing-select"),
+  SELECT_PARAGRAPH: docsUrl("browsing-select"),
+  SELECT_IMAGE: docsUrl("browsing-select"),
+  SEND_TEXT_TO_AI: docsUrl("functions", "send-text-to-ai"),
+  LAUNCHER: docsUrl("tools-launcher"),
+  TOP_SITES: docsUrl("tools-top-sites"),
+  OMNIBOX: docsUrl("tools-omnibox"),
+  TOGGLE_KEYBOARD_HELP: docsUrl("keyboard-reference"),
+  OPEN_SETTINGS_POPOVER: docsUrl("settings"),
+  CANCEL: docsUrl("browsing-modes"),
+  POI_WEBSITE: docsUrl("functions", "poi"),
+  POI_ADDRESS: docsUrl("functions", "poi"),
+  TYPE_CHARACTERS: docsUrl("functions", "type-characters"),
+  OPEN_URLS: docsUrl("browsing-tabs", "open-urls"),
+  OPEN_BOOKMARKS: docsUrl("browsing-tabs", "open-bookmarks"),
+  RANDOM_BOOKMARK: docsUrl("browsing-tabs", "random-bookmark"),
+  EXECUTE_JS: docsUrl("execute-js"),
+  GET_TEXT_AT_CURSOR: docsUrl("functions", "get-text-at-cursor"),
+  GET_TEXT_RANGE: docsUrl("functions", "get-text-at-cursor"),
+  GET_MEDIA_AT_CURSOR: docsUrl("functions", "get-text-at-cursor"),
+  LOOKUP_WORD: docsUrl("functions", "lookup-word"),
+  TRANSLATE: docsUrl("functions", "translate"),
+  SHOW_POPOVER: docsUrl("functions", "show-popover"),
+  ADD_URL_TO_MEDIA_LIBRARY: docsUrl("functions", "media-library-functions"),
+  FETCH_URL_FOR_MEDIA_LIBRARY: docsUrl("functions", "media-library-functions"),
+  SEND_HOTKEY: docsUrl("functions", "keystrokes"),
+  SEND_BURST: docsUrl("functions", "keystrokes"),
+  CYCLE_ROUND_ROBIN: docsUrl("functions", "keystrokes"),
+  HOLD_CONTINUOUS: docsUrl("functions", "keystrokes"),
+  CLICK_MOUSE_BUTTON: docsUrl("functions", "keystrokes"),
+  REMAP_KEY: docsUrl("functions", "keystrokes")
+});
+var DEFAULT_FUNCTION_DOCS_URL = docsUrl("functions");
+function getFunctionDocsUrl(functionId) {
+  const id = String(functionId || "");
+  return FUNCTION_DOCS_URL_BY_ID[id] || DEFAULT_FUNCTION_DOCS_URL;
+}
+function withDocsUrl(def) {
+  if (!def || !def.id) return def;
+  const url = getFunctionDocsUrl(def.id);
+  return Object.freeze({ ...def, docsUrl: url });
+}
+var KEYSTROKE_FUNCTION_CATEGORY = "Keystrokes";
+var TEXT_FUNCTION_CATEGORY = "Type";
+var DATA_FUNCTION_CATEGORY = "Data";
+var LOOKUP_FUNCTION_CATEGORY = "Lookup";
+var TRANSLATE_FUNCTION_CATEGORY = "Translate";
+var DISPLAY_FUNCTION_CATEGORY = "Display";
+var SCRIPT_FUNCTION_CATEGORY = "Script";
+var MEDIA_LIBRARY_FUNCTION_CATEGORY = "Media Library";
+var FUNCTION_ID_BY_MACRO_KEY_KIND = Object.freeze({
+  hotkey: "SEND_HOTKEY",
+  burst: "SEND_BURST",
+  roundRobin: "CYCLE_ROUND_ROBIN",
+  continuous: "HOLD_CONTINUOUS",
+  mouse: "CLICK_MOUSE_BUTTON",
+  key: "REMAP_KEY"
+});
+var MACRO_KEY_KIND_BY_FUNCTION_ID = Object.freeze(
+  Object.fromEntries(Object.entries(FUNCTION_ID_BY_MACRO_KEY_KIND).map(([k, v]) => [v, k]))
+);
+function buildKeystrokeFunctionDefs() {
+  const out = {};
+  for (const kindDef of MACRO_KEY_KIND_DEFS) {
+    const functionId = FUNCTION_ID_BY_MACRO_KEY_KIND[kindDef.id];
+    if (!functionId || isBuildExcludedKeyAction(functionId)) continue;
+    out[functionId] = withDocsUrl(Object.freeze({
+      id: functionId,
+      labelKey: kindDef.labelKey,
+      descriptionKey: kindDef.descriptionKey,
+      ...kindDef.detailsKey ? { detailsKey: kindDef.detailsKey } : {},
+      handler: "handleLegacyMacroKeyFunction",
+      category: KEYSTROKE_FUNCTION_CATEGORY,
+      keyboardClass: kindDef.keyboardClass,
+      parameters: Object.freeze([
+        Object.freeze({ id: "config", labelKey: "fn_param_config", type: "string" })
+      ]),
+      legacyMacroKeyKind: kindDef.id
+    }));
+  }
+  return out;
+}
+var TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
+  id: "TYPE_CHARACTERS",
+  labelKey: "fn_TYPE_CHARACTERS_label",
+  descriptionKey: "fn_TYPE_CHARACTERS_description",
+  detailsKey: "fn_TYPE_CHARACTERS_details",
+  handler: "handleTypeCharactersKey",
+  category: TEXT_FUNCTION_CATEGORY,
+  keyboardClass: "key-purple",
+  dataSource: "none",
+  worksWhileTyping: TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has("TYPE_CHARACTERS"),
+  parameters: Object.freeze([
+    Object.freeze({
+      id: "text",
+      labelKey: "fn_param_text_to_type",
+      type: "string",
+      multiline: true,
+      defaultValue: "",
+      placeholderKey: "fn_param_text_to_type_placeholder"
+    })
+  ])
+});
+var OPEN_URLS_FUNCTION_DEF = Object.freeze({
+  id: "OPEN_URLS",
+  labelKey: "fn_OPEN_URLS_label",
+  descriptionKey: "fn_OPEN_URLS_description",
+  detailsKey: "fn_OPEN_URLS_details",
+  handler: "handleOpenUrlsKey",
+  category: "Tab Control",
+  keyboardClass: "key-open-urls",
+  dataSource: "none",
+  parameters: Object.freeze([
+    Object.freeze({
+      id: "urls",
+      labelKey: "fn_param_urls",
+      type: "stringList",
+      defaultValue: Object.freeze([]),
+      maxItems: OPEN_URLS_MAX,
+      presentation: "table",
+      visibleRows: 5,
+      placeholderKey: "fn_param_urls_placeholder",
+      addLabelKey: "fn_param_urls_add",
+      removeLabelKey: "fn_param_urls_remove"
+    })
+  ])
+});
+var OPEN_BOOKMARKS_FUNCTION_DEF = Object.freeze({
+  id: "OPEN_BOOKMARKS",
+  labelKey: "fn_OPEN_BOOKMARKS_label",
+  descriptionKey: "fn_OPEN_BOOKMARKS_description",
+  detailsKey: "fn_OPEN_BOOKMARKS_details",
+  handler: "handleOpenBookmarksKey",
+  category: "Tab Control",
+  keyboardClass: "key-open-urls",
+  dataSource: "none",
+  parameters: Object.freeze([
+    Object.freeze({
+      id: "folderId",
+      labelKey: "fn_param_bookmark_folder",
+      type: "bookmarkFolder",
+      defaultValue: "",
+      placeholderKey: "fn_param_bookmark_folder_filter"
+    })
+  ])
+});
+var RANDOM_BOOKMARK_FUNCTION_DEF = Object.freeze({
+  id: "RANDOM_BOOKMARK",
+  labelKey: "fn_RANDOM_BOOKMARK_label",
+  descriptionKey: "fn_RANDOM_BOOKMARK_description",
+  detailsKey: "fn_RANDOM_BOOKMARK_details",
+  handler: "handleRandomBookmarkKey",
+  category: "Tab Control",
+  keyboardClass: "key-open-urls",
+  dataSource: "none",
+  parameters: Object.freeze([
+    Object.freeze({
+      id: "folderId",
+      labelKey: "fn_param_bookmark_folder",
+      type: "bookmarkFolder",
+      defaultValue: "",
+      allowAll: true,
+      placeholderKey: "fn_param_bookmark_folder_filter",
+      hintKey: "fn_param_random_bookmark_hint"
+    }),
+    Object.freeze({
+      id: "count",
+      labelKey: "fn_param_random_bookmark_count",
+      type: "number",
+      defaultValue: 1,
+      min: 1,
+      max: RANDOM_BOOKMARK_MAX,
+      step: 1
+    })
+  ])
+});
+var EXECUTE_JS_FUNCTION_DEF = Object.freeze({
+  id: "EXECUTE_JS",
+  labelKey: "fn_EXECUTE_JS_label",
+  descriptionKey: "fn_EXECUTE_JS_description",
+  detailsKey: "fn_EXECUTE_JS_details",
+  handler: "handleExecuteJsKey",
+  category: SCRIPT_FUNCTION_CATEGORY,
+  keyboardClass: "key-purple",
+  dataSource: "underCursor",
+  parameters: Object.freeze([
+    Object.freeze({
+      id: "script",
+      labelKey: "fn_param_script",
+      type: "string",
+      multiline: true,
+      rows: 10,
+      defaultValue: "",
+      placeholderKey: "fn_param_script_placeholder"
+    }),
+    Object.freeze({
+      id: "cbShowPopover",
+      labelKey: "fn_param_cb_show_popover",
+      type: "boolean",
+      defaultValue: false,
+      groupKey: "fn_param_group_callbacks"
+    }),
+    Object.freeze({
+      id: "cbCopyToClipboard",
+      labelKey: "fn_param_cb_copy",
+      type: "boolean",
+      defaultValue: false,
+      groupKey: "fn_param_group_callbacks"
+    }),
+    Object.freeze({
+      id: "cbNotify",
+      labelKey: "fn_param_cb_notify",
+      type: "boolean",
+      defaultValue: false,
+      groupKey: "fn_param_group_callbacks"
+    })
+  ])
+});
+function buildBuiltinActionFunctionDefs() {
+  const out = {};
+  for (const [id, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    if (isBuildExcludedKeyAction(id)) continue;
+    out[id] = withDocsUrl(Object.freeze({
+      id,
+      labelKey: `fn_${id}_label`,
+      descriptionKey: `fn_${id}_description`,
+      ...def.details ? { detailsKey: `fn_${id}_details` } : {},
+      handler: def.handler,
+      category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || "Other",
+      keyboardClass: def.keyboardClass ?? null,
+      // No `parameters` by default: most built-ins remain simple/non-instantiable Functions.
+      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE,
+      // COPY_HOVERED_URL, COPY_HOVERED_VIDEO, PREVIEW_LINK_POPOVER, OPEN_POPOVER)
+      // get their schema below from
+      // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
+      ...TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {},
+      ...def.mode ? { mode: def.mode } : {},
+      ...def.cancelOnPointerDown ? { cancelOnPointerDown: true } : {},
+      ...def.pointerBinding ? { pointerBinding: def.pointerBinding } : {},
+      ...BUILTIN_FUNCTION_DATA_TAGS[id] || {},
+      ...BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] ? { parameters: BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] } : {}
+    }));
+  }
+  return out;
+}
+function buildDataAcquisitionFunctionDefs() {
+  const GRANULARITY_OPTION_KEYS = Object.freeze({
+    word: "fn_param_opt_word",
+    sentence: "fn_param_opt_sentence",
+    paragraph: "fn_param_opt_paragraph",
+    hyperlink: "fn_param_opt_hyperlink"
+  });
+  const granularityOptions = (ids) => ({
+    id: "granularity",
+    labelKey: "fn_param_granularity",
+    type: "enum",
+    defaultValue: ids[0],
+    options: ids.map((id) => ({
+      id,
+      labelKey: GRANULARITY_OPTION_KEYS[id] || "fn_param_opt_word"
+    }))
+  });
+  return {
+    GET_TEXT_AT_CURSOR: Object.freeze({
+      id: "GET_TEXT_AT_CURSOR",
+      labelKey: "fn_GET_TEXT_AT_CURSOR_label",
+      descriptionKey: "fn_GET_TEXT_AT_CURSOR_description",
+      detailsKey: "fn_GET_TEXT_AT_CURSOR_details",
+      handler: "handleGetTextAtCursorKey",
+      category: DATA_FUNCTION_CATEGORY,
+      keyboardClass: "key-clipboard",
+      dataSource: "underCursor",
+      dataKind: "text",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
+      parameters: Object.freeze([Object.freeze(granularityOptions(["word", "sentence", "paragraph", "hyperlink"]))])
+    }),
+    GET_TEXT_RANGE: Object.freeze({
+      id: "GET_TEXT_RANGE",
+      labelKey: "fn_GET_TEXT_RANGE_label",
+      descriptionKey: "fn_GET_TEXT_RANGE_description",
+      detailsKey: "fn_GET_TEXT_RANGE_details",
+      handler: "handleGetTextRangeKey",
+      category: DATA_FUNCTION_CATEGORY,
+      keyboardClass: "key-clipboard",
+      dataSource: "textRange",
+      dataKind: "text",
+      assignableToKey: false
+    }),
+    GET_MEDIA_AT_CURSOR: Object.freeze({
+      id: "GET_MEDIA_AT_CURSOR",
+      labelKey: "fn_GET_MEDIA_AT_CURSOR_label",
+      descriptionKey: "fn_GET_MEDIA_AT_CURSOR_description",
+      detailsKey: "fn_GET_MEDIA_AT_CURSOR_details",
+      handler: "handleGetMediaAtCursorKey",
+      category: DATA_FUNCTION_CATEGORY,
+      keyboardClass: "key-page-media",
+      dataSource: "underCursor",
+      dataKind: "media",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
+      parameters: Object.freeze([Object.freeze({
+        id: "kind",
+        labelKey: "fn_param_media_kind",
+        type: "enum",
+        defaultValue: "image",
+        options: Object.freeze([
+          Object.freeze({ id: "image", labelKey: "fn_param_opt_image" }),
+          Object.freeze({ id: "video", labelKey: "fn_param_opt_video" }),
+          Object.freeze({ id: "audio", labelKey: "fn_param_opt_audio" })
+        ])
+      })])
+    }),
+    LOOKUP_WORD: Object.freeze({
+      id: "LOOKUP_WORD",
+      labelKey: "fn_LOOKUP_WORD_label",
+      descriptionKey: "fn_LOOKUP_WORD_description",
+      detailsKey: "fn_LOOKUP_WORD_details",
+      handler: "handleLookupWordKey",
+      category: LOOKUP_FUNCTION_CATEGORY,
+      keyboardClass: "key-page-media",
+      dataSource: "underCursor",
+      dataKind: "text",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
+      parameters: Object.freeze([
+        Object.freeze({
+          id: "source",
+          labelKey: "fn_param_source",
+          type: "enum",
+          defaultValue: "dictionary",
+          options: Object.freeze([
+            Object.freeze({ id: "dictionary", labelKey: "fn_param_opt_dictionary" }),
+            Object.freeze({ id: "ai", labelKey: "fn_param_opt_ask_ai" })
+          ])
+        })
+      ])
+    }),
+    TRANSLATE: Object.freeze({
+      id: "TRANSLATE",
+      labelKey: "fn_TRANSLATE_label",
+      descriptionKey: "fn_TRANSLATE_description",
+      detailsKey: "fn_TRANSLATE_details",
+      handler: "handleTranslateKey",
+      category: TRANSLATE_FUNCTION_CATEGORY,
+      keyboardClass: "key-page-media",
+      dataSource: "underCursor",
+      dataKind: "text",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MODIFY_PAGE, ACTION_RESULT_DESTINATIONS.POPOVER]),
+      parameters: Object.freeze([
+        Object.freeze(granularityOptions(["sentence", "word", "paragraph"])),
+        Object.freeze({
+          id: "targetLanguage",
+          labelKey: "fn_param_target_language",
+          type: "string",
+          defaultValue: "English",
+          placeholderKey: "fn_param_target_language_placeholder"
+        }),
+        buildResultDestinationParameter([
+          ACTION_RESULT_DESTINATIONS.MODIFY_PAGE,
+          ACTION_RESULT_DESTINATIONS.POPOVER
+        ])
+      ])
+    }),
+    SHOW_POPOVER: Object.freeze({
+      id: "SHOW_POPOVER",
+      labelKey: "fn_SHOW_POPOVER_label",
+      descriptionKey: "fn_SHOW_POPOVER_description",
+      detailsKey: "fn_SHOW_POPOVER_details",
+      handler: "handleShowPopoverKey",
+      category: DISPLAY_FUNCTION_CATEGORY,
+      keyboardClass: "key-kp-ui",
+      dataSource: "none",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
+      assignableToKey: false,
+      parameters: Object.freeze([Object.freeze({
+        id: "content",
+        labelKey: "fn_param_content",
+        type: "string",
+        multiline: true,
+        defaultValue: "",
+        placeholderKey: "fn_param_content_placeholder"
+      })])
+    }),
+    ADD_URL_TO_MEDIA_LIBRARY: Object.freeze({
+      id: "ADD_URL_TO_MEDIA_LIBRARY",
+      labelKey: "fn_ADD_URL_TO_MEDIA_LIBRARY_label",
+      descriptionKey: "fn_ADD_URL_TO_MEDIA_LIBRARY_description",
+      detailsKey: "fn_ADD_URL_TO_MEDIA_LIBRARY_details",
+      handler: "handleAddUrlToMediaLibraryKey",
+      category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
+      keyboardClass: "key-media-library",
+      dataSource: "underCursor",
+      dataKind: "text",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY])
+    }),
+    FETCH_URL_FOR_MEDIA_LIBRARY: Object.freeze({
+      id: "FETCH_URL_FOR_MEDIA_LIBRARY",
+      labelKey: "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label",
+      descriptionKey: "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description",
+      detailsKey: "fn_FETCH_URL_FOR_MEDIA_LIBRARY_details",
+      handler: "handleFetchUrlForMediaLibraryKey",
+      category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
+      keyboardClass: "key-media-library",
+      dataSource: "urlFetch",
+      dataKind: "file",
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY])
+    })
+  };
+}
+function omitBuildExcludedFunctions(defs) {
+  return Object.fromEntries(
+    Object.entries(defs).filter(([id]) => !isBuildExcludedKeyAction(id))
+  );
+}
+var FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
+  ...buildBuiltinActionFunctionDefs(),
+  ...buildKeystrokeFunctionDefs(),
+  [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
+  [OPEN_URLS_FUNCTION_DEF.id]: withDocsUrl(OPEN_URLS_FUNCTION_DEF),
+  [OPEN_BOOKMARKS_FUNCTION_DEF.id]: withDocsUrl(OPEN_BOOKMARKS_FUNCTION_DEF),
+  [RANDOM_BOOKMARK_FUNCTION_DEF.id]: withDocsUrl(RANDOM_BOOKMARK_FUNCTION_DEF),
+  [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
+  ...Object.fromEntries(
+    Object.entries(buildDataAcquisitionFunctionDefs()).map(([id, def]) => [id, withDocsUrl(def)])
+  )
+}));
+var FUNCTION_CATEGORY_ORDER = Object.freeze([
+  "Navigation",
+  "Deferred Open URLs",
+  "Tab Control",
+  "Begin URL",
+  "Get Page Data",
+  "Maps",
+  "Scroll",
+  "Select",
+  "Clipboard",
+  TEXT_FUNCTION_CATEGORY,
+  KEYSTROKE_FUNCTION_CATEGORY,
+  DATA_FUNCTION_CATEGORY,
+  LOOKUP_FUNCTION_CATEGORY,
+  TRANSLATE_FUNCTION_CATEGORY,
+  DISPLAY_FUNCTION_CATEGORY,
+  SCRIPT_FUNCTION_CATEGORY,
+  MEDIA_LIBRARY_FUNCTION_CATEGORY,
+  "AI",
+  "KeyPilot",
+  "Tools",
+  "System",
+  "Other"
+]);
+var FUNCTION_CATEGORY_LABEL_KEYS = Object.freeze({
+  Navigation: "fn_cat_navigation_label",
+  "Deferred Open URLs": "fn_cat_deferred_open_urls_label",
+  "Tab Control": "fn_cat_tab_control_label",
+  "Begin URL": "fn_cat_begin_url_label",
+  "Get Page Data": "fn_cat_get_page_data_label",
+  Maps: "fn_cat_maps_label",
+  Scroll: "fn_cat_scroll_label",
+  Select: "fn_cat_select_label",
+  Clipboard: "fn_cat_clipboard_label",
+  [TEXT_FUNCTION_CATEGORY]: "fn_cat_type_label",
+  [KEYSTROKE_FUNCTION_CATEGORY]: "fn_cat_keystrokes_label",
+  [DATA_FUNCTION_CATEGORY]: "fn_cat_data_label",
+  [LOOKUP_FUNCTION_CATEGORY]: "fn_cat_lookup_label",
+  [TRANSLATE_FUNCTION_CATEGORY]: "fn_cat_translate_label",
+  [DISPLAY_FUNCTION_CATEGORY]: "fn_cat_display_label",
+  [SCRIPT_FUNCTION_CATEGORY]: "fn_cat_script_label",
+  [MEDIA_LIBRARY_FUNCTION_CATEGORY]: "fn_cat_media_library_label",
+  AI: "fn_cat_ai_label",
+  KeyPilot: "fn_cat_keypilot_label",
+  Tools: "fn_cat_tools_label",
+  System: "fn_cat_system_label",
+  Other: "fn_cat_other_label"
+});
+var FUNCTION_CATEGORY_DESCRIPTION_KEYS = Object.freeze({
+  Navigation: "fn_cat_navigation_description",
+  "Deferred Open URLs": "fn_cat_deferred_open_urls_description",
+  "Tab Control": "fn_cat_tab_control_description",
+  "Begin URL": "fn_cat_begin_url_description",
+  "Get Page Data": "fn_cat_get_page_data_description",
+  Maps: "fn_cat_maps_description",
+  Scroll: "fn_cat_scroll_description",
+  Select: "fn_cat_select_description",
+  Clipboard: "fn_cat_clipboard_description",
+  [TEXT_FUNCTION_CATEGORY]: "fn_cat_type_description",
+  [KEYSTROKE_FUNCTION_CATEGORY]: "fn_cat_keystrokes_description",
+  [DATA_FUNCTION_CATEGORY]: "fn_cat_data_description",
+  [LOOKUP_FUNCTION_CATEGORY]: "fn_cat_lookup_description",
+  [TRANSLATE_FUNCTION_CATEGORY]: "fn_cat_translate_description",
+  [DISPLAY_FUNCTION_CATEGORY]: "fn_cat_display_description",
+  [SCRIPT_FUNCTION_CATEGORY]: "fn_cat_script_description",
+  [MEDIA_LIBRARY_FUNCTION_CATEGORY]: "fn_cat_media_library_description",
+  AI: "fn_cat_ai_description",
+  KeyPilot: "fn_cat_keypilot_description",
+  Tools: "fn_cat_tools_description",
+  System: "fn_cat_system_description",
+  Other: "fn_cat_other_description"
+});
+var LIBRARY_SECTION_DESCRIPTIONS = Object.freeze({
+  macros: "fn_section_macros_description",
+  macroKeys: "fn_section_macro_keys_description"
+});
+var FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
+  // Navigation
+  ACTIVATE: 10,
+  ACTIVATE_DEFERRED_RANDOM: 12,
+  ACTIVATE_DEFERRED_SCHEDULED: 14,
+  SCHEDULE_LINK_MANUAL: 16,
+  ACTIVATE_NEW_TAB: 20,
+  ACTIVATE_NEW_TAB_BACKGROUND: 30,
+  PREVIEW_LINK_POPOVER: 40,
+  POI_WEBSITE: 45,
+  POI_ADDRESS: 46,
+  OPEN_POPOVER: 50,
+  FORWARD: 60,
+  BACK: 70,
+  BACK2: 80,
+  ROOT: 90,
+  // Tab Control
+  CLOSE_TAB: 110,
+  CLOSE_WINDOW: 112,
+  TAB_LEFT: 120,
+  TAB_RIGHT: 130,
+  NEW_TAB: 140,
+  TAB_HISTORY: 150,
+  TABS_OVERVIEW: 152,
+  OPEN_BOOKMARKS: 153,
+  RANDOM_BOOKMARK: 154,
+  // Begin URL
+  TOP_SITES: 155,
+  LAUNCHER: 160,
+  OMNIBOX: 170,
+  // Get Page Data
+  FONT_INFO: 200,
+  PAGE_MEDIA: 205,
+  READER_MODE: 206,
+  RECTANGLE_HIGHLIGHT: 210,
+  HIGHLIGHT: 220,
+  // Clipboard
+  CLIPBOARD_COPY: 230,
+  CLIPBOARD_CUT: 231,
+  CLIPBOARD_PASTE: 232,
+  CLIPBOARD_SELECT_ALL: 233,
+  COPY_HOVERED_IMAGE: 234,
+  COPY_HOVERED_URL: 235,
+  COPY_HOVERED_VIDEO: 236,
+  SELECT_WORD: 237,
+  SELECT_SENTENCE: 238,
+  SELECT_PARAGRAPH: 239,
+  SELECT_IMAGE: 240,
+  // KeyPilot
+  TOGGLE_KEYBOARD_HELP: 280,
+  OPEN_SETTINGS_POPOVER: 290
+});
+function localizeFunctionParameter(param) {
+  if (!param) return param;
+  const out = { ...param };
+  if (param.labelKey) out.label = getMessage(param.labelKey);
+  if (param.placeholderKey) out.placeholder = getMessage(param.placeholderKey);
+  if (param.hintKey) out.hint = getMessage(param.hintKey);
+  if (param.groupKey) out.group = getMessage(param.groupKey);
+  if (param.addLabelKey) out.addLabel = getMessage(param.addLabelKey);
+  if (param.removeLabelKey) out.removeLabel = getMessage(param.removeLabelKey);
+  if (Array.isArray(param.options)) {
+    out.options = param.options.map((opt) => opt?.labelKey ? { ...opt, label: getMessage(opt.labelKey) } : opt);
+  }
+  return out;
+}
+function localizeFunctionDef(def) {
+  if (!def) return null;
+  const out = { ...def };
+  if (def.labelKey) out.label = getMessage(def.labelKey);
+  if (def.descriptionKey) out.description = getMessage(def.descriptionKey);
+  if (def.detailsKey) out.details = getMessage(def.detailsKey);
+  if (Array.isArray(def.parameters)) out.parameters = def.parameters.map(localizeFunctionParameter);
+  return out;
+}
+function getFunctionDef(functionId) {
+  const id = String(functionId || "");
+  const raw = id && FUNCTION_LIBRARY[id];
+  return raw ? localizeFunctionDef(raw) : null;
+}
+function defaultFunctionParameters(functionId) {
+  const def = getFunctionDef(functionId);
+  if (!def) return {};
+  if (def.legacyMacroKeyKind) return { config: defaultMacroKeyConfig(def.legacyMacroKeyKind) };
+  const out = {};
+  for (const p of def.parameters || []) {
+    out[p.id] = p.defaultValue;
+  }
+  return out;
+}
+function normalizeFunctionParameters(functionId, raw) {
+  const def = getFunctionDef(functionId);
+  if (!def) return {};
+  const src = raw && typeof raw === "object" ? raw : {};
+  if (def.legacyMacroKeyKind) {
+    return { config: normalizeMacroKeyConfig(def.legacyMacroKeyKind, src.config) };
+  }
+  const defaults = defaultFunctionParameters(functionId);
+  const out = {};
+  for (const p of def.parameters || []) {
+    const v = src[p.id];
+    switch (p.type) {
+      case "boolean":
+        out[p.id] = typeof v === "boolean" ? v : !!defaults[p.id];
+        break;
+      case "number": {
+        const n = Number(v);
+        let value = Number.isFinite(n) ? n : defaults[p.id];
+        if (typeof value === "number" && Number.isFinite(value)) {
+          if (p.step != null && Number(p.step) >= 1) value = Math.round(value);
+          if (p.min != null && value < p.min) value = p.min;
+          if (p.max != null && value > p.max) value = p.max;
+        }
+        out[p.id] = value;
+        break;
+      }
+      case "enum":
+        out[p.id] = (p.options || []).some((o) => o.id === v) ? v : defaults[p.id];
+        break;
+      case "stringList":
+        out[p.id] = normalizeOpenUrlList(
+          v !== void 0 ? v : defaults[p.id],
+          p.maxItems
+        );
+        break;
+      case "bookmarkFolder":
+        out[p.id] = normalizeBookmarkFolderId(v !== void 0 ? v : defaults[p.id]);
+        break;
+      default:
+        out[p.id] = v !== void 0 ? String(v) : defaults[p.id] ?? "";
+    }
+  }
+  return out;
+}
+
+// pages/deferred-open-settings.js
+init_stock_actions();
+
+// src/modules/keyboard-layout-store.js
+init_keyboard_layouts();
+init_stock_actions();
+
+// src/config/stock-macros.js
+var STOCK_MACRO_ID_PREFIX = "stock:";
+var STOCK_MACROS = Object.freeze([
+  Object.freeze({
+    id: `${STOCK_MACRO_ID_PREFIX}ai-assist-flow`,
+    label: "AI Assist Flow",
+    icon: "placeholder",
+    steps: Object.freeze([
+      Object.freeze({ kind: "function", functionId: "HIGHLIGHT", parameters: {} }),
+      Object.freeze({ kind: "wait", ms: 80 }),
+      Object.freeze({ kind: "function", functionId: "CLIPBOARD_COPY", parameters: {} }),
+      Object.freeze({ kind: "function", functionId: "OPEN_POPOVER", parameters: {} })
+    ])
+  }),
+  Object.freeze({
+    id: `${STOCK_MACRO_ID_PREFIX}quick-nav`,
+    label: "Quick Nav",
+    icon: "placeholder",
+    steps: Object.freeze([
+      Object.freeze({ kind: "function", functionId: "PAGE_DOWN_INSTANT", parameters: {}, delayMsBefore: 0 }),
+      Object.freeze({ kind: "function", functionId: "TAB_RIGHT", parameters: {}, delayMsBefore: 50 })
+    ])
+  }),
+  Object.freeze({
+    id: `${STOCK_MACRO_ID_PREFIX}clip-search`,
+    label: "Clip & Search",
+    icon: "placeholder",
+    steps: Object.freeze([
+      Object.freeze({ kind: "function", functionId: "CLIPBOARD_COPY", parameters: {} }),
+      Object.freeze({ kind: "gate", op: "truthy", left: "prior", thenSkip: 1 }),
+      Object.freeze({ kind: "function", functionId: "OMNIBOX", parameters: {} })
+    ])
+  })
+]);
+
+// src/modules/keyboard-layout-store.js
+init_i18n();
+var KEYBOARD_LAYOUT_STORE_KEY = "kp_keyboard_layout_store_v1";
+function getEmptyKeyboardLayoutStore() {
+  return {
+    version: 1,
+    layouts: {},
+    macros: {},
+    actions: {}
+  };
+}
+function nowMs() {
+  return Date.now();
+}
+function genId(prefix) {
+  try {
+    const id = typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${nowMs()}_${Math.random().toString(16).slice(2)}`;
+    return `${prefix}${id}`;
+  } catch {
+    return `${prefix}${nowMs()}_${Math.random().toString(16).slice(2)}`;
+  }
+}
+var HANDEDNESS_SLOT_PAIRS = Object.freeze([
+  ["KeyQ", "KeyP"],
+  ["KeyW", "KeyO"],
+  ["KeyE", "KeyI"],
+  ["KeyR", "KeyU"],
+  ["KeyT", "KeyY"],
+  ["KeyA", "Semicolon"],
+  ["KeyS", "KeyL"],
+  ["KeyD", "KeyK"],
+  ["KeyF", "KeyJ"],
+  ["KeyG", "KeyH"],
+  ["KeyZ", "Slash"],
+  ["KeyX", "Period"],
+  ["KeyC", "Comma"],
+  ["KeyV", "KeyM"],
+  ["KeyB", "KeyN"]
+]);
+var MIRRORED_PHYSICAL_SLOT = Object.freeze(Object.fromEntries(
+  HANDEDNESS_SLOT_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]])
+));
+function normalizeMacroStep(step) {
+  if (!step || typeof step !== "object") return null;
+  const rawKind = String(step.kind || (step.functionId ? "function" : "")).trim();
+  const kind = rawKind === "run_macro" ? "runMacro" : rawKind;
+  if (kind === "wait") {
+    const ms = Math.max(0, Math.floor(Number(step.ms) || 0));
+    return { kind: "wait", ms };
+  }
+  if (kind === "stop") {
+    return { kind: "stop" };
+  }
+  if (kind === "runMacro") {
+    const macroId = String(step.macroId || "").trim();
+    if (!macroId) return null;
+    return { kind: "runMacro", macroId };
+  }
+  if (kind === "gate") {
+    const thenSkip = Math.max(0, Math.floor(Number(step.thenSkip) || 0));
+    const out = {
+      kind: "gate",
+      op: String(step.op || "truthy"),
+      left: String(step.left || "prior")
+    };
+    if (step.leftKey != null && String(step.leftKey)) out.leftKey = String(step.leftKey);
+    if (step.right !== void 0) out.right = step.right;
+    if (thenSkip > 0) out.thenSkip = thenSkip;
+    return out;
+  }
+  if (kind === "function" || step.functionId) {
+    const functionId = String(step.functionId || "");
+    const def = getFunctionDef(functionId);
+    if (!def) return null;
+    const out = {
+      kind: "function",
+      functionId: def.id,
+      parameters: normalizeFunctionParameters(def.id, step?.parameters)
+    };
+    const delay = Number(step?.delayMsBefore);
+    if (Number.isFinite(delay) && delay > 0) out.delayMsBefore = delay;
+    return out;
+  }
+  return null;
+}
+function normalizeStoredMacros(rawMacros) {
+  const src = rawMacros && typeof rawMacros === "object" ? rawMacros : {};
+  const out = {};
+  for (const [id, m] of Object.entries(src)) {
+    if (!m || typeof m !== "object") continue;
+    const rawSteps = Array.isArray(m.steps) ? m.steps : Array.isArray(m.actions) ? m.actions : [];
+    const macro = {
+      id: String(m.id || id),
+      label: String(m.label || "Macro"),
+      icon: m.icon,
+      steps: rawSteps.map(normalizeMacroStep).filter(Boolean),
+      createdAt: Number.isFinite(m.createdAt) ? m.createdAt : nowMs(),
+      updatedAt: Number.isFinite(m.updatedAt) ? m.updatedAt : nowMs()
+    };
+    if (m.baseStockMacroId) macro.baseStockMacroId = String(m.baseStockMacroId);
+    out[id] = macro;
+  }
+  return out;
+}
+async function getKeyboardLayoutStore() {
+  try {
+    const result = await chrome.storage.sync.get(KEYBOARD_LAYOUT_STORE_KEY);
+    const stored = result && result[KEYBOARD_LAYOUT_STORE_KEY] ? result[KEYBOARD_LAYOUT_STORE_KEY] : null;
+    if (stored && typeof stored === "object" && stored.version === 1) {
+      return {
+        version: 1,
+        layouts: stored.layouts && typeof stored.layouts === "object" ? stored.layouts : {},
+        macros: normalizeStoredMacros(stored.macros),
+        actions: stored.actions && typeof stored.actions === "object" ? stored.actions : {}
+      };
+    }
+  } catch {
+  }
+  return getEmptyKeyboardLayoutStore();
+}
+async function setKeyboardLayoutStore(next) {
+  try {
+    await chrome.storage.sync.set({ [KEYBOARD_LAYOUT_STORE_KEY]: next });
+  } catch {
+  }
+}
+async function getUserKeyboardLayoutById(id) {
+  const st = await getKeyboardLayoutStore();
+  const key2 = String(id || "");
+  const v = st.layouts && typeof st.layouts === "object" ? st.layouts[key2] : null;
+  return v && typeof v === "object" ? v : null;
+}
+async function getUserMacroById(id) {
+  const st = await getKeyboardLayoutStore();
+  const key2 = String(id || "");
+  const m = st.macros && st.macros[key2] ? st.macros[key2] : null;
+  return m || null;
+}
+async function getUserActionById(id) {
+  const st = await getKeyboardLayoutStore();
+  const key2 = String(id || "");
+  const a = st.actions && st.actions[key2] ? st.actions[key2] : null;
+  return a || null;
+}
+async function upsertUserKeyboardLayout(layout) {
+  const st = await getKeyboardLayoutStore();
+  const t = nowMs();
+  const l = {
+    ...layout,
+    id: String(layout?.id || genId("layout:")),
+    label: String(layout?.label || "Custom Layout"),
+    builtIn: false,
+    slots: layout && typeof layout.slots === "object" ? layout.slots : {},
+    createdAt: Number.isFinite(layout?.createdAt) ? layout.createdAt : t,
+    updatedAt: t
+  };
+  st.layouts[l.id] = l;
+  await setKeyboardLayoutStore(st);
+  return l;
+}
+
+// pages/deferred-open-settings.js
+init_settings_manager();
+init_i18n();
+
+// src/utils/deferred-number-row.js
+var DEFERRED_NUMBER_ROW_SLOTS = Object.freeze([
+  Object.freeze({
+    code: "Digit1",
+    slot: "code:Digit1",
+    actionId: "ACTIVATE_DEFERRED_RANDOM",
+    label: "1"
+  }),
+  Object.freeze({
+    code: "Digit2",
+    slot: "code:Digit2",
+    actionId: "ACTIVATE_DEFERRED_SCHEDULED",
+    label: "2"
+  }),
+  Object.freeze({
+    code: "Digit4",
+    slot: "code:Digit4",
+    actionId: "SCHEDULE_LINK_MANUAL",
+    label: "4"
+  })
+]);
+function slotHoldsAction(assigned, actionId) {
+  return !!(assigned && assigned.type === "function" && String(assigned.id || "") === actionId);
+}
+function inspectDeferredNumberRowSlots(slots) {
+  const map = slots && typeof slots === "object" ? slots : {};
+  const conflicts = [];
+  let needsWrite = false;
+  for (const spec of DEFERRED_NUMBER_ROW_SLOTS) {
+    const assigned = map[spec.slot];
+    if (!assigned || !assigned.type || !assigned.id) {
+      needsWrite = true;
+      continue;
+    }
+    if (slotHoldsAction(assigned, spec.actionId)) continue;
+    needsWrite = true;
+    conflicts.push({
+      code: spec.code,
+      slot: spec.slot,
+      actionId: spec.actionId,
+      label: spec.label,
+      current: { type: String(assigned.type), id: String(assigned.id) }
+    });
+  }
+  return { conflicts, needsWrite };
+}
+function applyDeferredNumberRowSlots(slots) {
+  const next = { ...slots && typeof slots === "object" ? slots : {} };
+  for (const spec of DEFERRED_NUMBER_ROW_SLOTS) {
+    next[spec.slot] = { type: "function", id: spec.actionId };
+  }
+  return next;
+}
+function clearDeferredNumberRowSlots(slots) {
+  const next = { ...slots && typeof slots === "object" ? slots : {} };
+  for (const spec of DEFERRED_NUMBER_ROW_SLOTS) {
+    if (slotHoldsAction(next[spec.slot], spec.actionId)) next[spec.slot] = null;
+  }
+  return next;
+}
+
+// pages/deferred-open-settings.js
+var scope = document;
+var controller = null;
+var unsubscribe = null;
+var abort = null;
+var conflictMode = null;
+function el(id) {
+  if (!scope || !id) return null;
+  try {
+    if (typeof scope.getElementById === "function") {
+      const hit = scope.getElementById(id);
+      if (hit) return hit;
+    }
+  } catch {
+  }
+  try {
+    return scope.querySelector?.(`#${CSS.escape(id)}`) || null;
+  } catch {
+    return null;
+  }
+}
+function all(sel) {
+  try {
+    return scope.querySelectorAll(sel);
+  } catch {
+    return [];
+  }
+}
+function setInputValue(node, value) {
+  if (!node) return;
+  const s = String(value);
+  try {
+    node.value = s;
+  } catch {
+  }
+}
+async function labelForAssignment(assigned) {
+  const id = String(assigned?.id || "");
+  if (assigned?.type === "macro") {
+    try {
+      const macro = await getUserMacroById(id);
+      if (macro?.label) return String(macro.label);
+    } catch {
+    }
+    return id;
+  }
+  if (id.startsWith("action:")) {
+    try {
+      const action = await getUserActionById(id);
+      if (action?.label) return String(action.label);
+      const def = getFunctionDef(action?.functionId);
+      if (def?.label) return String(def.label);
+    } catch {
+    }
+  }
+  if (id.startsWith("stock:")) {
+    const stock = getStockActionById(id);
+    if (stock?.label) return String(stock.label);
+  }
+  const named = getMessage(`fn_${id}_label`);
+  return named || id;
+}
+function hideConflict() {
+  conflictMode = null;
+  const box = el("deferred-open-conflict");
+  if (box) box.hidden = true;
+  const list = el("deferred-open-conflict-list");
+  if (list) list.replaceChildren();
+}
+async function showConflict(conflicts, mode) {
+  conflictMode = mode;
+  const box = el("deferred-open-conflict");
+  const list = el("deferred-open-conflict-list");
+  if (!box || !list) return;
+  list.replaceChildren();
+  for (const conflict of conflicts) {
+    const item = document.createElement("li");
+    const name = await labelForAssignment(conflict.current);
+    item.textContent = getMessage("deferred_open_conflict_item", [conflict.label, name]) || `${conflict.label} is ${name}`;
+    list.appendChild(item);
+  }
+  box.hidden = false;
+}
+async function activeUserLayout() {
+  const sel = String(controller?.state?.currentKeyboardLayoutId || "");
+  if (!sel.startsWith("user:")) return null;
+  const id = sel.slice("user:".length);
+  const layout = await getUserKeyboardLayoutById(id);
+  return layout ? { id, layout } : null;
+}
+async function commitEnabled(patch) {
+  const partial = {
+    deferredOpen: {
+      enabled: true,
+      numberRowKeys: patch.numberRowKeys
+    }
+  };
+  if (patch.showNumberRow) partial.keyboardReferenceShowNumberRow = true;
+  await controller.updatePartial(partial);
+}
+async function writeLayoutSlots(layout, slots) {
+  await upsertUserKeyboardLayout({ ...layout, slots });
+}
+async function turnOff() {
+  hideConflict();
+  const active = await activeUserLayout();
+  if (active) {
+    const next = clearDeferredNumberRowSlots(active.layout.slots);
+    await writeLayoutSlots(active.layout, next);
+  }
+  await controller.updatePartial({
+    deferredOpen: { enabled: false, numberRowKeys: "auto" }
+  });
+}
+async function requestNumberRow(mode) {
+  const active = await activeUserLayout();
+  if (!active) {
+    await commitEnabled({ numberRowKeys: "applied", showNumberRow: true });
+    hideConflict();
+    return;
+  }
+  const inspection = inspectDeferredNumberRowSlots(active.layout.slots);
+  if (inspection.conflicts.length) {
+    await showConflict(inspection.conflicts, mode);
+    return;
+  }
+  if (inspection.needsWrite) {
+    await writeLayoutSlots(active.layout, applyDeferredNumberRowSlots(active.layout.slots));
+  }
+  await commitEnabled({ numberRowKeys: "applied", showNumberRow: true });
+  hideConflict();
+}
+async function replaceConflictKeys() {
+  const mode = conflictMode;
+  const active = await activeUserLayout();
+  if (active) {
+    await writeLayoutSlots(active.layout, applyDeferredNumberRowSlots(active.layout.slots));
+  }
+  hideConflict();
+  if (mode === "assign" && controller?.state?.deferredOpen?.enabled === true) {
+    await controller.updatePartial({
+      deferredOpen: { numberRowKeys: "applied" },
+      keyboardReferenceShowNumberRow: true
+    });
+    return;
+  }
+  await commitEnabled({ numberRowKeys: "applied", showNumberRow: true });
+}
+async function keepConflictKeys() {
+  const mode = conflictMode;
+  hideConflict();
+  if (mode === "assign" && controller?.state?.deferredOpen?.enabled === true) {
+    await controller.updatePartial({ deferredOpen: { numberRowKeys: "kept" } });
+    return;
+  }
+  await commitEnabled({ numberRowKeys: "kept" });
+}
+function paintSwitch(inputId, textId, on) {
+  const input = (
+    /** @type {HTMLInputElement|null} */
+    el(inputId)
+  );
+  if (input) input.checked = !!on;
+  const text = el(textId);
+  if (!text) return;
+  text.textContent = getMessage(on ? "settings_state_on" : "settings_state_off");
+  text.setAttribute("data-state", on ? "on" : "off");
+}
+function cancelConflict() {
+  const mode = conflictMode;
+  hideConflict();
+  if (mode === "enable") paintSwitch("deferred-open-enabled", "deferred-open-enabled-text", false);
+}
+function applyDeferredOpen(deferredOpen) {
+  const value = deferredOpen || DEFAULT_SETTINGS.deferredOpen;
+  const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
+  const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
+  const clickElement = value.clickElement || DEFAULT_SETTINGS.deferredOpen.clickElement;
+  const closeTab = value.closeTab || DEFAULT_SETTINGS.deferredOpen.closeTab;
+  const closeWindow = value.closeWindow || DEFAULT_SETTINGS.deferredOpen.closeWindow;
+  if (!conflictMode) {
+    paintSwitch("deferred-open-enabled", "deferred-open-enabled-text", value.enabled === true);
+  }
+  const urls = (
+    /** @type {HTMLInputElement|null} */
+    el("deferred-open-urls-enabled")
+  );
+  if (urls) urls.checked = openUrls.enabled !== false;
+  setInputValue(el("deferred-open-urls-min-range"), openUrls.minMinutes);
+  setInputValue(el("deferred-open-urls-min-number"), openUrls.minMinutes);
+  setInputValue(el("deferred-open-urls-max-range"), openUrls.maxMinutes);
+  setInputValue(el("deferred-open-urls-max-number"), openUrls.maxMinutes);
+  const bookmarks = (
+    /** @type {HTMLInputElement|null} */
+    el("deferred-random-bookmarks-enabled")
+  );
+  if (bookmarks) bookmarks.checked = randomBookmarks.enabled !== false;
+  setInputValue(el("deferred-random-bookmarks-min-range"), randomBookmarks.minMinutes);
+  setInputValue(el("deferred-random-bookmarks-min-number"), randomBookmarks.minMinutes);
+  setInputValue(el("deferred-random-bookmarks-max-range"), randomBookmarks.maxMinutes);
+  setInputValue(el("deferred-random-bookmarks-max-number"), randomBookmarks.maxMinutes);
+  const click = (
+    /** @type {HTMLInputElement|null} */
+    el("deferred-click-element-enabled")
+  );
+  if (click) click.checked = clickElement.enabled !== false;
+  setInputValue(el("deferred-click-element-min-range"), clickElement.minMinutes);
+  setInputValue(el("deferred-click-element-min-number"), clickElement.minMinutes);
+  setInputValue(el("deferred-click-element-max-range"), clickElement.maxMinutes);
+  setInputValue(el("deferred-click-element-max-number"), clickElement.maxMinutes);
+  const closeTabToggle = (
+    /** @type {HTMLInputElement|null} */
+    el("deferred-close-tab-enabled")
+  );
+  if (closeTabToggle) closeTabToggle.checked = closeTab.enabled !== false;
+  setInputValue(el("deferred-close-tab-min-range"), closeTab.minMinutes);
+  setInputValue(el("deferred-close-tab-min-number"), closeTab.minMinutes);
+  setInputValue(el("deferred-close-tab-max-range"), closeTab.maxMinutes);
+  setInputValue(el("deferred-close-tab-max-number"), closeTab.maxMinutes);
+  const closeWindowToggle = (
+    /** @type {HTMLInputElement|null} */
+    el("deferred-close-window-enabled")
+  );
+  if (closeWindowToggle) closeWindowToggle.checked = closeWindow.enabled !== false;
+  setInputValue(el("deferred-close-window-min-range"), closeWindow.minMinutes);
+  setInputValue(el("deferred-close-window-min-number"), closeWindow.minMinutes);
+  setInputValue(el("deferred-close-window-max-range"), closeWindow.maxMinutes);
+  setInputValue(el("deferred-close-window-max-number"), closeWindow.maxMinutes);
+  setInputValue(el("deferred-open-target"), value.target === "originalWindow" ? "originalWindow" : "activeWindow");
+  paintSwitch("deferred-silent-random", "deferred-silent-random-text", value.silentRandomScheduling === true);
+}
+async function injectDom(root) {
+  if (root.querySelector?.(".deferred-open-app")) return;
+  const url = chrome.runtime.getURL("pages/settings.html");
+  const stylesheetHrefs = ["pages/ui-standards.css", "pages/settings.css"];
+  const [html, ...cssTexts] = await Promise.all([
+    fetch(url).then((res) => res.text()),
+    ...stylesheetHrefs.map((href) => fetch(chrome.runtime.getURL(href)).then((res) => res.text()))
+  ]);
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  for (const cssText of cssTexts) {
+    const style = document.createElement("style");
+    style.textContent = cssText;
+    root.appendChild(style);
+  }
+  const template = parsed.querySelector("#deferred-open-template");
+  const fragment = template?.content?.cloneNode(true);
+  if (fragment) root.appendChild(fragment);
+}
+async function mountDeferredOpenApp(root) {
+  scope = root && root.nodeType !== 9 ? root : document;
+  if (scope !== document) await injectDom(scope);
+  localizeElements(scope);
+  abort?.abort();
+  abort = new AbortController();
+  const signal = abort.signal;
+  controller = createSettingsController();
+  unsubscribe = controller.subscribe((settings) => applyDeferredOpen(settings?.deferredOpen));
+  let live = null;
+  try {
+    const kp = window.__KeyPilotInstance || window.keyPilot;
+    if (kp?._settings) live = kp._settings;
+  } catch {
+  }
+  await controller.load({ snapshot: live });
+  bindSettingsControls({
+    controller,
+    el,
+    all,
+    setInputValue,
+    signal
+  });
+  const listen = { signal, capture: true };
+  el("deferred-open-enabled")?.addEventListener("change", () => {
+    const toggle = (
+      /** @type {HTMLInputElement|null} */
+      el("deferred-open-enabled")
+    );
+    if (!toggle) return;
+    paintSwitch("deferred-open-enabled", "deferred-open-enabled-text", toggle.checked);
+    if (toggle.checked) {
+      void requestNumberRow("enable");
+      return;
+    }
+    void turnOff();
+  }, listen);
+  el("deferred-silent-random")?.addEventListener("change", () => {
+    const input = (
+      /** @type {HTMLInputElement|null} */
+      el("deferred-silent-random")
+    );
+    paintSwitch("deferred-silent-random", "deferred-silent-random-text", !!input?.checked);
+  }, listen);
+  el("deferred-open-assign-keys")?.addEventListener("click", () => {
+    const enabled = controller?.state?.deferredOpen?.enabled === true;
+    if (!enabled) {
+      paintSwitch("deferred-open-enabled", "deferred-open-enabled-text", true);
+    }
+    void requestNumberRow(enabled ? "assign" : "enable");
+  }, listen);
+  el("deferred-open-conflict-replace")?.addEventListener("click", () => {
+    void replaceConflictKeys();
+  }, listen);
+  el("deferred-open-conflict-keep")?.addEventListener("click", () => {
+    void keepConflictKeys();
+  }, listen);
+  el("deferred-open-conflict-cancel")?.addEventListener("click", () => {
+    cancelConflict();
+  }, listen);
+  return () => {
+    try {
+      abort?.abort();
+    } catch {
+    }
+    abort = null;
+    try {
+      unsubscribe?.();
+    } catch {
+    }
+    unsubscribe = null;
+    try {
+      controller?.dispose();
+    } catch {
+    }
+    controller = null;
+    scope = document;
+    conflictMode = null;
+  };
 }
 
 // pages/settings.js
@@ -5047,23 +7244,23 @@ function getLiveSettingsSnapshot() {
   return null;
 }
 function settingsEl(id) {
-  const scope = settingsScope || document;
-  if (!scope || !id) return null;
+  const scope2 = settingsScope || document;
+  if (!scope2 || !id) return null;
   try {
-    if (typeof scope.getElementById === "function") {
-      const hit = scope.getElementById(id);
+    if (typeof scope2.getElementById === "function") {
+      const hit = scope2.getElementById(id);
       if (hit) return hit;
     }
   } catch {
   }
   try {
     const escaped = typeof CSS !== "undefined" && typeof CSS.escape === "function" ? CSS.escape(id) : id;
-    const hit = scope.querySelector?.(`#${escaped}`);
+    const hit = scope2.querySelector?.(`#${escaped}`);
     if (hit) return hit;
   } catch {
   }
   try {
-    return scope.querySelector?.(`[id="${id}"]`) || null;
+    return scope2.querySelector?.(`[id="${id}"]`) || null;
   } catch {
     return null;
   }
@@ -5195,9 +7392,9 @@ function isSettingsPanelAvailable(panelId) {
 }
 function stripDebugSettingsSurface() {
   if (BUILD_ENABLE_DEBUG_SETTINGS) return;
-  settingsAll("[data-kp-debug-settings]").forEach((el) => {
+  settingsAll("[data-kp-debug-settings]").forEach((el2) => {
     try {
-      el.remove();
+      el2.remove();
     } catch {
     }
   });
@@ -5342,14 +7539,14 @@ function localizeSettingsMixedCopy() {
   if (stripLead) stripLead.textContent = getMessage("settings_control_strip_lead", formatAltShortcut("J"));
   const omnibox = formatAltShortcut("L");
   const stripToggle = formatAltShortcut("J");
-  for (const el of settingsScope.querySelectorAll('[data-i18n="settings_static_038"]')) {
-    el.textContent = getMessage("settings_static_038", omnibox);
+  for (const el2 of settingsScope.querySelectorAll('[data-i18n="settings_static_038"]')) {
+    el2.textContent = getMessage("settings_static_038", omnibox);
   }
-  for (const el of settingsScope.querySelectorAll('[data-i18n="settings_static_104"]')) {
-    el.textContent = getMessage("settings_static_104", omnibox);
+  for (const el2 of settingsScope.querySelectorAll('[data-i18n="settings_static_104"]')) {
+    el2.textContent = getMessage("settings_static_104", omnibox);
   }
-  for (const el of settingsScope.querySelectorAll('[data-i18n="settings_static_218"]')) {
-    el.textContent = getMessage("settings_static_218", stripToggle);
+  for (const el2 of settingsScope.querySelectorAll('[data-i18n="settings_static_218"]')) {
+    el2.textContent = getMessage("settings_static_218", stripToggle);
   }
 }
 function setRadioGroupValue(radios, value) {
@@ -5358,15 +7555,15 @@ function setRadioGroupValue(radios, value) {
     r.checked = r.value === v;
   });
 }
-function setInputValue(el, value) {
-  if (!el) return;
+function setInputValue2(el2, value) {
+  if (!el2) return;
   const s = String(value);
   try {
-    el.value = s;
+    el2.value = s;
   } catch {
   }
   try {
-    el.defaultValue = s;
+    el2.defaultValue = s;
   } catch {
   }
 }
@@ -5392,16 +7589,16 @@ function applyAppearanceControls(settings) {
     Array.from(settingsAll('input[name="app-corner-mode"]')),
     shape.cornerMode === "cut" ? "cut" : "radius"
   );
-  setInputValue(settingsEl("app-cut-size-range"), cutSize);
-  setInputValue(settingsEl("app-cut-size-number"), cutSize);
-  setInputValue(settingsEl("app-panel-radius-range"), panelRadius);
-  setInputValue(settingsEl("app-panel-radius-number"), panelRadius);
+  setInputValue2(settingsEl("app-cut-size-range"), cutSize);
+  setInputValue2(settingsEl("app-cut-size-number"), cutSize);
+  setInputValue2(settingsEl("app-panel-radius-range"), panelRadius);
+  setInputValue2(settingsEl("app-panel-radius-number"), panelRadius);
   setRadioGroupValue(
     /** @type {HTMLInputElement[]} */
     Array.from(settingsAll('input[name="app-title-transform"]')),
     type2.textTransform?.titlebar === "uppercase" ? "uppercase" : "none"
   );
-  setInputValue(settingsEl("app-title-tracking"), type2.letterSpacing?.titlebar || "0.02em");
+  setInputValue2(settingsEl("app-title-tracking"), type2.letterSpacing?.titlebar || "0.02em");
   setRadioGroupValue(
     /** @type {HTMLInputElement[]} */
     Array.from(settingsAll('input[name="app-title-weight"]')),
@@ -5427,15 +7624,15 @@ function applyAppearanceControls(settings) {
     Array.from(settingsAll('input[name="app-key-corner"]')),
     keys.cornerMode === "cut" ? "cut" : "radius"
   );
-  setInputValue(settingsEl("app-key-cut-range"), keyCut);
-  setInputValue(settingsEl("app-key-cut-number"), keyCut);
-  setInputValue(settingsEl("app-key-border"), keys.border || "1px solid rgba(0, 0, 0, 0.4)");
+  setInputValue2(settingsEl("app-key-cut-range"), keyCut);
+  setInputValue2(settingsEl("app-key-cut-number"), keyCut);
+  setInputValue2(settingsEl("app-key-border"), keys.border || "1px solid rgba(0, 0, 0, 0.4)");
   const colorEl = (id, value, fallback) => {
-    const el = (
+    const el2 = (
       /** @type {HTMLInputElement|null} */
       settingsEl(id)
     );
-    if (el) el.value = toHexColor(value, fallback);
+    if (el2) el2.value = toHexColor(value, fallback);
   };
   colorEl("app-color-accent", color4.accent, "#4a90c8");
   colorEl("app-color-fg", color4.fg, "#dddddd");
@@ -5446,10 +7643,10 @@ function applyAppearanceControls(settings) {
   colorEl("app-color-title-mid", color4.titleMid, "#353535");
   colorEl("app-color-title-bot", color4.titleBot, "#252525");
   colorEl("app-color-kbd", color4.kbdColor || color4.fg, "#dddddd");
-  setInputValue(settingsEl("app-type-ui-range"), typeUi);
-  setInputValue(settingsEl("app-type-ui-number"), typeUi);
-  setInputValue(settingsEl("app-type-kbd-range"), typeKbd);
-  setInputValue(settingsEl("app-type-kbd-number"), typeKbd);
+  setInputValue2(settingsEl("app-type-ui-range"), typeUi);
+  setInputValue2(settingsEl("app-type-ui-number"), typeUi);
+  setInputValue2(settingsEl("app-type-kbd-range"), typeKbd);
+  setInputValue2(settingsEl("app-type-kbd-number"), typeKbd);
 }
 function applyAppearanceFromCache() {
   let overrides = {};
@@ -5491,10 +7688,10 @@ function renderCursorPreview({ container, kind, uri }) {
   img.src = uri;
   container.appendChild(img);
 }
-function applyVisibility(el, visible) {
-  if (!el) return;
-  el.hidden = !visible;
-  el.style.display = visible ? "" : "none";
+function applyVisibility(el2, visible) {
+  if (!el2) return;
+  el2.hidden = !visible;
+  el2.style.display = visible ? "" : "none";
 }
 function withOptionalViewTransition(fn) {
   try {
@@ -5603,6 +7800,22 @@ async function render() {
   const clickOverlayFill = (
     /** @type {HTMLInputElement|null} */
     settingsEl("click-overlay-fill")
+  );
+  const clickOverlayFillMaxWidthRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("click-overlay-fill-max-width-range")
+  );
+  const clickOverlayFillMaxWidthNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("click-overlay-fill-max-width-number")
+  );
+  const clickOverlayFillMaxHeightRange = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("click-overlay-fill-max-height-range")
+  );
+  const clickOverlayFillMaxHeightNumber = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("click-overlay-fill-max-height-number")
   );
   const clickOverlayShadow = (
     /** @type {HTMLInputElement|null} */
@@ -5887,7 +8100,7 @@ async function render() {
   const applyKeyboardLayoutFamily = (familyId) => {
     if (!keyboardLayoutFamilySelect) return;
     const v = normalizeKeyboardLayoutFamilyId(familyId);
-    setInputValue(keyboardLayoutFamilySelect, v);
+    setInputValue2(keyboardLayoutFamilySelect, v);
   };
   const applyKeyboardHandedness = (handedness) => {
     if (!keyboardLeftHandedToggle) return;
@@ -5910,13 +8123,13 @@ async function render() {
   };
   const applyClickMode = (clickMode) => {
     const cm = clickMode || DEFAULT_SETTINGS.clickMode;
-    setInputValue(clickCursorType, cm?.cursor?.type ?? DEFAULT_SETTINGS.clickMode.cursor.type);
-    setInputValue(clickCursorLineWidthRange, cm?.cursor?.lineWidth ?? DEFAULT_SETTINGS.clickMode.cursor.lineWidth);
-    setInputValue(clickCursorLineWidthNumber, cm?.cursor?.lineWidth ?? DEFAULT_SETTINGS.clickMode.cursor.lineWidth);
-    setInputValue(clickCursorSizeRange, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
-    setInputValue(clickCursorSizeNumber, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
-    setInputValue(clickCursorGapRange, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
-    setInputValue(clickCursorGapNumber, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
+    setInputValue2(clickCursorType, cm?.cursor?.type ?? DEFAULT_SETTINGS.clickMode.cursor.type);
+    setInputValue2(clickCursorLineWidthRange, cm?.cursor?.lineWidth ?? DEFAULT_SETTINGS.clickMode.cursor.lineWidth);
+    setInputValue2(clickCursorLineWidthNumber, cm?.cursor?.lineWidth ?? DEFAULT_SETTINGS.clickMode.cursor.lineWidth);
+    setInputValue2(clickCursorSizeRange, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
+    setInputValue2(clickCursorSizeNumber, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
+    setInputValue2(clickCursorGapRange, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
+    setInputValue2(clickCursorGapNumber, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
     const color4 = normalizeFocusColor2(cm?.focusColor ?? DEFAULT_SETTINGS.clickMode.focusColor);
     const preset = isFocusColorPreset(color4);
     clickFocusColorRadios.forEach((r) => {
@@ -5926,11 +8139,26 @@ async function render() {
     if (clickOverlayFill) {
       clickOverlayFill.checked = cm?.overlayFillEnabled === true;
     }
+    const overlayFillOn = cm?.overlayFillEnabled === true;
+    const overlayFillMaxWidth = cm?.overlayFillMaxWidth ?? DEFAULT_SETTINGS.clickMode.overlayFillMaxWidth;
+    const overlayFillMaxHeight = cm?.overlayFillMaxHeight ?? DEFAULT_SETTINGS.clickMode.overlayFillMaxHeight;
+    setInputValue2(clickOverlayFillMaxWidthRange, overlayFillMaxWidth);
+    setInputValue2(clickOverlayFillMaxWidthNumber, overlayFillMaxWidth);
+    setInputValue2(clickOverlayFillMaxHeightRange, overlayFillMaxHeight);
+    setInputValue2(clickOverlayFillMaxHeightNumber, overlayFillMaxHeight);
+    for (const el2 of [
+      clickOverlayFillMaxWidthRange,
+      clickOverlayFillMaxWidthNumber,
+      clickOverlayFillMaxHeightRange,
+      clickOverlayFillMaxHeightNumber
+    ]) {
+      if (el2) el2.disabled = !overlayFillOn;
+    }
     if (clickOverlayShadow) {
       clickOverlayShadow.checked = cm?.overlayShadowEnabled === true;
     }
-    setInputValue(clickRectThicknessRange, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
-    setInputValue(clickRectThicknessNumber, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
+    setInputValue2(clickRectThicknessRange, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
+    setInputValue2(clickRectThicknessNumber, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
     if (clickPaintStrategy) {
       clickPaintStrategy.value = normalizePaintStrategy(
         cm?.paintStrategy ?? DEFAULT_SETTINGS.clickMode.paintStrategy
@@ -5942,8 +8170,8 @@ async function render() {
     if (clickSkipForParent) {
       clickSkipForParent.checked = cm?.skipForParent !== false;
     }
-    setInputValue(clickFocusPaddingRange, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
-    setInputValue(clickFocusPaddingNumber, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
+    setInputValue2(clickFocusPaddingRange, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
+    setInputValue2(clickFocusPaddingNumber, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
     const effect = cm?.clickEffect ?? DEFAULT_SETTINGS.clickMode.clickEffect ?? "flash";
     clickEffectRadios.forEach((r) => {
       r.checked = r.value === effect;
@@ -5968,12 +8196,12 @@ async function render() {
   };
   const applyTextMode = (textMode) => {
     const tm = textMode || DEFAULT_SETTINGS.textMode;
-    setInputValue(textCursorType, tm?.cursorType ?? DEFAULT_SETTINGS.textMode.cursorType);
+    setInputValue2(textCursorType, tm?.cursorType ?? DEFAULT_SETTINGS.textMode.cursorType);
     if (textLabelsEnabled) textLabelsEnabled.checked = !!tm?.labelsEnabled;
-    setInputValue(textStrokeThicknessRange, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
-    setInputValue(textStrokeThicknessNumber, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
-    setInputValue(textLeftEdgeWidthRange, tm?.leftEdgeWidth ?? DEFAULT_SETTINGS.textMode.leftEdgeWidth);
-    setInputValue(textLeftEdgeWidthNumber, tm?.leftEdgeWidth ?? DEFAULT_SETTINGS.textMode.leftEdgeWidth);
+    setInputValue2(textStrokeThicknessRange, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
+    setInputValue2(textStrokeThicknessNumber, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
+    setInputValue2(textLeftEdgeWidthRange, tm?.leftEdgeWidth ?? DEFAULT_SETTINGS.textMode.leftEdgeWidth);
+    setInputValue2(textLeftEdgeWidthNumber, tm?.leftEdgeWidth ?? DEFAULT_SETTINGS.textMode.leftEdgeWidth);
     const focusStyle = normalizeTextFocusStyle(tm?.focusStyle ?? DEFAULT_SETTINGS.textMode.focusStyle);
     textFocusStyleRadios.forEach((r) => {
       r.checked = r.value === focusStyle;
@@ -5992,23 +8220,23 @@ async function render() {
     const themeId = normalizeThemeId(settings?.themeId);
     const customized = hasThemeOverrides(settings?.themeOverrides);
     const labelFor = (id) => themeDisplayName(id, customized && id === themeId);
-    const fillSelect = (el) => {
-      if (!el) return;
+    const fillSelect = (el2) => {
+      if (!el2) return;
       const items = listThemes();
-      if (el.options.length !== items.length) {
-        el.innerHTML = "";
+      if (el2.options.length !== items.length) {
+        el2.innerHTML = "";
         for (const item of items) {
           const opt = document.createElement("option");
           opt.value = item.id;
           opt.textContent = labelFor(item.id);
-          el.appendChild(opt);
+          el2.appendChild(opt);
         }
       } else {
-        Array.from(el.options).forEach((opt) => {
+        Array.from(el2.options).forEach((opt) => {
           opt.textContent = labelFor(opt.value);
         });
       }
-      el.value = themeId;
+      el2.value = themeId;
     };
     fillSelect(uiThemeSelect);
     fillSelect(uiThemeSelectAppearance);
@@ -6037,9 +8265,9 @@ async function render() {
     const sc = scroll || DEFAULT_SETTINGS.scroll;
     const half = sc?.halfPagePx ?? DEFAULT_SETTINGS.scroll.halfPagePx;
     const speed = sc?.speed === "instant" ? "instant" : "smooth";
-    setInputValue(scrollHalfPageRange, half);
-    setInputValue(scrollHalfPageNumber, half);
-    setInputValue(scrollSpeedSelect, speed);
+    setInputValue2(scrollHalfPageRange, half);
+    setInputValue2(scrollHalfPageNumber, half);
+    setInputValue2(scrollSpeedSelect, speed);
     if (scrollMiddleClickScrollLine) {
       scrollMiddleClickScrollLine.checked = !!sc?.middleClickScrollLine;
     }
@@ -6052,7 +8280,7 @@ async function render() {
     if (debugLoggingToggle) debugLoggingToggle.checked = on;
     applyDebugSetting(on);
   };
-  const applyDeferredOpen = (deferredOpen) => {
+  const applyDeferredOpen2 = (deferredOpen) => {
     const value = deferredOpen || DEFAULT_SETTINGS.deferredOpen;
     const openUrls = value.openUrls || DEFAULT_SETTINGS.deferredOpen.openUrls;
     const randomBookmarks = value.randomBookmarks || DEFAULT_SETTINGS.deferredOpen.randomBookmarks;
@@ -6060,32 +8288,32 @@ async function render() {
     const closeTab = value.closeTab || DEFAULT_SETTINGS.deferredOpen.closeTab;
     const closeWindow = value.closeWindow || DEFAULT_SETTINGS.deferredOpen.closeWindow;
     if (deferredOpenUrlsEnabled) deferredOpenUrlsEnabled.checked = openUrls.enabled !== false;
-    setInputValue(deferredOpenUrlsMinRange, openUrls.minMinutes);
-    setInputValue(deferredOpenUrlsMinNumber, openUrls.minMinutes);
-    setInputValue(deferredOpenUrlsMaxRange, openUrls.maxMinutes);
-    setInputValue(deferredOpenUrlsMaxNumber, openUrls.maxMinutes);
+    setInputValue2(deferredOpenUrlsMinRange, openUrls.minMinutes);
+    setInputValue2(deferredOpenUrlsMinNumber, openUrls.minMinutes);
+    setInputValue2(deferredOpenUrlsMaxRange, openUrls.maxMinutes);
+    setInputValue2(deferredOpenUrlsMaxNumber, openUrls.maxMinutes);
     if (deferredRandomBookmarksEnabled) deferredRandomBookmarksEnabled.checked = randomBookmarks.enabled !== false;
-    setInputValue(deferredRandomBookmarksMinRange, randomBookmarks.minMinutes);
-    setInputValue(deferredRandomBookmarksMinNumber, randomBookmarks.minMinutes);
-    setInputValue(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
-    setInputValue(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
+    setInputValue2(deferredRandomBookmarksMinRange, randomBookmarks.minMinutes);
+    setInputValue2(deferredRandomBookmarksMinNumber, randomBookmarks.minMinutes);
+    setInputValue2(deferredRandomBookmarksMaxRange, randomBookmarks.maxMinutes);
+    setInputValue2(deferredRandomBookmarksMaxNumber, randomBookmarks.maxMinutes);
     if (deferredClickElementEnabled) deferredClickElementEnabled.checked = clickElement.enabled !== false;
-    setInputValue(deferredClickElementMinRange, clickElement.minMinutes);
-    setInputValue(deferredClickElementMinNumber, clickElement.minMinutes);
-    setInputValue(deferredClickElementMaxRange, clickElement.maxMinutes);
-    setInputValue(deferredClickElementMaxNumber, clickElement.maxMinutes);
+    setInputValue2(deferredClickElementMinRange, clickElement.minMinutes);
+    setInputValue2(deferredClickElementMinNumber, clickElement.minMinutes);
+    setInputValue2(deferredClickElementMaxRange, clickElement.maxMinutes);
+    setInputValue2(deferredClickElementMaxNumber, clickElement.maxMinutes);
     if (deferredCloseTabEnabled) deferredCloseTabEnabled.checked = closeTab.enabled !== false;
-    setInputValue(deferredCloseTabMinRange, closeTab.minMinutes);
-    setInputValue(deferredCloseTabMinNumber, closeTab.minMinutes);
-    setInputValue(deferredCloseTabMaxRange, closeTab.maxMinutes);
-    setInputValue(deferredCloseTabMaxNumber, closeTab.maxMinutes);
+    setInputValue2(deferredCloseTabMinRange, closeTab.minMinutes);
+    setInputValue2(deferredCloseTabMinNumber, closeTab.minMinutes);
+    setInputValue2(deferredCloseTabMaxRange, closeTab.maxMinutes);
+    setInputValue2(deferredCloseTabMaxNumber, closeTab.maxMinutes);
     if (deferredCloseWindowEnabled) deferredCloseWindowEnabled.checked = closeWindow.enabled !== false;
-    setInputValue(deferredCloseWindowMinRange, closeWindow.minMinutes);
-    setInputValue(deferredCloseWindowMinNumber, closeWindow.minMinutes);
-    setInputValue(deferredCloseWindowMaxRange, closeWindow.maxMinutes);
-    setInputValue(deferredCloseWindowMaxNumber, closeWindow.maxMinutes);
-    setInputValue(deferredOpenTarget, value.target === "originalWindow" ? "originalWindow" : "activeWindow");
-    if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling !== false;
+    setInputValue2(deferredCloseWindowMinRange, closeWindow.minMinutes);
+    setInputValue2(deferredCloseWindowMinNumber, closeWindow.minMinutes);
+    setInputValue2(deferredCloseWindowMaxRange, closeWindow.maxMinutes);
+    setInputValue2(deferredCloseWindowMaxNumber, closeWindow.maxMinutes);
+    setInputValue2(deferredOpenTarget, value.target === "originalWindow" ? "originalWindow" : "activeWindow");
+    if (deferredSilentRandom) deferredSilentRandom.checked = value.silentRandomScheduling === true;
   };
   const applyAllSettings = (settings) => {
     const s = settings || DEFAULT_SETTINGS;
@@ -6103,7 +8331,7 @@ async function render() {
     applyClickMode(s.clickMode);
     applyTextMode(s.textMode);
     applyScroll(s.scroll);
-    applyDeferredOpen(s.deferredOpen);
+    applyDeferredOpen2(s.deferredOpen);
     applyDebugLogging(s.debugLogging);
   };
   try {
@@ -6144,11 +8372,18 @@ async function render() {
     controller: settingsController,
     el: settingsEl,
     all: settingsAll,
-    setInputValue,
+    setInputValue: setInputValue2,
     signal,
     withViewTransition: withOptionalViewTransition,
     applyState: applyAllSettings
   });
+  settingsEl("open-deferred-opening")?.addEventListener("click", () => {
+    try {
+      const kp = window.__KeyPilotInstance || window.keyPilot;
+      kp?.handleOpenDeferredOpenPopover?.();
+    } catch {
+    }
+  }, listenOpts);
   const commitFocusColor = (raw) => {
     void settingsController.update("clickMode.focusColor", normalizeFocusColor2(raw));
   };
@@ -6299,6 +8534,7 @@ async function mountSettingsApp(root, options = {}) {
 }
 export {
   applyAppearanceControls,
+  mountDeferredOpenApp,
   mountSettingsApp,
   setActiveSettingsPanel
 };

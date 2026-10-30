@@ -6497,6 +6497,71 @@
   "settings_static_274": { "message": "Alt+Mayús con Cerrar ventana programa el cierre de la ventana que está activa al pulsar el acorde." },
   "settings_static_275": { "message": "Cerrar ventana mínimo (minutos)" },
   "settings_static_276": { "message": "Cerrar ventana máximo (minutos)" },
+  "settings_static_277": { "message": "intervalo de tiempo" },
+  "settings_static_278": { "message": "Ancho máximo" },
+  "settings_static_279": { "message": "Oculta el relleno si el destino es más ancho que este valor (20–2000 px)." },
+  "settings_static_280": { "message": "Alto máximo" },
+  "settings_static_281": { "message": "Oculta el relleno si el destino es más alto que este valor (20–2000 px)." },
+  "deferred_open_window_title": {
+    "message": "Apertura diferida",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "Opcional. Los atajos no cambian hasta que lo actives.",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "Apertura diferida",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "Programe Abrir URLs, marcadores, clics y cierres para más tarde. En los diseños de navegación, las teclas 1, 2 y 4 programan un enlace.",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "Apertura diferida",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "Programación opcional de URLs, marcadores, clics y cierres.",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "Abrir",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "Asignar teclas de la fila numérica",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "Estas teclas numéricas ya están asignadas",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "La apertura diferida puede colocar la programación en las teclas 1, 2 y 4.",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "Reemplazar estas teclas",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "Conservar las teclas actuales",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "Cancelar",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 es $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "Programar el cierre de esta pestaña" },
   "deferred_open_dialog_title_close_window": { "message": "Programar el cierre de esta ventana" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

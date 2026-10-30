@@ -3269,6 +3269,7 @@ export class OverlayManager {
   showInPageDocsPopover(opts = {}) { return this.popover.showInPageDocsPopover(opts); }
   setDocsTopic(topicId, hash) { return this.popover.setDocsTopic(topicId, hash); }
   showInPageSettingsPopover(opts = {}) { return this.popover.showInPageSettingsPopover(opts); }
+  showInPageDeferredOpenPopover(opts = {}) { return this.popover.showInPageDeferredOpenPopover(opts); }
   setSettingsPanel(panelId) { return this.popover.setSettingsPanel(panelId); }
   showPopover(url, opts = {}) { return this.popover.showPopover(url, opts); }
   hidePopover(opts = {}) { return this.popover.hidePopover(opts); }

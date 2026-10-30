@@ -649,145 +649,13 @@
               </label>
 
               <div class="divider"></div>
-              <h3 class="subhead" data-i18n="settings_static_249">Deferred tab opening</h3>
-              <p class="hint" data-i18n="settings_static_250">Press Alt+Shift with an Open URLs or Random Bookmarks key to schedule it at a random time.</p>
-
-              <label class="toggle" for="deferred-silent-random">
-                <input id="deferred-silent-random" type="checkbox" />
+              <div class="deferred-open-row">
                 <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_263">Silent random scheduling</div>
-                  <div class="toggle-sub" data-i18n="settings_static_264">Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead.</div>
+                  <div class="toggle-title" data-i18n="deferred_open_settings_row_title">Deferred opening</div>
+                  <div class="toggle-sub" data-i18n="deferred_open_settings_row_sub">Optional scheduling for URLs, bookmarks, clicks, and closes.</div>
                 </div>
-              </label>
-
-              <label class="toggle" for="deferred-open-urls-enabled">
-                <input id="deferred-open-urls-enabled" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_251">Delay Open URLs</div>
-                  <div class="toggle-sub" data-i18n="settings_static_252">Enable Alt+Shift scheduling for every Open URLs key.</div>
-                </div>
-              </label>
-              <div class="grid-2">
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_253">Open URLs minimum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-open-urls-min-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-open-urls-min-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_254">Open URLs maximum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-open-urls-max-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-open-urls-max-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
+                <button id="open-deferred-opening" class="btn btn-secondary btn-small" type="button" data-i18n="deferred_open_open_button">Open</button>
               </div>
-
-              <label class="toggle" for="deferred-random-bookmarks-enabled">
-                <input id="deferred-random-bookmarks-enabled" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_255">Delay Random Bookmarks</div>
-                  <div class="toggle-sub" data-i18n="settings_static_256">Enable Alt+Shift scheduling for every Random Bookmarks key.</div>
-                </div>
-              </label>
-              <div class="grid-2">
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_257">Random Bookmarks minimum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-random-bookmarks-min-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-random-bookmarks-min-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_258">Random Bookmarks maximum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-random-bookmarks-max-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-random-bookmarks-max-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-              </div>
-
-              <label class="toggle" for="deferred-click-element-enabled">
-                <input id="deferred-click-element-enabled" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_265">Delay Click Element</div>
-                  <div class="toggle-sub" data-i18n="settings_static_266">Alt+Shift with the Click Element key schedules the link under the cursor.</div>
-                </div>
-              </label>
-              <div class="grid-2">
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_267">Click Element minimum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-click-element-min-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-click-element-min-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_268">Click Element maximum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-click-element-max-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-click-element-max-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-              </div>
-
-              <label class="toggle" for="deferred-close-tab-enabled">
-                <input id="deferred-close-tab-enabled" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_269">Delay Close Tab</div>
-                  <div class="toggle-sub" data-i18n="settings_static_270">Alt+Shift with Close Tab schedules closing the tab that is current when you press the chord.</div>
-                </div>
-              </label>
-              <div class="grid-2">
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_271">Close Tab minimum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-close-tab-min-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-close-tab-min-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_272">Close Tab maximum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-close-tab-max-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-close-tab-max-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-              </div>
-
-              <label class="toggle" for="deferred-close-window-enabled">
-                <input id="deferred-close-window-enabled" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_273">Delay Close Window</div>
-                  <div class="toggle-sub" data-i18n="settings_static_274">Alt+Shift with Close Window schedules closing the window that is current when you press the chord.</div>
-                </div>
-              </label>
-              <div class="grid-2">
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_275">Close Window minimum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-close-window-min-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-close-window-min-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="field-label" data-i18n="settings_static_276">Close Window maximum (minutes)</div>
-                  <div class="range-row">
-                    <input id="deferred-close-window-max-range" type="range" min="1" max="2880" step="1" />
-                    <input id="deferred-close-window-max-number" class="number" type="number" min="1" max="2880" step="1" />
-                  </div>
-                </div>
-              </div>
-
-              <label class="field">
-                <div class="field-label" data-i18n="settings_static_259">Open delayed tabs in</div>
-                <select id="deferred-open-target" class="select">
-                  <option value="activeWindow" data-i18n="settings_static_260">The active browser window</option>
-                  <option value="originalWindow" data-i18n="settings_static_261">The original browser window when available</option>
-                </select>
-                <div class="field-hint" data-i18n="settings_static_262">If the selected window is unavailable, KeyPilot waits and retries while the browser remains open.</div>
-              </label>
             </div>
           </section>
 
@@ -1024,13 +892,33 @@
                 </div>
 
                 <div class="grid-2 click-overlay-toggles">
-                  <label class="toggle" for="click-overlay-fill">
-                    <input id="click-overlay-fill" type="checkbox" />
-                    <div class="toggle-text">
-                      <div class="toggle-title" data-i18n="settings_static_161">Show transparent overlay</div>
-                      <div class="toggle-sub" data-i18n="settings_static_162">Adds a translucent fill inside the focus rectangle.</div>
+                  <div class="click-overlay-fill-card">
+                    <label class="toggle" for="click-overlay-fill">
+                      <input id="click-overlay-fill" type="checkbox" />
+                      <div class="toggle-text">
+                        <div class="toggle-title" data-i18n="settings_static_161">Show transparent overlay</div>
+                        <div class="toggle-sub" data-i18n="settings_static_162">Adds a translucent fill inside the focus rectangle.</div>
+                      </div>
+                    </label>
+                    <div class="click-overlay-fill-limits">
+                      <div class="field">
+                        <div class="field-label" data-i18n="settings_static_278">Max width</div>
+                        <div class="range-row">
+                          <input id="click-overlay-fill-max-width-range" type="range" min="20" max="2000" step="1" value="250" />
+                          <input id="click-overlay-fill-max-width-number" class="number" type="number" min="20" max="2000" step="1" value="250" />
+                        </div>
+                        <div class="field-hint" data-i18n="settings_static_279">Hide the fill when the target is wider than this (20–2000px).</div>
+                      </div>
+                      <div class="field">
+                        <div class="field-label" data-i18n="settings_static_280">Max height</div>
+                        <div class="range-row">
+                          <input id="click-overlay-fill-max-height-range" type="range" min="20" max="2000" step="1" value="250" />
+                          <input id="click-overlay-fill-max-height-number" class="number" type="number" min="20" max="2000" step="1" value="250" />
+                        </div>
+                        <div class="field-hint" data-i18n="settings_static_281">Hide the fill when the target is taller than this (20–2000px).</div>
+                      </div>
                     </div>
-                  </label>
+                  </div>
 
                   <label class="toggle" for="click-overlay-shadow">
                     <input id="click-overlay-shadow" type="checkbox" />
@@ -1344,6 +1232,210 @@
         </div>
       </div>
     </main>
+
+
+    <template id="deferred-open-template">
+      <div class="deferred-open-app">
+        <header class="panel-header">
+          <h2 data-i18n="deferred_open_window_title">Deferred opening</h2>
+          <p class="panel-lead" data-i18n="deferred_open_window_lead">Optional. Shortcuts stay as they are until you turn this on.</p>
+        </header>
+        <div class="stack">
+          <div class="deferred-open-switches">
+            <label class="kp-switch kp-switch--row" for="deferred-open-enabled">
+              <span class="kp-switch-meta">
+                <span class="kp-switch-label" data-i18n="deferred_open_master_title">Deferred opening</span>
+                <span class="kp-switch-sub" data-i18n="deferred_open_master_sub">Schedule Open URLs, bookmarks, clicks, and closes for later. On browsing layouts, keys 1, 2, and 4 schedule a link.</span>
+              </span>
+              <span class="kp-switch-control">
+                <input id="deferred-open-enabled" class="kp-switch-input" type="checkbox" role="switch" data-i18n-aria-label="deferred_open_master_title" />
+                <span class="kp-switch-track" aria-hidden="true"><span class="kp-switch-thumb" aria-hidden="true"></span></span>
+                <span id="deferred-open-enabled-text" class="kp-switch-state" aria-hidden="true" data-i18n="settings_state_off">Off</span>
+              </span>
+            </label>
+            <label class="kp-switch kp-switch--row" for="deferred-silent-random">
+              <span class="kp-switch-meta">
+                <span class="kp-switch-label" data-i18n="settings_static_263">Silent random scheduling</span>
+                <span class="kp-switch-sub" data-i18n="settings_static_264">Hide the scheduled-time alert for Alt+Shift on Open URLs and Random Bookmarks. A failed schedule shows a small red mark instead.</span>
+              </span>
+              <span class="kp-switch-control">
+                <input id="deferred-silent-random" class="kp-switch-input" type="checkbox" role="switch" data-i18n-aria-label="settings_static_263" />
+                <span class="kp-switch-track" aria-hidden="true"><span class="kp-switch-thumb" aria-hidden="true"></span></span>
+                <span id="deferred-silent-random-text" class="kp-switch-state" aria-hidden="true" data-i18n="settings_state_off">Off</span>
+              </span>
+            </label>
+          </div>
+          <button id="deferred-open-assign-keys" class="btn btn-secondary btn-small" type="button" data-i18n="deferred_open_assign_keys">Assign number-row keys</button>
+          <div id="deferred-open-conflict" class="deferred-open-conflict" hidden>
+            <div class="toggle-title" data-i18n="deferred_open_conflict_title">These number keys are already assigned</div>
+            <p class="hint" data-i18n="deferred_open_conflict_intro">Deferred opening can place scheduling on keys 1, 2, and 4.</p>
+            <ul id="deferred-open-conflict-list" class="deferred-open-conflict-list"></ul>
+            <div class="deferred-open-conflict-actions">
+              <button id="deferred-open-conflict-replace" class="btn btn-secondary btn-small" type="button" data-i18n="deferred_open_conflict_replace">Replace these keys</button>
+              <button id="deferred-open-conflict-keep" class="btn btn-secondary btn-small" type="button" data-i18n="deferred_open_conflict_keep">Keep current keys</button>
+              <button id="deferred-open-conflict-cancel" class="btn btn-secondary btn-small" type="button" data-i18n="deferred_open_conflict_cancel">Cancel</button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <h3 class="subhead" data-i18n="settings_static_249">Deferred tab opening</h3>
+          <p class="hint" data-i18n="settings_static_250">Press Alt+Shift with an Open URLs or Random Bookmarks key to schedule it at a random time.</p>
+
+              <fieldset class="settings-group">
+                <legend class="feature-legend" data-i18n="settings_static_251">Feature: Delay Open URLs</legend>
+                <label class="toggle" for="deferred-open-urls-enabled">
+                  <input id="deferred-open-urls-enabled" type="checkbox" />
+                  <div class="toggle-text">
+                    <div class="toggle-sub" data-i18n="settings_static_252">Enable Alt+Shift scheduling for every Open URLs key.</div>
+                  </div>
+                </label>
+                <fieldset class="time-frame-group">
+                  <legend data-i18n="settings_static_277">time frame</legend>
+                  <div class="grid-2">
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_253">Open URLs minimum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-open-urls-min-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-open-urls-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_254">Open URLs maximum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-open-urls-max-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-open-urls-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  </div>
+                </fieldset>
+              </fieldset>
+
+              <fieldset class="settings-group">
+                <legend class="feature-legend" data-i18n="settings_static_255">Feature: Delay Random Bookmarks</legend>
+                <label class="toggle" for="deferred-random-bookmarks-enabled">
+                  <input id="deferred-random-bookmarks-enabled" type="checkbox" />
+                  <div class="toggle-text">
+                    <div class="toggle-sub" data-i18n="settings_static_256">Enable Alt+Shift scheduling for every Random Bookmarks key.</div>
+                  </div>
+                </label>
+                <fieldset class="time-frame-group">
+                  <legend data-i18n="settings_static_277">time frame</legend>
+                  <div class="grid-2">
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_257">Random Bookmarks minimum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-random-bookmarks-min-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-random-bookmarks-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_258">Random Bookmarks maximum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-random-bookmarks-max-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-random-bookmarks-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  </div>
+                </fieldset>
+              </fieldset>
+
+              <fieldset class="settings-group">
+                <legend class="feature-legend" data-i18n="settings_static_265">Feature: Delay Click Element</legend>
+                <label class="toggle" for="deferred-click-element-enabled">
+                  <input id="deferred-click-element-enabled" type="checkbox" />
+                  <div class="toggle-text">
+                    <div class="toggle-sub" data-i18n="settings_static_266">Alt+Shift with the Click Element key schedules the link under the cursor.</div>
+                  </div>
+                </label>
+                <fieldset class="time-frame-group">
+                  <legend data-i18n="settings_static_277">time frame</legend>
+                  <div class="grid-2">
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_267">Click Element minimum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-click-element-min-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-click-element-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_268">Click Element maximum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-click-element-max-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-click-element-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  </div>
+                </fieldset>
+              </fieldset>
+
+              <fieldset class="settings-group">
+                <legend class="feature-legend" data-i18n="settings_static_269">Feature: Delay Close Tab</legend>
+                <label class="toggle" for="deferred-close-tab-enabled">
+                  <input id="deferred-close-tab-enabled" type="checkbox" />
+                  <div class="toggle-text">
+                    <div class="toggle-sub" data-i18n="settings_static_270">Alt+Shift with Close Tab schedules closing the tab that is current when you press the chord.</div>
+                  </div>
+                </label>
+                <fieldset class="time-frame-group">
+                  <legend data-i18n="settings_static_277">time frame</legend>
+                  <div class="grid-2">
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_271">Close Tab minimum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-close-tab-min-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-close-tab-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_272">Close Tab maximum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-close-tab-max-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-close-tab-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  </div>
+                </fieldset>
+              </fieldset>
+
+              <fieldset class="settings-group">
+                <legend class="feature-legend" data-i18n="settings_static_273">Feature: Delay Close Window</legend>
+                <label class="toggle" for="deferred-close-window-enabled">
+                  <input id="deferred-close-window-enabled" type="checkbox" />
+                  <div class="toggle-text">
+                    <div class="toggle-sub" data-i18n="settings_static_274">Alt+Shift with Close Window schedules closing the window that is current when you press the chord.</div>
+                  </div>
+                </label>
+                <fieldset class="time-frame-group">
+                  <legend data-i18n="settings_static_277">time frame</legend>
+                  <div class="grid-2">
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_275">Close Window minimum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-close-window-min-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-close-window-min-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label" data-i18n="settings_static_276">Close Window maximum (minutes)</div>
+                    <div class="range-row">
+                      <input id="deferred-close-window-max-range" type="range" min="1" max="2880" step="1" />
+                      <input id="deferred-close-window-max-number" class="number" type="number" min="1" max="2880" step="1" />
+                    </div>
+                  </div>
+                  </div>
+                </fieldset>
+              </fieldset>
+
+              <label class="field">
+                <div class="field-label" data-i18n="settings_static_259">Open delayed tabs in</div>
+                <select id="deferred-open-target" class="select">
+                  <option value="activeWindow" data-i18n="settings_static_260">The active browser window</option>
+                  <option value="originalWindow" data-i18n="settings_static_261">The original browser window when available</option>
+                </select>
+                <div class="field-hint" data-i18n="settings_static_262">If the selected window is unavailable, KeyPilot waits and retries while the browser remains open.</div>
+              </label>
+        </div>
+      </div>
+    </template>
 
     <script src="settings-early-appearance.js"></script>
     <script type="module" src="settings-page.js"></script>

@@ -31,9 +31,13 @@ describe('built-in keyboard layout physical bindings', () => {
         assert.match(binding.keys[0], /^(Key[A-Z]|Digit[0-9]|Backspace|Semicolon|Comma|Period|Slash|BracketLeft|BracketRight)$/, `${layoutId}:${actionId}`);
       }
       if (layoutId === 'browsing-right' || layoutId === 'browsing-left') {
-        assert.deepEqual(bindings.ACTIVATE_DEFERRED_RANDOM.keys, ['Digit1'], layoutId);
-        assert.deepEqual(bindings.ACTIVATE_DEFERRED_SCHEDULED.keys, ['Digit2'], layoutId);
-        assert.deepEqual(bindings.SCHEDULE_LINK_MANUAL.keys, ['Digit4'], layoutId);
+        assert.equal(bindings.ACTIVATE_DEFERRED_RANDOM, undefined, layoutId);
+        assert.equal(bindings.ACTIVATE_DEFERRED_SCHEDULED, undefined, layoutId);
+        assert.equal(bindings.SCHEDULE_LINK_MANUAL, undefined, layoutId);
+        const withRow = buildKeybindingsForLayout(layoutId, { deferredNumberRow: true });
+        assert.deepEqual(withRow.ACTIVATE_DEFERRED_RANDOM.keys, ['Digit1'], layoutId);
+        assert.deepEqual(withRow.ACTIVATE_DEFERRED_SCHEDULED.keys, ['Digit2'], layoutId);
+        assert.deepEqual(withRow.SCHEDULE_LINK_MANUAL.keys, ['Digit4'], layoutId);
       } else {
         assert.equal(bindings.ACTIVATE_DEFERRED_RANDOM, undefined, layoutId);
         assert.equal(bindings.ACTIVATE_DEFERRED_SCHEDULED, undefined, layoutId);
@@ -156,6 +160,7 @@ describe('built-in keyboard layout physical bindings', () => {
     // The dialog is closed by the close-all path and is only built from PopupManager.
     assert.match(keyPilotSource, /new ScheduleOpenDialog\(\{\s*popupManager: this\.overlayManager\?\.popupManager/);
     assert.match(keyPilotSource, /this\.scheduleOpenDialog\?\.hide\?\.\(\)/);
+    assert.match(keyPilotSource, /_deferredOpenEnabled\(\)/);
   });
 
   it('uses the physical Click Element binding during the Text Mode hover window', async () => {

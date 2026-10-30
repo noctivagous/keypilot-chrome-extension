@@ -5,7 +5,7 @@ Top Sites ist ein kompaktes Panel für Symbolleisten-Lesezeichen, meistbesuchte 
 ## Benutze es
 
 1. Drücken Sie <kbd>;</kbd> (Standard-Rechtshänder-Browsing; Linkshänder verwenden oft <kbd>A</kbd> / <kbd>`</kbd>).
-2. Wechseln Sie zwischen den Registerkarten im Bedienfeld: **Symbolleiste**, **Meistbesuchte**, **Letzte Lesezeichen** und **KeyPilot** (rechter Rand). Zifferntasten <kbd>1</kbd>–<kbd>4</kbd> springen zu einer Registerkarte; <kbd>Tab</kbd> wechselt sie.
+2. Wechseln Sie zwischen den Registerkarten im Bedienfeld: **Symbolleiste**, **Meistbesuchte**, **Letzte Lesezeichen** und **KeyPilot** (rechter Rand). <kbd>Tab</kbd> wechselt sie. Zifferntasten folgen dem Tastaturlayout.
 3. Klicken oder aktivieren Sie eine Site-Karte, um zu navigieren. Das Panel ist hoch genug für drei Kartenreihen ohne Beschneiden.
 4. Öffnen Sie die Registerkarte **KeyPilot** für dieselben Werkzeugkarten wie das Erweiterungs-Popup: Tastaturreferenz, Hilfe/Dokumente, Onboarding-Tutorial, Einstellungen und Kontrollleiste.
 5. Ziehen Sie die Titelleiste **Top Sites**, um das Bedienfeld zu verschieben. Ziehen Sie eine Kante oder Ecke, um die Größe zu ändern. Größe und Position werden gespeichert.

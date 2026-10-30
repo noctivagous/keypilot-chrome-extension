@@ -151,6 +151,9 @@
       if (typeof patch.keyboardReferenceShowNumberRow === 'boolean') {
         next.keyboardReferenceShowNumberRow = patch.keyboardReferenceShowNumberRow;
       }
+      if (typeof patch.keyboardDeferredNumberRow === 'boolean') {
+        next.keyboardDeferredNumberRow = patch.keyboardDeferredNumberRow;
+      }
       localStorage.setItem(KP_CHROME_LAYOUT_CACHE_KEY, JSON.stringify(next));
     } catch { /* ignore */ }
   }
@@ -15187,6 +15190,8 @@
   let earlyFocusChrome = {
     focusColor: 'blue',
     overlayFillEnabled: false,
+    overlayFillMaxWidth: 250,
+    overlayFillMaxHeight: 250,
     overlayShadowEnabled: false,
     rectangleThickness: 3
   };
@@ -15213,6 +15218,7 @@
   let keyboardLayoutSelectLabel = '';
   let keyboardLayoutStore = null;
   let keyboardShowNumberRow = false;
+  let keyboardDeferredNumberRow = false;
   let keyboardHardwareLayoutId = '';
   let keyboardReferenceCollapsed = false;
   let keyboardHelpRoot = null;
@@ -16283,9 +16289,17 @@
       ? settingsObj.clickMode
       : {};
     const thickness = Number(cm.rectangleThickness);
+    const maxW = Number(cm.overlayFillMaxWidth);
+    const maxH = Number(cm.overlayFillMaxHeight);
     earlyFocusChrome = {
       focusColor: normalizeEarlyFocusColor(cm.focusColor),
       overlayFillEnabled: cm.overlayFillEnabled === true,
+      overlayFillMaxWidth: Number.isFinite(maxW)
+        ? Math.min(2000, Math.max(20, maxW))
+        : 250,
+      overlayFillMaxHeight: Number.isFinite(maxH)
+        ? Math.min(2000, Math.max(20, maxH))
+        : 250,
       overlayShadowEnabled: cm.overlayShadowEnabled === true,
       rectangleThickness: Number.isFinite(thickness) && thickness >= 1
         ? Math.min(16, thickness)
@@ -16448,6 +16462,25 @@
     }
   }
 
+  const EARLY_DEFERRED_NUMBER_KEYS = {
+    '1': 'ACTIVATE_DEFERRED_RANDOM',
+    '2': 'ACTIVATE_DEFERRED_SCHEDULED',
+    '4': 'SCHEDULE_LINK_MANUAL',
+    Digit1: 'ACTIVATE_DEFERRED_RANDOM',
+    Digit2: 'ACTIVATE_DEFERRED_SCHEDULED',
+    Digit4: 'SCHEDULE_LINK_MANUAL'
+  };
+
+  function earlyDeferredNumberRowActive(layoutId) {
+    if (!keyboardDeferredNumberRow) return false;
+    const id = normalizeKeyboardLayoutId(layoutId || '');
+    return id === 'browsing-right' || id === 'browsing-left';
+  }
+
+  function readEarlyDeferredNumberRow(settingsObj) {
+    return !!(settingsObj && settingsObj.deferredOpen && settingsObj.deferredOpen.enabled === true);
+  }
+
   /** Prepend number row (same shape as addNumberRowToKeyboardUiLayout). */
   function addNumberRowToEarlyKeyboardLayout(layout) {
     const base = Array.isArray(layout) ? layout : [];
@@ -16497,7 +16530,9 @@
           (node) => String(node.textContent || '').trim()
         );
       } catch { /* ignore */ }
-      if (existingLayoutId === layoutSel && existingNum === wantNumRow && existingVisible) return true;
+      const existingDeferred = existing.dataset.kpDeferredRow === '1';
+      const wantDeferred = earlyDeferredNumberRowActive(baseId);
+      if (existingLayoutId === layoutSel && existingNum === wantNumRow && existingDeferred === wantDeferred && existingVisible) return true;
     }
 
     const data = getEarlyKeyboardDataForLayout(baseId);
@@ -16582,6 +16617,7 @@
     try {
       visual.dataset.kpLayoutId = layoutSel;
       visual.dataset.kpNumRow = wantNumRow ? '1' : '0';
+      visual.dataset.kpDeferredRow = earlyDeferredNumberRowActive(baseId) ? '1' : '0';
     } catch { /* ignore */ }
     container.appendChild(visual);
 
@@ -16666,7 +16702,9 @@
       const existingLayoutId = String(existing.dataset.kpLayoutId || '');
       const existingNum = existing.dataset.kpNumRow === '1';
       const existingKey = `${desired}:${normalizeEarlyKeyboardHardwareLayoutId(keyboardHardwareLayoutId)}`;
-      if ((!existingLayoutId || existingLayoutId === existingKey) && existingNum === wantNumRow) return;
+      const existingDeferred = existing.dataset.kpDeferredRow === '1';
+      const wantDeferred = earlyDeferredNumberRowActive(desired);
+      if ((!existingLayoutId || existingLayoutId === existingKey) && existingNum === wantNumRow && existingDeferred === wantDeferred) return;
       // Layout or number-row mode changed: re-render so bounds stay correct on first paint.
     }
 
@@ -16678,6 +16716,7 @@
     try {
       visual.dataset.kpLayoutId = paintKey;
       visual.dataset.kpNumRow = wantNumRow ? '1' : '0';
+      visual.dataset.kpDeferredRow = earlyDeferredNumberRowActive(desired) ? '1' : '0';
     } catch { /* ignore */ }
     container.appendChild(visual);
 
@@ -16728,6 +16767,28 @@
           continue;
         }
         if (item.type === 'key') {
+          const deferredId = earlyDeferredNumberRowActive(desired)
+            ? (EARLY_DEFERRED_NUMBER_KEYS[String(item.code || '')] || EARLY_DEFERRED_NUMBER_KEYS[String(item.text || '').trim()] || '')
+            : '';
+          if (deferredId) {
+            const keyEl = el(doc, 'div', 'key key-activate');
+            keyEl.dataset.kpActionId = deferredId;
+            if (item.code) keyEl.dataset.kpPhysicalCode = String(item.code);
+            keyEl.dataset.kpBaseClass = 'key';
+            keyEl.setAttribute('role', 'button');
+            try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
+            const actionLabel = earlyMessage(`fn_${deferredId}_label`) || deferredId;
+            const actionDescription = earlyMessage(`fn_${deferredId}_description`) || '';
+            keyEl.setAttribute('aria-label', actionDescription || actionLabel);
+            ensureBgIcon(keyEl);
+            syncEarlySettingsMark(doc, keyEl, earlyActionHasSettings(deferredId));
+            keyEl.appendChild(el(doc, 'div', 'key-main', actionLabel));
+            const labelText = earlyKeycapLabel(String(item.legend || item.text || ''));
+            if (labelText) keyEl.appendChild(el(doc, 'div', 'key-label', labelText));
+            ensurePressOverlay(keyEl);
+            rowEl.appendChild(keyEl);
+            continue;
+          }
           // Unassigned alphanumeric key → no background icon.
           const keyEl = el(doc, 'div', 'key');
           keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
@@ -17555,6 +17616,9 @@
       if (typeof cachedLayout.keyboardReferenceShowNumberRow === 'boolean') {
         keyboardShowNumberRow = cachedLayout.keyboardReferenceShowNumberRow;
       }
+      if (typeof cachedLayout.keyboardDeferredNumberRow === 'boolean') {
+        keyboardDeferredNumberRow = cachedLayout.keyboardDeferredNumberRow;
+      }
       if (cachedLayout.controlStrip && typeof cachedLayout.controlStrip === 'object') {
         if (typeof cachedLayout.controlStrip.visible === 'boolean') {
           controlStripDesiredVisible = cachedLayout.controlStrip.visible;
@@ -17571,6 +17635,7 @@
       keyboardReferenceVisible: keyboardHelpVisible,
       keyboardReferenceCollapsed: keyboardReferenceCollapsed,
       keyboardReferenceShowNumberRow: keyboardShowNumberRow,
+      keyboardDeferredNumberRow: keyboardDeferredNumberRow,
       keyboardHardwareLayoutId: normalizeEarlyKeyboardHardwareLayoutId(keyboardHardwareLayoutId),
       keyboardLayoutId: keyboardLayoutId,
       keyboardLayoutFamilyId: keyboardLayoutFamilyId,
@@ -18541,14 +18606,17 @@
         const { layoutChanged, customLayoutChanged } = applyEarlyKeyboardLayoutFromSettingsObj(nextObj);
         try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(nextObj && nextObj.themeId, nextObj ? nextObj.themeOverrides : undefined); } catch { /* ignore */ }
         const nextNum = !!(nextObj && nextObj.keyboardReferenceShowNumberRow);
+        const nextDeferred = readEarlyDeferredNumberRow(nextObj);
         const nextCollapsed = !!(nextObj && nextObj.keyboardReferenceCollapsed);
         const numChanged = nextNum !== keyboardShowNumberRow;
+        const deferredChanged = nextDeferred !== keyboardDeferredNumberRow;
         const collapsedChanged = nextCollapsed !== keyboardReferenceCollapsed;
         if (numChanged) keyboardShowNumberRow = nextNum;
+        if (deferredChanged) keyboardDeferredNumberRow = nextDeferred;
         if (collapsedChanged) {
           try { applyEarlyKeyboardReferenceCollapsed(nextCollapsed); } catch { /* ignore */ }
         }
-        if (layoutChanged || numChanged || customLayoutChanged) {
+        if (layoutChanged || numChanged || deferredChanged || customLayoutChanged) {
           try {
             renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
               layoutId: keyboardLayoutId,
@@ -18686,6 +18754,7 @@
           try { applyEarlyKeyboardLayoutStore(result && result[KEYBOARD_LAYOUT_STORE_KEY]); } catch { /* ignore */ }
           try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(st && st.themeId, st ? st.themeOverrides : undefined); } catch { /* ignore */ }
           keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
+          keyboardDeferredNumberRow = readEarlyDeferredNumberRow(st);
           keyboardReferenceCollapsed = !!(st && st.keyboardReferenceCollapsed);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
         } catch {
@@ -18753,6 +18822,7 @@
             applyEarlyKeyboardLayoutFromSettingsObj(settingsObj);
             try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(settingsObj.themeId, settingsObj.themeOverrides); } catch { /* ignore */ }
             keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
+            keyboardDeferredNumberRow = readEarlyDeferredNumberRow(settingsObj);
             keyboardReferenceCollapsed = !!settingsObj.keyboardReferenceCollapsed;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
           }
@@ -18989,7 +19059,12 @@
     const thickness = Math.min(Math.max(Number(earlyFocusChrome.rectangleThickness) || 3, 1), 16);
     try {
       earlyHoverEl.style.border = `${thickness}px solid ${p.border}`;
-      earlyHoverEl.style.background = earlyFocusChrome.overlayFillEnabled === true ? p.fill : 'transparent';
+      let tooLarge = false;
+      try {
+        const r = target && target.getBoundingClientRect && target.getBoundingClientRect();
+        tooLarge = !!(r && (r.width > earlyFocusChrome.overlayFillMaxWidth || r.height > earlyFocusChrome.overlayFillMaxHeight));
+      } catch { tooLarge = false; }
+      earlyHoverEl.style.background = earlyFocusChrome.overlayFillEnabled === true && !tooLarge ? p.fill : 'transparent';
       earlyHoverEl.style.boxShadow = earlyFocusChrome.overlayShadowEnabled === true
         ? `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`
         : 'none';

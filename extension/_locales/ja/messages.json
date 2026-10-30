@@ -6537,6 +6537,71 @@
   "settings_static_274": { "message": "Alt+Shift とウィンドウを閉じるで、キーを押したときのウィンドウを閉じる予定を入れます。" },
   "settings_static_275": { "message": "ウィンドウを閉じる最短（分）" },
   "settings_static_276": { "message": "ウィンドウを閉じる最長（分）" },
+  "settings_static_277": { "message": "時間枠" },
+  "settings_static_278": { "message": "最大幅" },
+  "settings_static_279": { "message": "対象がこの幅より広いときは塗りつぶしを表示しません（20～2000px）。" },
+  "settings_static_280": { "message": "最大高さ" },
+  "settings_static_281": { "message": "対象がこの高さより高いときは塗りつぶしを表示しません（20～2000px）。" },
+  "deferred_open_window_title": {
+    "message": "遅延して開く",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "任意の機能です。オンにするまでショートカットは変わりません。",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "遅延して開く",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "URL、ブックマーク、クリック、閉じる操作を後で実行するよう予定します。ブラウジング配列では 1、2、4 がリンクを予定します。",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "遅延して開く",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "URL、ブックマーク、クリック、閉じる操作の任意の予定。",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "開く",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "数字キーを割り当て",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "これらの数字キーはすでに割り当てられています",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "遅延して開くは、1、2、4 に予定を置けます。",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "これらのキーを置き換える",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "今のキーを残す",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "キャンセル",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 は $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "このタブを閉じる予定" },
   "deferred_open_dialog_title_close_window": { "message": "このウィンドウを閉じる予定" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

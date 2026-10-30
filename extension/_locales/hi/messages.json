@@ -6542,6 +6542,71 @@
   "settings_static_274": { "message": "Alt+Shift के साथ विंडो बंद करें उस विंडो को बंद करने का समय तय करता है जो कॉर्ड दबाने पर वर्तमान हो।" },
   "settings_static_275": { "message": "विंडो बंद करें न्यूनतम (मिनट)" },
   "settings_static_276": { "message": "विंडो बंद करें अधिकतम (मिनट)" },
+  "settings_static_277": { "message": "समय सीमा" },
+  "settings_static_278": { "message": "अधिकतम चौड़ाई" },
+  "settings_static_279": { "message": "लक्ष्य इस मान से चौड़ा हो तो भराव न दिखाएँ (20–2000px)।" },
+  "settings_static_280": { "message": "अधिकतम ऊँचाई" },
+  "settings_static_281": { "message": "लक्ष्य इस मान से ऊँचा हो तो भराव न दिखाएँ (20–2000px)।" },
+  "deferred_open_window_title": {
+    "message": "स्थगित खोलना",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "वैकल्पिक। शॉर्टकट तब तक वैसे ही रहते हैं जब तक आप इसे चालू नहीं करते।",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "स्थगित खोलना",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "URL, बुकमार्क, क्लिक और बंद करने को बाद के लिए शेड्यूल करें। ब्राउज़िंग लेआउट में कुंजी 1, 2 और 4 एक लिंक शेड्यूल करती हैं।",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "स्थगित खोलना",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "URL, बुकमार्क, क्लिक और बंद करने के लिए वैकल्पिक शेड्यूलिंग।",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "खोलें",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "नंबर पंक्ति की कुंजियाँ असाइन करें",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "ये नंबर कुंजियाँ पहले से असाइन हैं",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "स्थगित खोलना कुंजी 1, 2 और 4 पर शेड्यूलिंग रख सकता है।",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "इन कुंजियों को बदलें",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "मौजूदा कुंजियाँ रखें",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "रद्द करें",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 है $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "इस टैब को बंद करने का समय तय करें" },
   "deferred_open_dialog_title_close_window": { "message": "इस विंडो को बंद करने का समय तय करें" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

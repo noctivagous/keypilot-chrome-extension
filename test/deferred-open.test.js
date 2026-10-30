@@ -68,7 +68,7 @@ describe('deferred opening queue', () => {
     assert.equal(isValidManualFireAt('9999999999999', now), false);
 
     assert.equal(randomScheduleIsSilent({ minMinutes: 1, maxMinutes: 60 }, true), true);
-    assert.equal(randomScheduleIsSilent({ minMinutes: 1, maxMinutes: 60 }, undefined), true);
+    assert.equal(randomScheduleIsSilent({ minMinutes: 1, maxMinutes: 60 }, undefined), false);
     assert.equal(randomScheduleIsSilent({ minMinutes: 1, maxMinutes: 60 }, false), false);
     assert.equal(randomScheduleIsSilent({ fireAt: now + 60_000 }, true), false);
 

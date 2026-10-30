@@ -6537,6 +6537,71 @@
   "settings_static_274": { "message": "Alt+Shift 加關閉視窗會安排關閉按下組合鍵時的目前視窗。" },
   "settings_static_275": { "message": "關閉視窗最短（分鐘）" },
   "settings_static_276": { "message": "關閉視窗最長（分鐘）" },
+  "settings_static_277": { "message": "時間範圍" },
+  "settings_static_278": { "message": "最大寬度" },
+  "settings_static_279": { "message": "目標寬於該值時不顯示半透明填色（20–2000px）。" },
+  "settings_static_280": { "message": "最大高度" },
+  "settings_static_281": { "message": "目標高於該值時不顯示半透明填色（20–2000px）。" },
+  "deferred_open_window_title": {
+    "message": "延遲開啟",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "選用。開啟之前，快捷鍵維持不變。",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "延遲開啟",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "將開啟網址、書籤、點選和關閉安排到稍後。在瀏覽版面中，1、2 和 4 鍵安排一個連結。",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "延遲開啟",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "網址、書籤、點選和關閉的選用安排。",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "開啟",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "指派數字列按鍵",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "這些數字鍵已被占用",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "延遲開啟可以把安排放到 1、2 和 4 鍵上。",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "取代這些鍵",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "保留目前按鍵",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "取消",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 是 $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "安排關閉此分頁" },
   "deferred_open_dialog_title_close_window": { "message": "安排關閉此視窗" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

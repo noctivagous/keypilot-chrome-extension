@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-18T19:19:22.364Z
+ * Generated on 2026-10-30T01:11:07.764Z
  */
 
 (() => {
@@ -1502,13 +1502,26 @@
       description: getMessage(`fn_${id}_description`) || def?.description || ""
     };
   }
-  function buildKeybindingsForLayout(layoutId) {
+  var DEFERRED_NUMBER_ROW_ASSIGNMENTS = Object.freeze({
+    ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
+    ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
+    SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4")
+  });
+  function isBrowsingKeyboardLayoutId(layoutId) {
+    const id = normalizeKeyboardLayoutId(layoutId);
+    return id === "browsing-right" || id === "browsing-left";
+  }
+  function buildKeybindingsForLayout(layoutId, opts = {}) {
     const id = normalizeKeyboardLayoutId(layoutId);
     const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
     const out = {};
+    const assignments = {
+      ...layout?.assignments || {},
+      ...opts?.deferredNumberRow && isBrowsingKeyboardLayoutId(id) ? DEFERRED_NUMBER_ROW_ASSIGNMENTS : {}
+    };
     for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
       if (isBuildExcludedKeyAction(actionId)) continue;
-      const assign = layout?.assignments?.[actionId];
+      const assign = assignments[actionId];
       if (!assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
       const copy = localizedActionCopy(actionId, def);
@@ -1526,7 +1539,7 @@
       };
     }
     for (const stock of STOCK_ACTIONS) {
-      const assign = layout?.assignments?.[stock.id];
+      const assign = assignments[stock.id];
       if (!assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
       const localized = getStockActionById(stock.id);
@@ -1586,9 +1599,6 @@
     ROOT: physicalAssignment("KeyS", "S"),
     BACK: physicalAssignment("KeyD", "D"),
     ACTIVATE: physicalAssignment("KeyF", "F"),
-    ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
-    ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
-    SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4"),
     ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyG", "G"),
     HIGHLIGHT: physicalAssignment("KeyH", "H"),
     TAB_HISTORY: physicalAssignment("KeyJ", "J"),
@@ -1633,9 +1643,6 @@
     ROOT: physicalAssignment("KeyL", "L"),
     BACK: physicalAssignment("KeyK", "K"),
     ACTIVATE: physicalAssignment("KeyJ", "J"),
-    ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
-    ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
-    SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4"),
     ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
     // H is background-tab open on left; G is text select.
     HIGHLIGHT: physicalAssignment("KeyG", "G"),
@@ -1705,9 +1712,9 @@
     }
     return out;
   }
-  function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+  function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS, opts = {}) {
     return {
-      ...buildKeybindingsForLayout(layoutId),
+      ...buildKeybindingsForLayout(layoutId, opts),
       ...buildSystemKeybindings(handedness)
     };
   }
@@ -2732,6 +2739,13 @@
   var SETTINGS_STORAGE_KEY = "kp_settings_v1";
   var DEFERRED_OPEN_MIN_MINUTES = 1;
   var DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
+  var OVERLAY_FILL_MAX_SIZE_MIN = 20;
+  var OVERLAY_FILL_MAX_SIZE_MAX = 2e3;
+  var OVERLAY_FILL_MAX_SIZE_DEFAULT = 250;
+  function overlayFillExceedsMaxSize(rect, maxWidth, maxHeight) {
+    if (!rect) return false;
+    return Number(rect.width) > Number(maxWidth) || Number(rect.height) > Number(maxHeight);
+  }
   var TEXT_FOCUS_STYLE_IDS = Object.freeze(
     /** @type {const} */
     [
@@ -2821,6 +2835,8 @@
       focusColor: "blue",
       // When true, the focus rectangle can include a translucent fill (where applicable).
       overlayFillEnabled: true,
+      overlayFillMaxWidth: OVERLAY_FILL_MAX_SIZE_DEFAULT,
+      overlayFillMaxHeight: OVERLAY_FILL_MAX_SIZE_DEFAULT,
       // When true, draw a soft outer glow/shadow on the focus rectangle.
       overlayShadowEnabled: false,
       // Focus rectangle border thickness in px.
@@ -2867,6 +2883,10 @@
       linePreferPortraitTargets: true
     }),
     deferredOpen: Object.freeze({
+      // Bonus feature. Missing `enabled` on older stored settings stays off.
+      enabled: false,
+      // 'auto' asks on enable; 'applied' wrote 1/2/4; 'kept' left existing keys.
+      numberRowKeys: "auto",
       openUrls: Object.freeze({
         enabled: true,
         minMinutes: 1,
@@ -2893,7 +2913,7 @@
         maxMinutes: 60
       }),
       target: "activeWindow",
-      silentRandomScheduling: true
+      silentRandomScheduling: false
     })
   });
   function normalizeSearchEngine(raw) {
@@ -2987,6 +3007,18 @@
       overlayFillEnabled: normalizeBoolean(
         stored.overlayFillEnabled,
         DEFAULT_SETTINGS.clickMode.overlayFillEnabled
+      ),
+      overlayFillMaxWidth: normalizeNumber(
+        stored.overlayFillMaxWidth,
+        DEFAULT_SETTINGS.clickMode.overlayFillMaxWidth,
+        OVERLAY_FILL_MAX_SIZE_MIN,
+        OVERLAY_FILL_MAX_SIZE_MAX
+      ),
+      overlayFillMaxHeight: normalizeNumber(
+        stored.overlayFillMaxHeight,
+        DEFAULT_SETTINGS.clickMode.overlayFillMaxHeight,
+        OVERLAY_FILL_MAX_SIZE_MIN,
+        OVERLAY_FILL_MAX_SIZE_MAX
       ),
       overlayShadowEnabled: normalizeBoolean(
         stored.overlayShadowEnabled,
@@ -3084,9 +3116,15 @@
       maxMinutes: Math.max(minMinutes, maxMinutes)
     };
   }
+  function normalizeDeferredNumberRowKeys(raw) {
+    return raw === "applied" || raw === "kept" ? raw : "auto";
+  }
   function normalizeDeferredOpen(raw) {
     const stored = raw && typeof raw === "object" ? raw : {};
     return {
+      // Absent means off, including profiles saved before this flag existed.
+      enabled: normalizeBoolean(stored.enabled, false),
+      numberRowKeys: normalizeDeferredNumberRowKeys(stored.numberRowKeys),
       openUrls: normalizeDeferredOpenRange(stored.openUrls, DEFAULT_SETTINGS.deferredOpen.openUrls),
       randomBookmarks: normalizeDeferredOpenRange(
         stored.randomBookmarks,
@@ -3645,6 +3683,8 @@
       }),
       focusColor: "blue",
       overlayFillEnabled: true,
+      overlayFillMaxWidth: 250,
+      overlayFillMaxHeight: 250,
       overlayShadowEnabled: false,
       rectangleThickness: 3,
       clickEffect: "flash",
@@ -3665,6 +3705,8 @@
       }),
       focusColor: "blue",
       overlayFillEnabled: true,
+      overlayFillMaxWidth: 250,
+      overlayFillMaxHeight: 250,
       overlayShadowEnabled: false,
       rectangleThickness: 4,
       clickEffect: "flash",
@@ -3685,6 +3727,8 @@
       }),
       focusColor: "green",
       overlayFillEnabled: false,
+      overlayFillMaxWidth: 250,
+      overlayFillMaxHeight: 250,
       overlayShadowEnabled: true,
       rectangleThickness: 3,
       clickEffect: "flash",
@@ -5919,6 +5963,8 @@
       let focusChrome = {
         focusColor: "blue",
         overlayFillEnabled: false,
+        overlayFillMaxWidth: OVERLAY_FILL_MAX_SIZE_DEFAULT,
+        overlayFillMaxHeight: OVERLAY_FILL_MAX_SIZE_DEFAULT,
         overlayShadowEnabled: false,
         rectangleThickness: 3
       };
@@ -6089,7 +6135,18 @@
         try {
           hoverEl.style.border = `${thickness}px solid ${p.border}`;
           const suppressPlayingVideoFill = !isText && playingVideoCoversElement(target);
-          hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false || suppressPlayingVideoFill ? "transparent" : p.fill;
+          let tooLarge = false;
+          try {
+            const r = target && target.getBoundingClientRect && target.getBoundingClientRect();
+            tooLarge = overlayFillExceedsMaxSize(
+              r,
+              focusChrome.overlayFillMaxWidth,
+              focusChrome.overlayFillMaxHeight
+            );
+          } catch {
+            tooLarge = false;
+          }
+          hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false || suppressPlayingVideoFill || tooLarge ? "transparent" : p.fill;
           hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false ? "none" : `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`;
         } catch {
         }
@@ -6126,9 +6183,13 @@
             keybindings = buildEffectiveKeybindings(layoutId, settings?.keyboardHandedness);
           }
           const cm = settings?.clickMode || {};
+          const maxW = Number(cm.overlayFillMaxWidth);
+          const maxH = Number(cm.overlayFillMaxHeight);
           focusChrome = {
             focusColor: normalizeFocusColor(cm.focusColor),
             overlayFillEnabled: cm.overlayFillEnabled === true,
+            overlayFillMaxWidth: Number.isFinite(maxW) ? Math.min(Math.max(maxW, OVERLAY_FILL_MAX_SIZE_MIN), OVERLAY_FILL_MAX_SIZE_MAX) : OVERLAY_FILL_MAX_SIZE_DEFAULT,
+            overlayFillMaxHeight: Number.isFinite(maxH) ? Math.min(Math.max(maxH, OVERLAY_FILL_MAX_SIZE_MIN), OVERLAY_FILL_MAX_SIZE_MAX) : OVERLAY_FILL_MAX_SIZE_DEFAULT,
             overlayShadowEnabled: cm.overlayShadowEnabled === true,
             rectangleThickness: Number(cm.rectangleThickness) || 3
           };

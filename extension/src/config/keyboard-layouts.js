@@ -1005,19 +1005,53 @@ function localizedActionCopy(actionId, def) {
 }
 
 /**
+ * Optional number-row bindings for Deferred opening.
+ * Added on top of browsing layouts only while that feature is enabled.
+ */
+const DEFERRED_NUMBER_ROW_ASSIGNMENTS = Object.freeze({
+  ACTIVATE_DEFERRED_RANDOM: physicalAssignment('Digit1', '1'),
+  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment('Digit2', '2'),
+  SCHEDULE_LINK_MANUAL: physicalAssignment('Digit4', '4')
+});
+
+/**
+ * @param {any} layoutId
+ * @returns {boolean}
+ */
+export function isBrowsingKeyboardLayoutId(layoutId) {
+  const id = normalizeKeyboardLayoutId(layoutId);
+  return id === 'browsing-right' || id === 'browsing-left';
+}
+
+/**
+ * @param {any} settings
+ * @returns {boolean}
+ */
+export function deferredNumberRowActive(settings) {
+  return settings?.deferredOpen?.enabled === true;
+}
+
+/**
  * Build the legacy `KEYBINDINGS` object shape used throughout the codebase.
  *
  * @param {BuiltinKeyboardLayoutId} layoutId
+ * @param {{ deferredNumberRow?: boolean }} [opts]
  * @returns {Record<string, any>}
  */
-export function buildKeybindingsForLayout(layoutId) {
+export function buildKeybindingsForLayout(layoutId, opts = {}) {
   const id = normalizeKeyboardLayoutId(layoutId);
   const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
   const out = {};
+  const assignments = {
+    ...(layout?.assignments || {}),
+    ...(opts?.deferredNumberRow && isBrowsingKeyboardLayoutId(id)
+      ? DEFERRED_NUMBER_ROW_ASSIGNMENTS
+      : {})
+  };
 
   for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
     if (isBuildExcludedKeyAction(actionId)) continue;
-    const assign = layout?.assignments?.[actionId];
+    const assign = assignments[actionId];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
     const copy = localizedActionCopy(actionId, def);
@@ -1037,7 +1071,7 @@ export function buildKeybindingsForLayout(layoutId) {
   }
 
   for (const stock of STOCK_ACTIONS) {
-    const assign = layout?.assignments?.[stock.id];
+    const assign = assignments[stock.id];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
     const localized = getStockActionById(stock.id);
@@ -1201,9 +1235,6 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   ROOT: physicalAssignment('KeyS', 'S'),
   BACK: physicalAssignment('KeyD', 'D'),
   ACTIVATE: physicalAssignment('KeyF', 'F'),
-  ACTIVATE_DEFERRED_RANDOM: physicalAssignment('Digit1', '1'),
-  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment('Digit2', '2'),
-  SCHEDULE_LINK_MANUAL: physicalAssignment('Digit4', '4'),
   ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyG', 'G'),
   HIGHLIGHT: physicalAssignment('KeyH', 'H'),
 
@@ -1257,9 +1288,6 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   ROOT: physicalAssignment('KeyL', 'L'),
   BACK: physicalAssignment('KeyK', 'K'),
   ACTIVATE: physicalAssignment('KeyJ', 'J'),
-  ACTIVATE_DEFERRED_RANDOM: physicalAssignment('Digit1', '1'),
-  ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment('Digit2', '2'),
-  SCHEDULE_LINK_MANUAL: physicalAssignment('Digit4', '4'),
   ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyH', 'H'),
   // H is background-tab open on left; G is text select.
   HIGHLIGHT: physicalAssignment('KeyG', 'G'),
@@ -1361,11 +1389,12 @@ export function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS)
  * Layout keybindings + system layer (system wins on id collision).
  * @param {any} layoutId
  * @param {any} [handedness]
+ * @param {{ deferredNumberRow?: boolean }} [opts]
  * @returns {Record<string, any>}
  */
-export function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+export function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS, opts = {}) {
   return {
-    ...buildKeybindingsForLayout(layoutId),
+    ...buildKeybindingsForLayout(layoutId, opts),
     ...buildSystemKeybindings(handedness)
   };
 }
@@ -1688,7 +1717,7 @@ export const BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
 
 /**
  * @param {BuiltinKeyboardLayoutId} layoutId
- * @param {{ includeNumberRow?: boolean, hardwareLayoutId?: unknown }} [opts]
+ * @param {{ includeNumberRow?: boolean, hardwareLayoutId?: unknown, deferredNumberRow?: boolean }} [opts]
  * @returns {any[]}
  */
 export function getKeyboardUiLayoutForLayout(layoutId, opts = {}) {
@@ -1696,7 +1725,9 @@ export function getKeyboardUiLayoutForLayout(layoutId, opts = {}) {
   const inferred = inferFamilyAndHandednessFromLayoutId(id);
   return buildKeyboardReferenceUiLayout({
     hardwareLayoutId: opts?.hardwareLayoutId,
-    keybindings: buildEffectiveKeybindings(id, inferred.handedness),
+    keybindings: buildEffectiveKeybindings(id, inferred.handedness, {
+      deferredNumberRow: !!opts?.deferredNumberRow
+    }),
     includeNumberRow: !!opts?.includeNumberRow
   });
 }

@@ -6542,6 +6542,71 @@
   "settings_static_274": { "message": "Alt+Umschalt mit Fenster schließen plant das Schließen des Fensters, das beim Drücken der Kombination aktuell ist." },
   "settings_static_275": { "message": "Fenster schließen Minimum (Minuten)" },
   "settings_static_276": { "message": "Fenster schließen Maximum (Minuten)" },
+  "settings_static_277": { "message": "Zeitrahmen" },
+  "settings_static_278": { "message": "Maximale Breite" },
+  "settings_static_279": { "message": "Keine Füllung, wenn das Ziel breiter ist als dieser Wert (20–2000 px)." },
+  "settings_static_280": { "message": "Maximale Höhe" },
+  "settings_static_281": { "message": "Keine Füllung, wenn das Ziel höher ist als dieser Wert (20–2000 px)." },
+  "deferred_open_window_title": {
+    "message": "Verzögertes Öffnen",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "Optional. Die Kurzbefehle bleiben, bis Sie dies einschalten.",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "Verzögertes Öffnen",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "Open URLs, Lesezeichen, Klicks und Schließen für später planen. In den Surfen-Layouts planen die Tasten 1, 2 und 4 einen Link.",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "Verzögertes Öffnen",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "Optionale Planung für URLs, Lesezeichen, Klicks und Schließen.",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "Öffnen",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "Ziffernreihe zuweisen",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "Diese Zifferntasten sind schon belegt",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "Verzögertes Öffnen kann die Tasten 1, 2 und 4 für die Planung verwenden.",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "Diese Tasten ersetzen",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "Aktuelle Tasten behalten",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "Abbrechen",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 ist $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "Schließen dieses Tabs planen" },
   "deferred_open_dialog_title_close_window": { "message": "Schließen dieses Fensters planen" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

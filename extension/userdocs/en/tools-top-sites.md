@@ -5,7 +5,7 @@ Top Sites is a compact panel for toolbar bookmarks, most-visited sites, recent b
 ## Use it
 
 1. Press <kbd>;</kbd> (default right-handed Browsing; left-handed often uses <kbd>A</kbd> / <kbd>&#96;</kbd>).
-2. Switch tabs inside the panel: **Toolbar**, **Most Visited**, **Recent Bookmarks**, and **KeyPilot** (right edge). Number keys <kbd>1</kbd>–<kbd>4</kbd> jump to a tab; <kbd>Tab</kbd> cycles them.
+2. Switch tabs inside the panel: **Toolbar**, **Most Visited**, **Recent Bookmarks**, and **KeyPilot** (right edge). <kbd>Tab</kbd> cycles them. Number keys follow the keyboard layout.
 3. Click or activate a site card to navigate. The panel is tall enough for three rows of cards without clipping.
 4. Open the **KeyPilot** tab for the same tool cards as the extension popup: Keyboard Reference, Help / Docs, Onboarding Tutorial, Settings, and Control Strip.
 5. Drag the **Top Sites** titlebar to move the panel; drag an edge or corner to resize. Size and position are remembered.

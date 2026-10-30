@@ -33,7 +33,16 @@ import {
   normalizeKeyboardLayoutId,
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
-import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
+import {
+  getSettings,
+  SETTINGS_STORAGE_KEY,
+  scrollBehaviorFromSpeed,
+  DEFAULT_SETTINGS,
+  OVERLAY_FILL_MAX_SIZE_DEFAULT,
+  OVERLAY_FILL_MAX_SIZE_MAX,
+  OVERLAY_FILL_MAX_SIZE_MIN,
+  overlayFillExceedsMaxSize
+} from './settings-manager.js';
 import {
   FRAME_LAYOUT_STORE_KEY,
   loadFrameLocalKeybindingsForUserLayout
@@ -461,10 +470,12 @@ export function installFrameClickAgent() {
     let lastPointerPostedX = NaN;
     /** @type {number} */
     let lastPointerPostedY = NaN;
-    /** @type {{ focusColor: string, overlayFillEnabled: boolean, overlayShadowEnabled: boolean, rectangleThickness: number }} */
+    /** @type {{ focusColor: string, overlayFillEnabled: boolean, overlayFillMaxWidth: number, overlayFillMaxHeight: number, overlayShadowEnabled: boolean, rectangleThickness: number }} */
     let focusChrome = {
       focusColor: 'blue',
       overlayFillEnabled: false,
+      overlayFillMaxWidth: OVERLAY_FILL_MAX_SIZE_DEFAULT,
+      overlayFillMaxHeight: OVERLAY_FILL_MAX_SIZE_DEFAULT,
       overlayShadowEnabled: false,
       rectangleThickness: 3
     };
@@ -680,7 +691,16 @@ export function installFrameClickAgent() {
       try {
         hoverEl.style.border = `${thickness}px solid ${p.border}`;
         const suppressPlayingVideoFill = !isText && playingVideoCoversElement(target);
-        hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false || suppressPlayingVideoFill
+        let tooLarge = false;
+        try {
+          const r = target && target.getBoundingClientRect && target.getBoundingClientRect();
+          tooLarge = overlayFillExceedsMaxSize(
+            r,
+            focusChrome.overlayFillMaxWidth,
+            focusChrome.overlayFillMaxHeight
+          );
+        } catch { tooLarge = false; }
+        hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false || suppressPlayingVideoFill || tooLarge
           ? 'transparent'
           : p.fill;
         hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false
@@ -729,9 +749,17 @@ export function installFrameClickAgent() {
           keybindings = buildEffectiveKeybindings(layoutId, settings?.keyboardHandedness);
         }
         const cm = settings?.clickMode || {};
+        const maxW = Number(cm.overlayFillMaxWidth);
+        const maxH = Number(cm.overlayFillMaxHeight);
         focusChrome = {
           focusColor: normalizeFocusColor(cm.focusColor),
           overlayFillEnabled: cm.overlayFillEnabled === true,
+          overlayFillMaxWidth: Number.isFinite(maxW)
+            ? Math.min(Math.max(maxW, OVERLAY_FILL_MAX_SIZE_MIN), OVERLAY_FILL_MAX_SIZE_MAX)
+            : OVERLAY_FILL_MAX_SIZE_DEFAULT,
+          overlayFillMaxHeight: Number.isFinite(maxH)
+            ? Math.min(Math.max(maxH, OVERLAY_FILL_MAX_SIZE_MIN), OVERLAY_FILL_MAX_SIZE_MAX)
+            : OVERLAY_FILL_MAX_SIZE_DEFAULT,
           overlayShadowEnabled: cm.overlayShadowEnabled === true,
           rectangleThickness: Number(cm.rectangleThickness) || 3
         };

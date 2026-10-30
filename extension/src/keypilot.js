@@ -40,6 +40,7 @@ import { ALT_CHROME_BINDINGS, isAltChromeShortcut } from './utils/alt-chrome.js'
 import {
   buildKeybindingsForLayout,
   buildSystemKeybindings,
+  deferredNumberRowActive,
   DEFAULT_KEYBOARD_HANDEDNESS,
   DEFAULT_KEYBOARD_LAYOUT_ID,
   getInstalledKeyboardLayoutFamilyIds,
@@ -1260,7 +1261,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     });
     this._keyboardLayoutId = layoutId;
     // Layout family assignments only — system keys live in a separate always-on layer.
-    this._layoutKeybindings = buildKeybindingsForLayout(layoutId);
+    const deferredNumberRow = deferredNumberRowActive(this._settings);
+    this._layoutKeybindings = buildKeybindingsForLayout(layoutId, { deferredNumberRow });
     this._systemKeybindings = buildSystemKeybindings(handedness);
     this.keybindings = {
       ...this._layoutKeybindings,
@@ -1269,7 +1271,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     const showNumberRow = !!this._settings?.keyboardReferenceShowNumberRow;
     this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId, {
       includeNumberRow: showNumberRow,
-      hardwareLayoutId: this._settings?.keyboardHardwareLayoutId
+      hardwareLayoutId: this._settings?.keyboardHardwareLayoutId,
+      deferredNumberRow
     });
 
     // Keep text-input SVG background hints in sync with layout-bound keys (F vs J, Esc).
@@ -1603,7 +1606,12 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     return { ...base, action: 'OPEN_URLS', payload: { urls: fallback } };
   }
 
+  _deferredOpenEnabled() {
+    return this._settings?.deferredOpen?.enabled === true;
+  }
+
   handleActivateDeferredRandomKey() {
+    if (!this._deferredOpenEnabled()) return;
     const request = this._deferredClickElementRequest();
     if (!request) return;
     this._submitDeferredOpen(request, {
@@ -1613,6 +1621,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   handleActivateDeferredScheduledKey() {
+    if (!this._deferredOpenEnabled()) return;
     const request = this._deferredClickElementRequest();
     if (!request || !this.scheduleOpenDialog) return;
     this.scheduleOpenDialog.show({
@@ -1622,6 +1631,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   handleScheduleLinkManualKey() {
+    if (!this._deferredOpenEnabled()) return;
     if (!this.scheduleOpenDialog) return;
     const target = this._settings?.deferredOpen?.target || DEFAULT_SETTINGS.deferredOpen.target;
     this.scheduleOpenDialog.show({
@@ -1645,6 +1655,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    * @returns {boolean} true when the event was claimed
    */
   _maybeHandleDeferredOpen(e) {
+    if (!this._deferredOpenEnabled()) return false;
     if (!e?.altKey || !e?.shiftKey || e?.metaKey) return false;
     if (this.state?.getState?.()?.mode !== MODES.NONE) return false;
     if (this._isUnsafeToRunActionKey(e)) return false;
@@ -8659,6 +8670,20 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     } catch {
       return null;
     }
+  }
+
+  handleOpenDeferredOpenPopover() {
+    if (this.state.getState()?.mode === MODES.POPOVER) {
+      this.handleClosePopover();
+    }
+    const width = Math.min(760, window.innerWidth - 36);
+    const height = Math.min(window.innerHeight * 0.82, window.innerHeight - 80);
+    void this.overlayManager.showInPageDeferredOpenPopover({
+      title: getMessage('deferred_open_window_title'),
+      width: `${width}px`,
+      height: `${height}px`
+    });
+    this.state.setPopoverOpen(true, 'kp://deferred-open');
   }
 
   handleOpenSettingsPopover(opts = {}) {

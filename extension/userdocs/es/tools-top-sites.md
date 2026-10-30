@@ -5,7 +5,7 @@ Top Sites es un panel compacto para los marcadores de la barra de herramientas, 
 ## Úselo
 
 1. Presione <kbd>;</kbd> (navegación predeterminada para diestros; los zurdos a menudo usan <kbd>A</kbd> / <kbd>`</kbd>).
-2. Cambie de pestaña dentro del panel: **Barra de herramientas**, **Más visitados**, **Marcadores recientes** y **KeyPilot** (borde derecho). Teclas numéricas <kbd>1</kbd>–<kbd>4</kbd> saltan a una pestaña; <kbd>Tab</kbd> los cicla.
+2. Cambie de pestaña dentro del panel: **Barra de herramientas**, **Más visitados**, **Marcadores recientes** y **KeyPilot** (borde derecho). <kbd>Tab</kbd> los cicla. Las teclas numéricas siguen la distribución del teclado.
 3. Haga clic o active una tarjeta del sitio para navegar. El panel es lo suficientemente alto para tres filas de tarjetas sin recortes.
 4. Abra la pestaña **KeyPilot** para ver las mismas tarjetas de herramientas que la ventana emergente de extensión: Referencia del teclado, Ayuda/Documentos, Tutorial de incorporación, Configuración y Tira de control.
 5. Arrastre la barra de título **Sitios principales** para mover el panel; arrastre un borde o una esquina para cambiar su tamaño. Se recuerdan el tamaño y la posición.

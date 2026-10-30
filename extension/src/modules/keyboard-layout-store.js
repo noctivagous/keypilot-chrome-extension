@@ -881,17 +881,22 @@ export async function setUserKeyboardLayoutSlot(layoutId, slotKey, item) {
 /**
  * Duplicate a built-in layout into an editable user layout.
  *
- * @param {{ builtinLayoutId: string, label?: string }} params
+ * @param {{ builtinLayoutId: string, label?: string, deferredNumberRow?: boolean }} params
  * @returns {Promise<UserKeyboardLayout>}
  */
-export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label } = {}) {
+export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label, deferredNumberRow = false } = {}) {
   const baseId = String(builtinLayoutId || '');
   // Include the always-on system layer (KB Reference / Settings) so keycaps that
   // appear on the built-in Keyboard Reference are seeded into the editable copy.
   // `buildKeybindingsForLayout` alone omits those and leaves K / ' empty.
+  // Number-row deferred keys are included only while that bonus feature is on.
   const { handedness } = inferFamilyAndHandednessFromLayoutId(baseId);
-  const kb = buildEffectiveKeybindings(baseId, handedness);
-  const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: true });
+  const includeDeferred = !!deferredNumberRow;
+  const kb = buildEffectiveKeybindings(baseId, handedness, { deferredNumberRow: includeDeferred });
+  const uiLayout = getKeyboardUiLayoutForLayout(baseId, {
+    includeNumberRow: true,
+    deferredNumberRow: includeDeferred
+  });
 
   // Seed slots from whatever actions currently appear on the keyboard.
   /** @type {Record<string, SlotAssignment|null>} */

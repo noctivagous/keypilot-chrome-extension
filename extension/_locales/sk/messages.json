@@ -6537,6 +6537,71 @@
   "settings_static_274": { "message": "Alt+Shift so Zavrieť okno naplánuje zatvorenie okna, ktoré je aktuálne pri stlačení skratky." },
   "settings_static_275": { "message": "Zavrieť okno minimum (minúty)" },
   "settings_static_276": { "message": "Zavrieť okno maximum (minúty)" },
+  "settings_static_277": { "message": "časový rámec" },
+  "settings_static_278": { "message": "Maximálna šírka" },
+  "settings_static_279": { "message": "Skryť výplň, ak je cieľ širší ako táto hodnota (20–2000 px)." },
+  "settings_static_280": { "message": "Maximálna výška" },
+  "settings_static_281": { "message": "Skryť výplň, ak je cieľ vyšší ako táto hodnota (20–2000 px)." },
+  "deferred_open_window_title": {
+    "message": "Odložené otváranie",
+    "description": "Title of the Deferred opening settings window."
+  },
+  "deferred_open_window_lead": {
+    "message": "Voliteľné. Skratky zostanú, kým to nezapnete.",
+    "description": "Lead text in the Deferred opening settings window."
+  },
+  "deferred_open_master_title": {
+    "message": "Odložené otváranie",
+    "description": "Master switch title for Deferred opening."
+  },
+  "deferred_open_master_sub": {
+    "message": "Naplánujte otvorenie URL, záložky, kliknutia a zatvorenia na neskôr. V rozloženiach prehliadania klávesy 1, 2 a 4 naplánujú odkaz.",
+    "description": "Master switch description for Deferred opening."
+  },
+  "deferred_open_settings_row_title": {
+    "message": "Odložené otváranie",
+    "description": "Keyboard settings row that opens Deferred opening."
+  },
+  "deferred_open_settings_row_sub": {
+    "message": "Voliteľné plánovanie URL, záložiek, kliknutí a zatvorení.",
+    "description": "Keyboard settings row description for Deferred opening."
+  },
+  "deferred_open_open_button": {
+    "message": "Otvoriť",
+    "description": "Button that opens the Deferred opening window."
+  },
+  "deferred_open_assign_keys": {
+    "message": "Priradiť klávesy číselného radu",
+    "description": "Button that assigns deferred actions to number-row keys."
+  },
+  "deferred_open_conflict_title": {
+    "message": "Tieto číselné klávesy sú už priradené",
+    "description": "Title when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_intro": {
+    "message": "Odložené otváranie môže umiestniť plánovanie na klávesy 1, 2 a 4.",
+    "description": "Explanation shown when number-row keys are already assigned."
+  },
+  "deferred_open_conflict_replace": {
+    "message": "Nahradiť tieto klávesy",
+    "description": "Replace the actions currently on keys 1, 2, and 4."
+  },
+  "deferred_open_conflict_keep": {
+    "message": "Ponechať aktuálne klávesy",
+    "description": "Turn Deferred opening on without changing number-row keys."
+  },
+  "deferred_open_conflict_cancel": {
+    "message": "Zrušiť",
+    "description": "Leave Deferred opening off."
+  },
+  "deferred_open_conflict_item": {
+    "message": "$1 je $2",
+    "description": "One taken number key in the Deferred opening dialog. $1 is the key, $2 is the current action.",
+    "placeholders": {
+      "key": { "content": "$1" },
+      "action": { "content": "$2" }
+    }
+  },
   "deferred_open_dialog_title_close_tab": { "message": "Naplánovať zatvorenie tejto karty" },
   "deferred_open_dialog_title_close_window": { "message": "Naplánovať zatvorenie tohto okna" },
   "fn_ACTIVATE_DEFERRED_RANDOM_label": {

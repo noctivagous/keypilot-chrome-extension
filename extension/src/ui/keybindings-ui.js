@@ -183,6 +183,73 @@ function el(doc, tag, className, text) {
   return node;
 }
 
+const DEFERRED_NUMBER_ROW_ACTION_IDS = new Set([
+  'ACTIVATE_DEFERRED_RANDOM',
+  'ACTIVATE_DEFERRED_SCHEDULED',
+  'SCHEDULE_LINK_MANUAL'
+]);
+
+/**
+ * Number-row presence and deferred-key paint are not part of the layout id.
+ * Reusing an early keyboard that was drawn without them leaves 1/2/4 blank
+ * after Deferred opening or Show number row is turned on.
+ * @param {any[]|null|undefined} layout
+ * @returns {{ numberRow: boolean, deferred: boolean }}
+ */
+function layoutChromeFlags(layout) {
+  let numberRow = false;
+  let deferred = false;
+  for (const row of Array.isArray(layout) ? layout : []) {
+    if (!Array.isArray(row)) continue;
+    for (const item of row) {
+      if (!item) continue;
+      const code = String(item.code || '');
+      const text = String(item.text || item.legend || '').trim();
+      if (code === 'Digit1' || text === '1') numberRow = true;
+      if (DEFERRED_NUMBER_ROW_ACTION_IDS.has(String(item.id || ''))) deferred = true;
+    }
+  }
+  return { numberRow, deferred };
+}
+
+/**
+ * @param {HTMLElement|null|undefined} visual
+ * @returns {{ numberRow: boolean, deferred: boolean }}
+ */
+function existingChromeFlags(visual) {
+  const num = visual?.dataset?.kpNumRow;
+  let numberRow;
+  if (num === '1') numberRow = true;
+  else if (num === '0') numberRow = false;
+  else {
+    let labeledOne = false;
+    try {
+      labeledOne = Array.prototype.some.call(
+        visual?.querySelectorAll?.('.key-label, .key-text') || [],
+        (node) => String(node.textContent || '').trim() === '1'
+      );
+    } catch { /* ignore */ }
+    numberRow = !!(visual?.querySelector?.('[data-kp-physical-code="Digit1"]') || labeledOne);
+  }
+  const deferred = !!(
+    visual?.querySelector?.('[data-kp-action-id="ACTIVATE_DEFERRED_RANDOM"]')
+    || visual?.querySelector?.('[data-kp-action-id="ACTIVATE_DEFERRED_SCHEDULED"]')
+    || visual?.querySelector?.('[data-kp-action-id="SCHEDULE_LINK_MANUAL"]')
+  );
+  return { numberRow, deferred };
+}
+
+/**
+ * @param {HTMLElement} visual
+ * @param {{ numberRow: boolean, deferred: boolean }} flags
+ */
+function stampChromeFlags(visual, flags) {
+  try {
+    visual.dataset.kpNumRow = flags.numberRow ? '1' : '0';
+    visual.dataset.kpDeferredRow = flags.deferred ? '1' : '0';
+  } catch { /* ignore */ }
+}
+
 function updateExistingKeyboardDOM({ container, keybindings }) {
   const doc = container.ownerDocument || document;
 
@@ -298,9 +365,14 @@ export function renderKeybindingsKeyboard({
     // Reuse only when the existing DOM was built for this exact layout.
     // An empty/missing layoutId must not keep a previous (e.g. left-handed)
     // keyboard and only rewrite labels — that leaves leftover mappings.
-    const canReuse = !!layoutKey && existingLayoutKey === layoutKey;
+    const wantedFlags = layoutChromeFlags(layout);
+    const existingFlags = existingChromeFlags(existingVisual);
+    const chromeMatches = wantedFlags.numberRow === existingFlags.numberRow
+      && wantedFlags.deferred === existingFlags.deferred;
+    const canReuse = !!layoutKey && existingLayoutKey === layoutKey && chromeMatches;
     if (canReuse) {
       if (updateExistingKeyboardDOM({ container, keybindings })) {
+        stampChromeFlags(existingVisual, wantedFlags);
         if (attachPopovers) {
           attachKeyPopoverBehavior({ root: container, keybindings, getKeyPilot, pinOnClick });
         } else {
@@ -316,6 +388,7 @@ export function renderKeybindingsKeyboard({
   const visual = el(doc, 'div', `keyboard-visual ${KEYBINDINGS_UI_ROOT_CLASS}`);
   visual.dataset.kpKeyboardBuilt = 'true';
   if (layoutKey) visual.dataset.kpLayoutId = layoutKey;
+  stampChromeFlags(visual, layoutChromeFlags(layout));
   container.appendChild(visual);
 
   // Layout is intentionally stable + reusable (not tied to popup.html).

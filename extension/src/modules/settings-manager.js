@@ -48,6 +48,22 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 export const DEFERRED_OPEN_MIN_MINUTES = 1;
 export const DEFERRED_OPEN_MAX_MINUTES = 48 * 60;
 
+/** Transparent overlay fill is skipped when either axis exceeds these limits (px). */
+export const OVERLAY_FILL_MAX_SIZE_MIN = 20;
+export const OVERLAY_FILL_MAX_SIZE_MAX = 2000;
+export const OVERLAY_FILL_MAX_SIZE_DEFAULT = 250;
+
+/**
+ * True when the focus rect is too large to paint the translucent overlay fill.
+ * @param {{ width?: number, height?: number }|null|undefined} rect
+ * @param {number} maxWidth
+ * @param {number} maxHeight
+ */
+export function overlayFillExceedsMaxSize(rect, maxWidth, maxHeight) {
+  if (!rect) return false;
+  return Number(rect.width) > Number(maxWidth) || Number(rect.height) > Number(maxHeight);
+}
+
 /** Valid text-mode focus field styles (order is settings UI preference). */
 export const TEXT_FOCUS_STYLE_IDS = Object.freeze(/** @type {const} */ ([
   'left_edge',
@@ -86,6 +102,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   cursor: ClickCursorSettings,
  *   focusColor: FocusColor,
  *   overlayFillEnabled: boolean,
+ *   overlayFillMaxWidth: number,
+ *   overlayFillMaxHeight: number,
  *   overlayShadowEnabled: boolean,
  *   rectangleThickness: number,
  *   clickEffect: ClickEffect,
@@ -170,6 +188,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   textMode: TextModeSettings,
  *   scroll: ScrollSettings,
  *   deferredOpen: {
+ *     enabled: boolean,
+ *     numberRowKeys: 'auto'|'applied'|'kept',
  *     openUrls: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     randomBookmarks: { enabled: boolean, minMinutes: number, maxMinutes: number },
  *     clickElement: { enabled: boolean, minMinutes: number, maxMinutes: number },
@@ -255,6 +275,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     focusColor: 'blue',
     // When true, the focus rectangle can include a translucent fill (where applicable).
     overlayFillEnabled: true,
+    overlayFillMaxWidth: OVERLAY_FILL_MAX_SIZE_DEFAULT,
+    overlayFillMaxHeight: OVERLAY_FILL_MAX_SIZE_DEFAULT,
     // When true, draw a soft outer glow/shadow on the focus rectangle.
     overlayShadowEnabled: false,
     // Focus rectangle border thickness in px.
@@ -301,6 +323,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
     linePreferPortraitTargets: true
   }),
   deferredOpen: Object.freeze({
+    // Bonus feature. Missing `enabled` on older stored settings stays off.
+    enabled: false,
+    // 'auto' asks on enable; 'applied' wrote 1/2/4; 'kept' left existing keys.
+    numberRowKeys: 'auto',
     openUrls: Object.freeze({
       enabled: true,
       minMinutes: 1,
@@ -327,7 +353,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
       maxMinutes: 60
     }),
     target: 'activeWindow',
-    silentRandomScheduling: true
+    silentRandomScheduling: false
   })
 });
 
@@ -505,6 +531,18 @@ function normalizeClickMode(raw) {
       stored.overlayFillEnabled,
       DEFAULT_SETTINGS.clickMode.overlayFillEnabled
     ),
+    overlayFillMaxWidth: normalizeNumber(
+      stored.overlayFillMaxWidth,
+      DEFAULT_SETTINGS.clickMode.overlayFillMaxWidth,
+      OVERLAY_FILL_MAX_SIZE_MIN,
+      OVERLAY_FILL_MAX_SIZE_MAX
+    ),
+    overlayFillMaxHeight: normalizeNumber(
+      stored.overlayFillMaxHeight,
+      DEFAULT_SETTINGS.clickMode.overlayFillMaxHeight,
+      OVERLAY_FILL_MAX_SIZE_MIN,
+      OVERLAY_FILL_MAX_SIZE_MAX
+    ),
     overlayShadowEnabled: normalizeBoolean(
       stored.overlayShadowEnabled,
       DEFAULT_SETTINGS.clickMode.overlayShadowEnabled
@@ -619,9 +657,20 @@ function normalizeDeferredOpenRange(raw, fallback) {
   };
 }
 
+/**
+ * @param {any} raw
+ * @returns {'auto'|'applied'|'kept'}
+ */
+function normalizeDeferredNumberRowKeys(raw) {
+  return raw === 'applied' || raw === 'kept' ? raw : 'auto';
+}
+
 export function normalizeDeferredOpen(raw) {
   const stored = raw && typeof raw === 'object' ? raw : {};
   return {
+    // Absent means off, including profiles saved before this flag existed.
+    enabled: normalizeBoolean(stored.enabled, false),
+    numberRowKeys: normalizeDeferredNumberRowKeys(stored.numberRowKeys),
     openUrls: normalizeDeferredOpenRange(stored.openUrls, DEFAULT_SETTINGS.deferredOpen.openUrls),
     randomBookmarks: normalizeDeferredOpenRange(
       stored.randomBookmarks,
