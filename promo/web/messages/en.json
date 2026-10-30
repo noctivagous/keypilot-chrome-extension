@@ -299,6 +299,14 @@
     "message": "Close the current tab",
     "description": "Function Library description for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "Close Window",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "Close the current window",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "Exit Focus",
     "description": "Function Library label for CANCEL."
@@ -934,5 +942,37 @@
   "fn_READER_MODE_description": {
     "message": "Read this page without clutter",
     "description": "Function Library description for READER_MODE."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "Click Element Deferred Random",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "Schedule the hovered link for a random time",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "Click Element Deferred Scheduled",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "Schedule the hovered link for an exact time",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "Deferred Open URLs",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "Schedule a hovered link to open later.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "Schedule Link Manual",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "Schedule a typed URL for an exact time",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
   }
 }

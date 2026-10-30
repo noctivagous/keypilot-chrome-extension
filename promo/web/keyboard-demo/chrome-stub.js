@@ -5,6 +5,10 @@
 
 const messages = { current: {} };
 
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function substitute(entry, substitutions) {
   if (!entry || typeof entry.message !== "string") return "";
   let message = entry.message;
@@ -20,7 +24,9 @@ function substitute(entry, substitutions) {
       : "";
     const index = /^\$(\d+)$/.exec(content);
     const value = index ? (subs[Number(index[1]) - 1] ?? "") : content;
-    message = message.split(`$${name}$`).join(String(value));
+    // Chrome placeholder names are case-insensitive ($NAME$ matches placeholder "name").
+    const pattern = new RegExp(`\\$${escapeRegExp(name)}\\$`, "gi");
+    message = message.replace(pattern, () => String(value));
   }
   subs.forEach((value, index) => {
     message = message.split(`$${index + 1}`).join(value == null ? "" : String(value));

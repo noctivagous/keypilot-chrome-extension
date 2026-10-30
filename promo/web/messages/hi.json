@@ -299,6 +299,14 @@
     "message": "वर्तमान टैब बंद करें",
     "description": "Function Library description for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "विंडो बंद करें",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "वर्तमान विंडो बंद करें",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "फ़ोकस छोड़ें",
     "description": "Function Library label for CANCEL."
@@ -934,5 +942,37 @@
   "fn_READER_MODE_description": {
     "message": "इस पेज को बिना अव्यवस्था पढ़ें",
     "description": "Function Library description for READER_MODE."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "तत्व क्लिक विलंबित यादृच्छिक",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "कर्सर के नीचे की कड़ी को यादृच्छिक समय के लिए निर्धारित करें",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "तत्व क्लिक विलंबित निर्धारित",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "कर्सर के नीचे की कड़ी को सटीक समय के लिए निर्धारित करें",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "विलंबित URL खोलना",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "कर्सर के नीचे की कड़ी को बाद में खुलने के लिए निर्धारित करें।",
+    "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "लिंक मैन्युअल शेड्यूल करें",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "टाइप की गई URL को सटीक समय के लिए निर्धारित करें",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
   }
 }

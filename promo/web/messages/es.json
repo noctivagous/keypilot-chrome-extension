@@ -299,6 +299,14 @@
     "message": "Cerrar la pestaña actual",
     "description": "Function Library description for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "Cerrar ventana",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "Cerrar la ventana actual",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "Salir del foco",
     "description": "Function Library label for CANCEL."
@@ -934,5 +942,37 @@
   "fn_READER_MODE_description": {
     "message": "Read this page without clutter",
     "description": "Function Library description for READER_MODE."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "Clic en elemento diferido aleatorio",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "Programar el enlace bajo el cursor para un momento aleatorio",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "Clic en elemento diferido programado",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "Programar el enlace bajo el cursor para una hora exacta",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "Apertura diferida de URLs",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "Programa que un enlace bajo el cursor se abra más tarde.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "Programar enlace manual",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "Programar una URL escrita para una hora exacta",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
   }
 }

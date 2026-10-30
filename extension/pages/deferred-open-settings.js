@@ -5,7 +5,7 @@
 
 import { getFunctionDef } from '../src/config/function-library.js';
 import { getStockActionById } from '../src/config/stock-actions.js';
-import { bindSettingsControls } from '../src/modules/settings-binder.js';
+import { bindSettingsControls, writeSettingsInputValue } from '../src/modules/settings-binder.js';
 import { createSettingsController } from '../src/modules/settings-controller.js';
 import {
   getUserActionById,
@@ -52,9 +52,7 @@ function all(sel) {
 }
 
 function setInputValue(node, value) {
-  if (!node) return;
-  const s = String(value);
-  try { node.value = s; } catch { /* ignore */ }
+  writeSettingsInputValue(node, value);
 }
 
 /**

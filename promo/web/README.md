@@ -11,17 +11,16 @@ This is separate from HyperFrames (`promo/intro-reel/`) and from the extension `
 | English page (tagged) | `index.html` |
 | English key-click SVGs (tagged) | `assets/keyclick-landscape.svg`, `assets/keyclick-portrait.svg` |
 | Flag SVGs (shared, not generated) | `assets/flags/` |
-| String catalogs | `locales/en.json`, `de.json`, `es.json`, `es_419.json`, `ja.json`, `sk.json`, `zh_CN.json`, `zh_TW.json` |
+| String catalogs | `locales/en.json` plus `locales/<locale>.json` for each id in `LOCALES` (`generate.mjs`) |
 | Generator | `locales/generate.mjs` |
 | Redirect helper (shared, not generated) | `locale.js` |
 | F/D mini-browser demo (shared, not generated) | `try-it-demo.js` |
 | Shared CSS | `site.css` |
 | Icon + hero video (not in this repo) | `promo-materials/web/assets/` (`icon256.png`, `cyberpilotfloat-optimized.mp4`) |
 
-Generated output:
+Generated output (one folder per id in `LOCALES`):
 
-- `de/index.html` + `de/assets/keyclick-*.svg`
-- `es/`, `es_419/`, `ja/`, `sk/`, `zh_CN/`, and `zh_TW/` the same way
+- `<locale>/index.html` + `<locale>/assets/keyclick-*.svg`
 
 Those files start with `<!-- Generated … Do not edit. -->`. Change copy in JSON; change layout in English source; then regenerate.
 
@@ -36,7 +35,7 @@ Keep `assets/` SVG-only in git. At deploy, copy `icon256.png` and `cyberpilotflo
 | `es` | `es-es-qwerty-iso` |
 | `sk` | `sk-sk-qwertz-iso` |
 | `ja` | `ja-jis-106` |
-| `es_419`, `zh_CN`, `zh_TW` | `us-ansi-qwerty` (no separate hardware model) |
+| Locales mapped to `us-ansi-qwerty` in `HARDWARE_BY_LOCALE` | `us-ansi-qwerty` (no separate hardware model) |
 
 Listing PNGs come from `online-stores/generated/chrome/<locale>/`. `--check` fails if any site locale is missing one of the five files. Generate them with `npm run store:screenshots -- --locale=<id>` first. Fonts, theme icons, and those PNGs are gitignored.
 
@@ -79,7 +78,7 @@ Leave untagged: KeyPilot, Noctivagous Software, the store URL, the email, `nocti
 4. Add `hreflang` / `PATHS` (and detection) in `index.html` and `locale.js` as needed.
 5. Run `npm run web:locales`.
 
-Ship `en`, `de`, `es`, `es_419`, `ja`, `sk`, `zh_CN`, `zh_TW` as directory names (underscore). HTML `lang` uses hyphens: `es-419`, `zh-CN`, `zh-TW`.
+Ship each registered locale as a directory named after its id (underscores where the id uses them, e.g. `es_419`, `zh_CN`). HTML `lang` comes from `HTML_LANG` in `generate.mjs` (hyphens where required, e.g. `es-419`, `zh-CN`). RTL locales get `dir="rtl"` on `<html>` when the generator sets it for that id.
 
 
 ---

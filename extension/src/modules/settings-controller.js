@@ -81,6 +81,12 @@ export class SettingsController {
     if (area !== 'sync' && area !== 'local') return;
     const entry = changes?.[SETTINGS_STORAGE_KEY];
     if (!entry) return;
+    const incomingAt = entry.newValue && typeof entry.newValue === 'object'
+      ? Number(entry.newValue._updatedAt)
+      : NaN;
+    if (Number.isFinite(incomingAt) && incomingAt === Number(this.state?._updatedAt)) {
+      return;
+    }
     try {
       this.state = await getSettings();
       this._emit();

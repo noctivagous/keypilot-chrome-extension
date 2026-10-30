@@ -14,6 +14,59 @@ beforeEach(() => {
   resetChromeMock(mock);
 });
 
+describe('writeSettingsInputValue', () => {
+  it('skips identical values and focused controls so range drags are not rewritten', async () => {
+    const { writeSettingsInputValue } =
+      await import('../extension/src/modules/settings-binder.js');
+    const el = {
+      value: '250',
+      getRootNode() {
+        return { activeElement: this };
+      }
+    };
+    writeSettingsInputValue(el, '400');
+    assert.equal(el.value, '250');
+    el.getRootNode = () => ({ activeElement: null });
+    writeSettingsInputValue(el, '400');
+    assert.equal(el.value, '400');
+    const before = el.value;
+    writeSettingsInputValue(el, '400');
+    assert.equal(el.value, before);
+  });
+
+  it('does not write a range or stale paired number while the thumb is down', async () => {
+    const { writeSettingsInputValue, setSettingsRangeDragging } =
+      await import('../extension/src/modules/settings-binder.js');
+    const root = { activeElement: null, getElementById: (id) => map[id] || null };
+    const range = {
+      id: 'click-overlay-fill-max-width-range',
+      type: 'range',
+      value: '401',
+      getRootNode: () => root
+    };
+    const number = {
+      id: 'click-overlay-fill-max-width-number',
+      type: 'number',
+      value: '401',
+      getRootNode: () => root
+    };
+    const map = {
+      'click-overlay-fill-max-width-range': range,
+      'click-overlay-fill-max-width-number': number
+    };
+    setSettingsRangeDragging(range, true);
+    writeSettingsInputValue(range, '400');
+    assert.equal(range.value, '401');
+    writeSettingsInputValue(number, '400');
+    assert.equal(number.value, '401');
+    writeSettingsInputValue(number, '401');
+    assert.equal(number.value, '401');
+    setSettingsRangeDragging(range, false);
+    writeSettingsInputValue(range, '400');
+    assert.equal(range.value, '400');
+  });
+});
+
 describe('settings-path', () => {
   it('builds nested partials and reads paths', async () => {
     const { pathToPartial, getPath, setOverridePath, clampNumber } =
@@ -58,6 +111,28 @@ describe('SettingsController', () => {
     assert.equal(c.state.themeOverrides.shape.cornerMode, 'cut');
     await c.reset('appearance');
     assert.deepEqual(c.state.themeOverrides, {});
+    c.dispose();
+  });
+
+  it('does not re-emit storage echoes of a local write', async () => {
+    const { createSettingsController } =
+      await import('../extension/src/modules/settings-controller.js');
+    const { SETTINGS_STORAGE_KEY } =
+      await import('../extension/src/modules/settings-manager.js');
+    const c = createSettingsController();
+    await c.load();
+    let n = 0;
+    c.subscribe(() => { n += 1; });
+    await c.update('clickMode.cursor.lineWidth', 7);
+    const afterUpdate = n;
+    mock.emitChange({
+      [SETTINGS_STORAGE_KEY]: { newValue: mock.syncStore.get(SETTINGS_STORAGE_KEY) }
+    }, 'sync');
+    mock.emitChange({
+      [SETTINGS_STORAGE_KEY]: { newValue: mock.localStore.get(SETTINGS_STORAGE_KEY) }
+    }, 'local');
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(n, afterUpdate);
     c.dispose();
   });
 

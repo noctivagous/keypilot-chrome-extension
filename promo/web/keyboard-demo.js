@@ -778,13 +778,21 @@
       description: getMessage(`fn_${id}_description`) || def?.description || ""
     };
   }
-  function buildKeybindingsForLayout(layoutId) {
+  function isBrowsingKeyboardLayoutId(layoutId) {
+    const id = normalizeKeyboardLayoutId(layoutId);
+    return id === "browsing-right" || id === "browsing-left";
+  }
+  function buildKeybindingsForLayout(layoutId, opts = {}) {
     const id = normalizeKeyboardLayoutId(layoutId);
     const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
     const out = {};
+    const assignments = {
+      ...layout?.assignments || {},
+      ...opts?.deferredNumberRow && isBrowsingKeyboardLayoutId(id) ? DEFERRED_NUMBER_ROW_ASSIGNMENTS : {}
+    };
     for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
       if (isBuildExcludedKeyAction(actionId)) continue;
-      const assign = layout?.assignments?.[actionId];
+      const assign = assignments[actionId];
       if (!assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
       const copy = localizedActionCopy(actionId, def);
@@ -802,7 +810,7 @@
       };
     }
     for (const stock of STOCK_ACTIONS) {
-      const assign = layout?.assignments?.[stock.id];
+      const assign = assignments[stock.id];
       if (!assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
       const localized = getStockActionById(stock.id);
@@ -883,9 +891,9 @@
     }
     return out;
   }
-  function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+  function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS, opts = {}) {
     return {
-      ...buildKeybindingsForLayout(layoutId),
+      ...buildKeybindingsForLayout(layoutId, opts),
       ...buildSystemKeybindings(handedness)
     };
   }
@@ -972,11 +980,13 @@
     const inferred = inferFamilyAndHandednessFromLayoutId(id);
     return buildKeyboardReferenceUiLayout({
       hardwareLayoutId: opts?.hardwareLayoutId,
-      keybindings: buildEffectiveKeybindings(id, inferred.handedness),
+      keybindings: buildEffectiveKeybindings(id, inferred.handedness, {
+        deferredNumberRow: !!opts?.deferredNumberRow
+      }),
       includeNumberRow: !!opts?.includeNumberRow
     });
   }
-  var DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID, DEFAULT_KEYBOARD_HANDEDNESS, SOURCE_BUILD_ENABLE_MACRO_BUILDER, BUILD_ENABLE_MACRO_BUILDER, BUILD_EXCLUDED_KEY_ACTIONS, BUILD_EXCLUDED_KEY_ACTION_SET, BUILTIN_KEYBOARD_LAYOUT_META, BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META, LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS, KNOWN_BUILTIN_LAYOUT_IDS, KEYBINDING_ACTION_DEFS, KEYBINDING_ACTION_CATEGORY_BY_ID, KEYBINDING_ACTION_CATEGORY_ORDER, CATALOG_KEYBINDINGS, ASSIGNMENTS_BROWSING_RIGHT, ASSIGNMENTS_BROWSING_LEFT, SYSTEM_LAYER_ACTION_IDS, SYSTEM_LAYER_ASSIGNMENTS_RIGHT, SYSTEM_LAYER_ASSIGNMENTS_LEFT, BASIC_NAVIGATION_ACTION_IDS, CLICK_HISTORY_ACTION_IDS, BASIC_NAVIGATION_UI_ACTION_IDS, CLICK_HISTORY_UI_ACTION_IDS, ASSIGNMENTS_BASIC_NAVIGATION_RIGHT, ASSIGNMENTS_BASIC_NAVIGATION_LEFT, ASSIGNMENTS_CLICK_HISTORY_RIGHT, ASSIGNMENTS_CLICK_HISTORY_LEFT, KEYBOARD_UI_LAYOUT_RIGHT, KEYBOARD_UI_LAYOUT_LEFT, BUILTIN_KEYBOARD_LAYOUTS;
+  var DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID, DEFAULT_KEYBOARD_HANDEDNESS, SOURCE_BUILD_ENABLE_MACRO_BUILDER, BUILD_ENABLE_MACRO_BUILDER, BUILD_EXCLUDED_KEY_ACTIONS, BUILD_EXCLUDED_KEY_ACTION_SET, BUILTIN_KEYBOARD_LAYOUT_META, BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META, LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS, KNOWN_BUILTIN_LAYOUT_IDS, KEYBINDING_ACTION_DEFS, KEYBINDING_ACTION_CATEGORY_BY_ID, KEYBINDING_ACTION_CATEGORY_ORDER, DEFERRED_NUMBER_ROW_ASSIGNMENTS, CATALOG_KEYBINDINGS, ASSIGNMENTS_BROWSING_RIGHT, ASSIGNMENTS_BROWSING_LEFT, SYSTEM_LAYER_ACTION_IDS, SYSTEM_LAYER_ASSIGNMENTS_RIGHT, SYSTEM_LAYER_ASSIGNMENTS_LEFT, BASIC_NAVIGATION_ACTION_IDS, CLICK_HISTORY_ACTION_IDS, BASIC_NAVIGATION_UI_ACTION_IDS, CLICK_HISTORY_UI_ACTION_IDS, ASSIGNMENTS_BASIC_NAVIGATION_RIGHT, ASSIGNMENTS_BASIC_NAVIGATION_LEFT, ASSIGNMENTS_CLICK_HISTORY_RIGHT, ASSIGNMENTS_CLICK_HISTORY_LEFT, KEYBOARD_UI_LAYOUT_RIGHT, KEYBOARD_UI_LAYOUT_LEFT, BUILTIN_KEYBOARD_LAYOUTS;
   var init_keyboard_layouts = __esm({
     "extension/src/config/keyboard-layouts.js"() {
       init_i18n();
@@ -1127,6 +1137,30 @@
           keyboardClass: "key-activate",
           row: 2
         }),
+        ACTIVATE_DEFERRED_RANDOM: Object.freeze({
+          handler: "handleActivateDeferredRandomKey",
+          label: "Click Element Deferred Random",
+          description: "Schedule the hovered link for a random time",
+          details: "Schedules the link under the cursor for a random time in the Delay Click Element range. Same as Alt+Shift with Click Element.",
+          keyboardClass: "key-activate",
+          row: 0
+        }),
+        ACTIVATE_DEFERRED_SCHEDULED: Object.freeze({
+          handler: "handleActivateDeferredScheduledKey",
+          label: "Click Element Deferred Scheduled",
+          description: "Schedule the hovered link for an exact time",
+          details: "Opens the time dialog for the link under the cursor. Same as Ctrl+Alt+Shift with Click Element.",
+          keyboardClass: "key-activate",
+          row: 0
+        }),
+        SCHEDULE_LINK_MANUAL: Object.freeze({
+          handler: "handleScheduleLinkManualKey",
+          label: "Schedule Link Manual",
+          description: "Schedule a typed URL for an exact time",
+          details: "Opens the time dialog with a URL field. The address you type is opened at the time you choose.",
+          keyboardClass: "key-activate",
+          row: 0
+        }),
         // Foreground new tab (switch to the new tab).
         ACTIVATE_NEW_TAB: Object.freeze({
           handler: "handleActivateNewTabKey",
@@ -1230,6 +1264,14 @@
           label: "Close Tab",
           description: "Close the current tab",
           details: "Closes the active tab. Behavior matches the browser\u2019s close-tab action for the current window.",
+          keyboardClass: "key-close-tab",
+          row: 3
+        }),
+        CLOSE_WINDOW: Object.freeze({
+          handler: "handleCloseWindowKey",
+          label: "Close Window",
+          description: "Close the current window",
+          details: "Closes the browser window that contains the current tab, including its other tabs.",
           keyboardClass: "key-close-tab",
           row: 3
         }),
@@ -1554,6 +1596,9 @@
       KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
         // Navigation — click / link preview / history
         ACTIVATE: "Navigation",
+        ACTIVATE_DEFERRED_RANDOM: "Deferred Open URLs",
+        ACTIVATE_DEFERRED_SCHEDULED: "Deferred Open URLs",
+        SCHEDULE_LINK_MANUAL: "Deferred Open URLs",
         ACTIVATE_NEW_TAB: "Navigation",
         ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
         PREVIEW_LINK_POPOVER: "Navigation",
@@ -1566,6 +1611,7 @@
         ROOT: "Navigation",
         // Tab Control
         CLOSE_TAB: "Tab Control",
+        CLOSE_WINDOW: "Tab Control",
         TAB_LEFT: "Tab Control",
         TAB_RIGHT: "Tab Control",
         NEW_TAB: "Tab Control",
@@ -1608,6 +1654,7 @@
       });
       KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
         "Navigation",
+        "Deferred Open URLs",
         "Tab Control",
         "Begin URL",
         "Get Page Data",
@@ -1623,6 +1670,11 @@
         "System",
         "Other"
       ]);
+      DEFERRED_NUMBER_ROW_ASSIGNMENTS = Object.freeze({
+        ACTIVATE_DEFERRED_RANDOM: physicalAssignment("Digit1", "1"),
+        ACTIVATE_DEFERRED_SCHEDULED: physicalAssignment("Digit2", "2"),
+        SCHEDULE_LINK_MANUAL: physicalAssignment("Digit4", "4")
+      });
       CATALOG_KEYBINDINGS = (() => {
         const out = {};
         for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
@@ -2717,6 +2769,9 @@ ${lines.join("\n")}
 
   // promo/web/keyboard-demo/chrome-stub.js
   var messages = { current: {} };
+  function escapeRegExp(text) {
+    return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
   function substitute(entry, substitutions) {
     if (!entry || typeof entry.message !== "string") return "";
     let message = entry.message;
@@ -2726,7 +2781,8 @@ ${lines.join("\n")}
       const content = placeholder && typeof placeholder.content === "string" ? placeholder.content : "";
       const index = /^\$(\d+)$/.exec(content);
       const value = index ? subs[Number(index[1]) - 1] ?? "" : content;
-      message = message.split(`$${name}$`).join(String(value));
+      const pattern = new RegExp(`\\$${escapeRegExp(name)}\\$`, "gi");
+      message = message.replace(pattern, () => String(value));
     }
     subs.forEach((value, index) => {
       message = message.split(`$${index + 1}`).join(value == null ? "" : String(value));
@@ -5550,7 +5606,7 @@ ${scrollCss}
         gap: 6
       }),
       focusColor: "blue",
-      overlayFillEnabled: false,
+      overlayFillEnabled: true,
       overlayFillMaxWidth: 250,
       overlayFillMaxHeight: 250,
       overlayShadowEnabled: false,
@@ -5572,7 +5628,7 @@ ${scrollCss}
         gap: 6
       }),
       focusColor: "blue",
-      overlayFillEnabled: false,
+      overlayFillEnabled: true,
       overlayFillMaxWidth: 250,
       overlayFillMaxHeight: 250,
       overlayShadowEnabled: false,
@@ -6382,6 +6438,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     ACTIVATE_TAB: "KP_ACTIVATE_TAB",
     NEW_TAB: "KP_NEW_TAB",
     CLOSE_TAB: "KP_CLOSE_TAB",
+    CLOSE_WINDOW: "KP_CLOSE_WINDOW",
     GO_BACK: "KP_GO_BACK",
     GO_FORWARD: "KP_GO_FORWARD",
     OPEN_URL_BACKGROUND: "KP_OPEN_URL_BACKGROUND",
@@ -6398,6 +6455,8 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     OPEN_RANDOM_BOOKMARK: "KP_OPEN_RANDOM_BOOKMARK",
     /** Content → SW: persist an Open URLs or Random Bookmark action for a randomized later time. */
     SCHEDULE_DEFERRED_OPEN: "KP_SCHEDULE_DEFERRED_OPEN",
+    /** SW → content: press the button or form control captured when a click was scheduled. */
+    RUN_DEFERRED_CLICK: "KP_RUN_DEFERRED_CLICK",
     /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
     NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
     /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
@@ -6814,6 +6873,9 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   }
   var FUNCTION_DOCS_URL_BY_ID = Object.freeze({
     ACTIVATE: docsUrl("browsing-click"),
+    ACTIVATE_DEFERRED_RANDOM: docsUrl("browsing-tabs"),
+    ACTIVATE_DEFERRED_SCHEDULED: docsUrl("browsing-tabs"),
+    SCHEDULE_LINK_MANUAL: docsUrl("browsing-tabs"),
     ACTIVATE_NEW_TAB: docsUrl("browsing-click"),
     ACTIVATE_NEW_TAB_BACKGROUND: docsUrl("browsing-click"),
     PREVIEW_LINK_POPOVER: docsUrl("tools-previews"),
@@ -6823,6 +6885,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     BACK2: docsUrl("browsing-tabs"),
     ROOT: docsUrl("browsing-tabs"),
     CLOSE_TAB: docsUrl("browsing-tabs"),
+    CLOSE_WINDOW: docsUrl("browsing-tabs"),
     TAB_LEFT: docsUrl("browsing-tabs"),
     TAB_RIGHT: docsUrl("browsing-tabs"),
     NEW_TAB: docsUrl("browsing-tabs"),
@@ -7277,6 +7340,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   }));
   var FUNCTION_CATEGORY_ORDER = Object.freeze([
     "Navigation",
+    "Deferred Open URLs",
     "Tab Control",
     "Begin URL",
     "Get Page Data",
@@ -7300,6 +7364,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   ]);
   var FUNCTION_CATEGORY_LABEL_KEYS = Object.freeze({
     Navigation: "fn_cat_navigation_label",
+    "Deferred Open URLs": "fn_cat_deferred_open_urls_label",
     "Tab Control": "fn_cat_tab_control_label",
     "Begin URL": "fn_cat_begin_url_label",
     "Get Page Data": "fn_cat_get_page_data_label",
@@ -7323,6 +7388,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   });
   var FUNCTION_CATEGORY_DESCRIPTION_KEYS = Object.freeze({
     Navigation: "fn_cat_navigation_description",
+    "Deferred Open URLs": "fn_cat_deferred_open_urls_description",
     "Tab Control": "fn_cat_tab_control_description",
     "Begin URL": "fn_cat_begin_url_description",
     "Get Page Data": "fn_cat_get_page_data_description",
@@ -7351,6 +7417,9 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
   var FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
     // Navigation
     ACTIVATE: 10,
+    ACTIVATE_DEFERRED_RANDOM: 12,
+    ACTIVATE_DEFERRED_SCHEDULED: 14,
+    SCHEDULE_LINK_MANUAL: 16,
     ACTIVATE_NEW_TAB: 20,
     ACTIVATE_NEW_TAB_BACKGROUND: 30,
     PREVIEW_LINK_POPOVER: 40,
@@ -7363,6 +7432,7 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     ROOT: 90,
     // Tab Control
     CLOSE_TAB: 110,
+    CLOSE_WINDOW: 112,
     TAB_LEFT: 120,
     TAB_RIGHT: 130,
     NEW_TAB: 140,
@@ -7760,11 +7830,15 @@ ${getCutCornerCss()}`, ALL_THEMES_ATTR);
     await setKeyboardLayoutStore(st);
     return l;
   }
-  async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label } = {}) {
+  async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label, deferredNumberRow = false } = {}) {
     const baseId = String(builtinLayoutId || "");
     const { handedness } = inferFamilyAndHandednessFromLayoutId(baseId);
-    const kb = buildEffectiveKeybindings(baseId, handedness);
-    const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: true });
+    const includeDeferred = !!deferredNumberRow;
+    const kb = buildEffectiveKeybindings(baseId, handedness, { deferredNumberRow: includeDeferred });
+    const uiLayout = getKeyboardUiLayoutForLayout(baseId, {
+      includeNumberRow: true,
+      deferredNumberRow: includeDeferred
+    });
     const slots = {};
     for (const row2 of uiLayout || []) {
       for (const item of row2 || []) {
@@ -9791,7 +9865,11 @@ ${getSelectMenuCss()}`
       const builtinLayoutId = kp._keyboardLayoutId || "browsing-right";
       const layouts = await listUserKeyboardLayouts();
       const label = nextUserCopyLayoutLabel(familyBaseLabel(builtinLayoutId), layouts);
-      layout = await duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label });
+      layout = await duplicateBuiltinLayoutToUserLayout({
+        builtinLayoutId,
+        label,
+        deferredNumberRow: kp?._settings?.deferredOpen?.enabled === true
+      });
     }
     if (!layout) return false;
     const slots = { ...layout.slots || {} };
@@ -10024,6 +10102,52 @@ ${getSelectMenuCss()}`
     if (text !== void 0) node.textContent = text;
     return node;
   }
+  var DEFERRED_NUMBER_ROW_ACTION_IDS = /* @__PURE__ */ new Set([
+    "ACTIVATE_DEFERRED_RANDOM",
+    "ACTIVATE_DEFERRED_SCHEDULED",
+    "SCHEDULE_LINK_MANUAL"
+  ]);
+  function layoutChromeFlags(layout) {
+    let numberRow = false;
+    let deferred = false;
+    for (const row2 of Array.isArray(layout) ? layout : []) {
+      if (!Array.isArray(row2)) continue;
+      for (const item of row2) {
+        if (!item) continue;
+        const code = String(item.code || "");
+        const text = String(item.text || item.legend || "").trim();
+        if (code === "Digit1" || text === "1") numberRow = true;
+        if (DEFERRED_NUMBER_ROW_ACTION_IDS.has(String(item.id || ""))) deferred = true;
+      }
+    }
+    return { numberRow, deferred };
+  }
+  function existingChromeFlags(visual) {
+    const num = visual?.dataset?.kpNumRow;
+    let numberRow;
+    if (num === "1") numberRow = true;
+    else if (num === "0") numberRow = false;
+    else {
+      let labeledOne = false;
+      try {
+        labeledOne = Array.prototype.some.call(
+          visual?.querySelectorAll?.(".key-label, .key-text") || [],
+          (node) => String(node.textContent || "").trim() === "1"
+        );
+      } catch {
+      }
+      numberRow = !!(visual?.querySelector?.('[data-kp-physical-code="Digit1"]') || labeledOne);
+    }
+    const deferred = !!(visual?.querySelector?.('[data-kp-action-id="ACTIVATE_DEFERRED_RANDOM"]') || visual?.querySelector?.('[data-kp-action-id="ACTIVATE_DEFERRED_SCHEDULED"]') || visual?.querySelector?.('[data-kp-action-id="SCHEDULE_LINK_MANUAL"]'));
+    return { numberRow, deferred };
+  }
+  function stampChromeFlags(visual, flags) {
+    try {
+      visual.dataset.kpNumRow = flags.numberRow ? "1" : "0";
+      visual.dataset.kpDeferredRow = flags.deferred ? "1" : "0";
+    } catch {
+    }
+  }
   function updateExistingKeyboardDOM({ container, keybindings }) {
     const doc = container.ownerDocument || document;
     try {
@@ -10115,9 +10239,13 @@ ${getSelectMenuCss()}`
     }
     if (existingVisual && existingVisual.dataset && existingVisual.dataset.kpKeyboardBuilt === "true") {
       const existingLayoutKey = String(existingVisual.dataset.kpLayoutId || "");
-      const canReuse = !!layoutKey && existingLayoutKey === layoutKey;
+      const wantedFlags = layoutChromeFlags(layout);
+      const existingFlags = existingChromeFlags(existingVisual);
+      const chromeMatches = wantedFlags.numberRow === existingFlags.numberRow && wantedFlags.deferred === existingFlags.deferred;
+      const canReuse = !!layoutKey && existingLayoutKey === layoutKey && chromeMatches;
       if (canReuse) {
         if (updateExistingKeyboardDOM({ container, keybindings })) {
+          stampChromeFlags(existingVisual, wantedFlags);
           if (attachPopovers) {
             attachKeyPopoverBehavior({ root: container, keybindings, getKeyPilot, pinOnClick });
           } else {
@@ -10131,6 +10259,7 @@ ${getSelectMenuCss()}`
     const visual = el(doc, "div", `keyboard-visual ${KEYBINDINGS_UI_ROOT_CLASS}`);
     visual.dataset.kpKeyboardBuilt = "true";
     if (layoutKey) visual.dataset.kpLayoutId = layoutKey;
+    stampChromeFlags(visual, layoutChromeFlags(layout));
     container.appendChild(visual);
     for (const row2 of layout) {
       const rowEl = el(doc, "div", "keyboard-row");

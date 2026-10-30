@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-30T01:11:07.764Z
+ * Generated on 2026-10-30T02:17:22.516Z
  */
 
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -4569,6 +4569,10 @@ var SettingsController = class {
     if (area !== "sync" && area !== "local") return;
     const entry = changes?.[SETTINGS_STORAGE_KEY];
     if (!entry) return;
+    const incomingAt = entry.newValue && typeof entry.newValue === "object" ? Number(entry.newValue._updatedAt) : NaN;
+    if (Number.isFinite(incomingAt) && incomingAt === Number(this.state?._updatedAt)) {
+      return;
+    }
     try {
       this.state = await getSettings();
       this._emit();
@@ -4803,6 +4807,120 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "appearanceRangePair", baseId: "app-type-ui", overridePath: "type.size.ui", min: 9, max: 18 },
   { type: "appearanceRangePair", baseId: "app-type-kbd", overridePath: "type.size.kbd", min: 8, max: 16 }
 ]);
+var draggingSettingsRanges = /* @__PURE__ */ new Set();
+function setSettingsRangeDragging(range, dragging) {
+  if (!range) return;
+  if (dragging) draggingSettingsRanges.add(range);
+  else draggingSettingsRanges.delete(range);
+}
+function isSettingsRangeDragging(node) {
+  if (!node) return false;
+  if (draggingSettingsRanges.has(
+    /** @type {HTMLInputElement} */
+    node
+  )) return true;
+  try {
+    if (typeof node.matches === "function" && node.matches("input[type=range]:active")) return true;
+  } catch {
+  }
+  return false;
+}
+function pairedRangeForNumber(node) {
+  const id = node && "id" in node ? String(node.id || "") : "";
+  if (!id.endsWith("-number")) return null;
+  try {
+    const root = typeof node.getRootNode === "function" ? node.getRootNode() : node.ownerDocument;
+    const range = root && typeof root.getElementById === "function" ? root.getElementById(id.slice(0, -"-number".length) + "-range") : null;
+    return range || null;
+  } catch {
+    return null;
+  }
+}
+function isLiveSettingsControl(node) {
+  if (!node) return false;
+  if (isSettingsRangeDragging(node)) return true;
+  try {
+    const root = typeof node.getRootNode === "function" ? node.getRootNode() : node.ownerDocument;
+    return !!(root && "activeElement" in root && root.activeElement === node);
+  } catch {
+    return false;
+  }
+}
+function writeSettingsInputValue(node, value) {
+  if (!node) return;
+  const s = String(value);
+  try {
+    if ("value" in node && node.value === s) return;
+  } catch {
+  }
+  if (isSettingsRangeDragging(node)) return;
+  const paired = pairedRangeForNumber(node);
+  if (paired && isSettingsRangeDragging(paired)) {
+    try {
+      if ("value" in paired && String(paired.value) !== s) return;
+    } catch {
+    }
+  }
+  if (isLiveSettingsControl(node)) return;
+  try {
+    node.value = s;
+  } catch {
+  }
+}
+function syncRangePair(range, number, n, source, setInputValue3) {
+  if (range && range !== source) setInputValue3(range, n);
+  if (number && number !== source) setInputValue3(number, n);
+}
+function trackRangeDrag(range, signal) {
+  if (!range) return;
+  const doc = range.ownerDocument || (typeof document !== "undefined" ? document : null);
+  const onDown = (event) => {
+    if (event && "button" in event && event.button !== 0) return;
+    setSettingsRangeDragging(range, true);
+  };
+  const onUp = () => setSettingsRangeDragging(range, false);
+  const opts = { signal, capture: true };
+  range.addEventListener("pointerdown", onDown, opts);
+  range.addEventListener("lostpointercapture", onUp, opts);
+  doc?.addEventListener("pointerup", onUp, opts);
+  doc?.addEventListener("pointercancel", onUp, opts);
+  if (signal) {
+    signal.addEventListener("abort", () => setSettingsRangeDragging(range, false), { once: true });
+  }
+}
+function coalesceNumericPersist(persist) {
+  let inflight = false;
+  let pending = (
+    /** @type {number|null} */
+    null
+  );
+  const flush = (n) => {
+    pending = n;
+    if (inflight) return;
+    inflight = true;
+    const send = pending;
+    pending = null;
+    void Promise.resolve(persist(send)).finally(() => {
+      inflight = false;
+      if (pending != null) flush(pending);
+    });
+  };
+  return flush;
+}
+function bindNumericPair(opts) {
+  const { range, number, min, max, persist, setInputValue: setInputValue3, signal } = opts;
+  const listenOpts = { signal, capture: true };
+  trackRangeDrag(range, signal);
+  const flush = coalesceNumericPersist(persist);
+  const commit = (raw, source) => {
+    if (source === number && isSettingsRangeDragging(range)) return;
+    const n = clampNumber(raw, min, max);
+    syncRangePair(range, number, n, source, setInputValue3);
+    flush(n);
+  };
+  range?.addEventListener("input", () => commit(range.value, range), listenOpts);
+  number?.addEventListener("input", () => commit(number.value, number), listenOpts);
+}
 function bindSettingsControls(ctx) {
   const { controller: controller2, el: el2, all: all2, setInputValue: setInputValue3, signal } = ctx;
   const listenOpts = { signal, capture: true };
@@ -4853,22 +4971,21 @@ function bindSettingsControls(ctx) {
       continue;
     }
     if (spec.type === "rangePair") {
-      const range = (
-        /** @type {HTMLInputElement|null} */
-        el2(`${spec.baseId}-range`)
-      );
-      const number = (
-        /** @type {HTMLInputElement|null} */
-        el2(`${spec.baseId}-number`)
-      );
-      const commit = (raw) => {
-        const n = clampNumber(raw, spec.min ?? 0, spec.max ?? 0);
-        setInputValue3(range, n);
-        setInputValue3(number, n);
-        void controller2.update(spec.path, n);
-      };
-      range?.addEventListener("input", () => commit(range.value), listenOpts);
-      number?.addEventListener("input", () => commit(number.value), listenOpts);
+      bindNumericPair({
+        range: (
+          /** @type {HTMLInputElement|null} */
+          el2(`${spec.baseId}-range`)
+        ),
+        number: (
+          /** @type {HTMLInputElement|null} */
+          el2(`${spec.baseId}-number`)
+        ),
+        min: spec.min ?? 0,
+        max: spec.max ?? 0,
+        persist: (n) => controller2.update(spec.path, n),
+        setInputValue: setInputValue3,
+        signal
+      });
       continue;
     }
     if (spec.type === "appearanceControl") {
@@ -4899,23 +5016,22 @@ function bindSettingsControls(ctx) {
       continue;
     }
     if (spec.type === "appearanceRangePair") {
-      const range = (
-        /** @type {HTMLInputElement|null} */
-        el2(`${spec.baseId}-range`)
-      );
-      const number = (
-        /** @type {HTMLInputElement|null} */
-        el2(`${spec.baseId}-number`)
-      );
       const format = typeof spec.formatValue === "function" ? spec.formatValue : (n) => `${n}px`;
-      const commit = (raw) => {
-        const n = clampNumber(raw, spec.min ?? 0, spec.max ?? 0);
-        setInputValue3(range, n);
-        setInputValue3(number, n);
-        void controller2.updateThemeOverride(spec.overridePath, format(n));
-      };
-      range?.addEventListener("input", () => commit(range.value), listenOpts);
-      number?.addEventListener("input", () => commit(number.value), listenOpts);
+      bindNumericPair({
+        range: (
+          /** @type {HTMLInputElement|null} */
+          el2(`${spec.baseId}-range`)
+        ),
+        number: (
+          /** @type {HTMLInputElement|null} */
+          el2(`${spec.baseId}-number`)
+        ),
+        min: spec.min ?? 0,
+        max: spec.max ?? 0,
+        persist: (n) => controller2.updateThemeOverride(spec.overridePath, format(n)),
+        setInputValue: setInputValue3,
+        signal
+      });
     }
   }
 }
@@ -6924,12 +7040,7 @@ function all(sel) {
   }
 }
 function setInputValue(node, value) {
-  if (!node) return;
-  const s = String(value);
-  try {
-    node.value = s;
-  } catch {
-  }
+  writeSettingsInputValue(node, value);
 }
 async function labelForAssignment(assigned) {
   const id = String(assigned?.id || "");
@@ -7556,16 +7667,7 @@ function setRadioGroupValue(radios, value) {
   });
 }
 function setInputValue2(el2, value) {
-  if (!el2) return;
-  const s = String(value);
-  try {
-    el2.value = s;
-  } catch {
-  }
-  try {
-    el2.defaultValue = s;
-  } catch {
-  }
+  writeSettingsInputValue(el2, value);
 }
 function applyAppearanceControls(settings) {
   const s = settings || lastUiSettings || getLiveSettingsSnapshot() || DEFAULT_SETTINGS;

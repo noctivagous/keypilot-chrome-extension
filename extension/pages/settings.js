@@ -8,7 +8,7 @@ import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
 import { DEFAULT_SETTINGS, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle } from '../src/modules/settings-manager.js';
 import { hexForFocusColor, isFocusColorPreset } from '../src/config/focus-color.js';
 import { createSettingsController } from '../src/modules/settings-controller.js';
-import { bindSettingsControls } from '../src/modules/settings-binder.js';
+import { bindSettingsControls, writeSettingsInputValue } from '../src/modules/settings-binder.js';
 import { applyDebugSetting, BUILD_ENABLE_DEBUG_SETTINGS } from '../src/utils/debug.js';
 import { getMessage, localizeElements } from '../src/utils/i18n.js';
 import { formatAltShortcut } from '../src/utils/platform.js';
@@ -415,10 +415,7 @@ function setRadioGroupValue(radios, value) {
 }
 
 function setInputValue(el, value) {
-  if (!el) return;
-  const s = String(value);
-  try { el.value = s; } catch { /* ignore */ }
-  try { el.defaultValue = s; } catch { /* ignore */ }
+  writeSettingsInputValue(el, value);
 }
 
 /**

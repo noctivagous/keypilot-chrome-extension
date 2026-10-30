@@ -152,6 +152,176 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'appearanceRangePair', baseId: 'app-type-kbd', overridePath: 'type.size.kbd', min: 8, max: 16 }
 ]);
 
+/** @type {Set<HTMLInputElement>} */
+const draggingSettingsRanges = new Set();
+
+/**
+ * Mark a settings range as having pointer capture so later storage `_emit`
+ * cannot write `.value` mid-drag (Chromium then re-applies the next
+ * pointermove as a fresh delta and the thumb runs away).
+ * @param {HTMLInputElement|null|undefined} range
+ * @param {boolean} dragging
+ */
+export function setSettingsRangeDragging(range, dragging) {
+  if (!range) return;
+  if (dragging) draggingSettingsRanges.add(range);
+  else draggingSettingsRanges.delete(range);
+}
+
+/**
+ * @param {Element|null|undefined} node
+ * @returns {boolean}
+ */
+export function isSettingsRangeDragging(node) {
+  if (!node) return false;
+  if (draggingSettingsRanges.has(/** @type {HTMLInputElement} */ (node))) return true;
+  try {
+    if (typeof node.matches === 'function' && node.matches('input[type=range]:active')) return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * @param {Element|null|undefined} node
+ * @returns {HTMLInputElement|null}
+ */
+function pairedRangeForNumber(node) {
+  const id = node && 'id' in node ? String(node.id || '') : '';
+  if (!id.endsWith('-number')) return null;
+  try {
+    const root = typeof node.getRootNode === 'function' ? node.getRootNode() : node.ownerDocument;
+    const range = root && typeof root.getElementById === 'function'
+      ? root.getElementById(id.slice(0, -'-number'.length) + '-range')
+      : null;
+    return range || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when a control currently has focus (range drag or number typing).
+ * Writing `.value` in that state retriggers `input` and makes native range
+ * drags accumulate.
+ * @param {Element|null|undefined} node
+ */
+export function isLiveSettingsControl(node) {
+  if (!node) return false;
+  if (isSettingsRangeDragging(node)) return true;
+  try {
+    const root = typeof node.getRootNode === 'function' ? node.getRootNode() : node.ownerDocument;
+    return !!(root && 'activeElement' in root && root.activeElement === node);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Assign an input/select value without clobbering an in-progress edit, and
+ * without rewriting the same string (which can emit extra `input` events).
+ * @param {HTMLInputElement|HTMLSelectElement|HTMLElement|null} node
+ * @param {any} value
+ */
+export function writeSettingsInputValue(node, value) {
+  if (!node) return;
+  const s = String(value);
+  try {
+    if ('value' in node && node.value === s) return;
+  } catch { /* ignore */ }
+  if (isSettingsRangeDragging(node)) return;
+  const paired = pairedRangeForNumber(node);
+  if (paired && isSettingsRangeDragging(paired)) {
+    try {
+      if ('value' in paired && String(paired.value) !== s) return;
+    } catch { /* ignore */ }
+  }
+  if (isLiveSettingsControl(node)) return;
+  try { node.value = s; } catch { /* ignore */ }
+}
+
+/**
+ * @param {HTMLInputElement|null|undefined} range
+ * @param {HTMLInputElement|null|undefined} number
+ * @param {number} n
+ * @param {HTMLInputElement|null|undefined} source
+ * @param {(el: HTMLElement|null, value: any) => void} setInputValue
+ */
+function syncRangePair(range, number, n, source, setInputValue) {
+  if (range && range !== source) setInputValue(range, n);
+  if (number && number !== source) setInputValue(number, n);
+}
+
+/**
+ * @param {HTMLInputElement|null|undefined} range
+ * @param {AbortSignal|undefined} signal
+ */
+function trackRangeDrag(range, signal) {
+  if (!range) return;
+  const doc = range.ownerDocument || (typeof document !== 'undefined' ? document : null);
+  const onDown = (event) => {
+    if (event && 'button' in event && event.button !== 0) return;
+    setSettingsRangeDragging(range, true);
+  };
+  const onUp = () => setSettingsRangeDragging(range, false);
+  const opts = { signal, capture: true };
+  range.addEventListener('pointerdown', onDown, opts);
+  range.addEventListener('lostpointercapture', onUp, opts);
+  doc?.addEventListener('pointerup', onUp, opts);
+  doc?.addEventListener('pointercancel', onUp, opts);
+  if (signal) {
+    signal.addEventListener('abort', () => setSettingsRangeDragging(range, false), { once: true });
+  }
+}
+
+/**
+ * Coalesce async controller writes so an older `setSettings` cannot finish
+ * after a newer tick and `_emit` a stale value onto the thumb.
+ * @param {(n: number) => Promise<any>|any} persist
+ * @returns {(n: number) => void}
+ */
+function coalesceNumericPersist(persist) {
+  let inflight = false;
+  let pending = /** @type {number|null} */ (null);
+  const flush = (n) => {
+    pending = n;
+    if (inflight) return;
+    inflight = true;
+    const send = pending;
+    pending = null;
+    void Promise.resolve(persist(send)).finally(() => {
+      inflight = false;
+      if (pending != null) flush(pending);
+    });
+  };
+  return flush;
+}
+
+/**
+ * @param {{
+ *   range: HTMLInputElement|null,
+ *   number: HTMLInputElement|null,
+ *   min: number,
+ *   max: number,
+ *   persist: (n: number) => Promise<any>|any,
+ *   setInputValue: (el: HTMLElement|null, value: any) => void,
+ *   signal: AbortSignal
+ * }} opts
+ */
+function bindNumericPair(opts) {
+  const { range, number, min, max, persist, setInputValue, signal } = opts;
+  const listenOpts = { signal, capture: true };
+  trackRangeDrag(range, signal);
+  const flush = coalesceNumericPersist(persist);
+  const commit = (raw, source) => {
+    if (source === number && isSettingsRangeDragging(range)) return;
+    const n = clampNumber(raw, min, max);
+    syncRangePair(range, number, n, source, setInputValue);
+    flush(n);
+  };
+  range?.addEventListener('input', () => commit(range.value, range), listenOpts);
+  number?.addEventListener('input', () => commit(number.value, number), listenOpts);
+}
+
 /**
  * @param {{
  *   controller: import('./settings-controller.js').SettingsController,
@@ -212,16 +382,15 @@ export function bindSettingsControls(ctx) {
     }
 
     if (spec.type === 'rangePair') {
-      const range = /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-range`));
-      const number = /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-number`));
-      const commit = (raw) => {
-        const n = clampNumber(raw, spec.min ?? 0, spec.max ?? 0);
-        setInputValue(range, n);
-        setInputValue(number, n);
-        void controller.update(spec.path, n);
-      };
-      range?.addEventListener('input', () => commit(range.value), listenOpts);
-      number?.addEventListener('input', () => commit(number.value), listenOpts);
+      bindNumericPair({
+        range: /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-range`)),
+        number: /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-number`)),
+        min: spec.min ?? 0,
+        max: spec.max ?? 0,
+        persist: (n) => controller.update(spec.path, n),
+        setInputValue,
+        signal
+      });
       continue;
     }
 
@@ -249,17 +418,16 @@ export function bindSettingsControls(ctx) {
     }
 
     if (spec.type === 'appearanceRangePair') {
-      const range = /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-range`));
-      const number = /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-number`));
       const format = typeof spec.formatValue === 'function' ? spec.formatValue : (n) => `${n}px`;
-      const commit = (raw) => {
-        const n = clampNumber(raw, spec.min ?? 0, spec.max ?? 0);
-        setInputValue(range, n);
-        setInputValue(number, n);
-        void controller.updateThemeOverride(spec.overridePath, format(n));
-      };
-      range?.addEventListener('input', () => commit(range.value), listenOpts);
-      number?.addEventListener('input', () => commit(number.value), listenOpts);
+      bindNumericPair({
+        range: /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-range`)),
+        number: /** @type {HTMLInputElement|null} */ (el(`${spec.baseId}-number`)),
+        min: spec.min ?? 0,
+        max: spec.max ?? 0,
+        persist: (n) => controller.updateThemeOverride(spec.overridePath, format(n)),
+        setInputValue,
+        signal
+      });
     }
   }
 }

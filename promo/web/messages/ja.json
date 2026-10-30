@@ -299,6 +299,14 @@
     "message": "現在のタブを閉じます",
     "description": "Function Library description for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "ウィンドウを閉じる",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "現在のウィンドウを閉じる",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "フォーカスを終了",
     "description": "Function Library label for CANCEL."
@@ -934,5 +942,37 @@
   "fn_READER_MODE_description": {
     "message": "Read this page without clutter",
     "description": "Function Library description for READER_MODE."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "要素クリック遅延（ランダム）",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "カーソル下のリンクをランダムな時刻に予定する",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "要素クリック遅延（指定時刻）",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "カーソル下のリンクを指定した時刻に予定する",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "URL の遅延オープン",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "カーソル下のリンクを後で開くよう予定します。",
+    "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "リンクを手動で予定",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "入力した URL を指定時刻に予定する",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
   }
 }

@@ -299,6 +299,14 @@
     "message": "סגירת הכרטיסייה הנוכחית",
     "description": "Function Library description for CLOSE_TAB."
   },
+  "fn_CLOSE_WINDOW_label": {
+    "message": "סגור חלון",
+    "description": "Function Library label for CLOSE_WINDOW."
+  },
+  "fn_CLOSE_WINDOW_description": {
+    "message": "סגור את החלון הנוכחי",
+    "description": "Function Library description for CLOSE_WINDOW."
+  },
   "fn_CANCEL_label": {
     "message": "יציאה ממיקוד",
     "description": "Function Library label for CANCEL."
@@ -934,5 +942,37 @@
   "fn_READER_MODE_description": {
     "message": "קריאת הדף בלי עומס",
     "description": "Function Library description for READER_MODE."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_label": {
+    "message": "לחיצה על רכיב מושהית אקראית",
+    "description": "Function Library label for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_RANDOM_description": {
+    "message": "תזמן את הקישור שמתחת לסמן לזמן אקראי",
+    "description": "Function Library description for ACTIVATE_DEFERRED_RANDOM."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_label": {
+    "message": "לחיצה על רכיב מושהית מתוזמנת",
+    "description": "Function Library label for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_ACTIVATE_DEFERRED_SCHEDULED_description": {
+    "message": "תזמן את הקישור שמתחת לסמן לזמן מדויק",
+    "description": "Function Library description for ACTIVATE_DEFERRED_SCHEDULED."
+  },
+  "fn_cat_deferred_open_urls_label": {
+    "message": "פתיחת כתובות מושהית",
+    "description": "Actions Library category label for Deferred Open URLs."
+  },
+  "fn_cat_deferred_open_urls_description": {
+    "message": "מתזמן קישור שמתחת לסמן להיפתח מאוחר יותר.",
+    "description": "Actions Library category description for Deferred Open URLs."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_label": {
+    "message": "תזמון קישור ידני",
+    "description": "Function Library label for SCHEDULE_LINK_MANUAL."
+  },
+  "fn_SCHEDULE_LINK_MANUAL_description": {
+    "message": "תזמן כתובת שהוקלדה לזמן מדויק",
+    "description": "Function Library description for SCHEDULE_LINK_MANUAL."
   }
 }

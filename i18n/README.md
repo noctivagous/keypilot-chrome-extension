@@ -244,9 +244,30 @@ in `i18n/region-defaults/`.
 5. Add complete `online-stores/chrome/copy/<locale>.json`,
    `online-stores/chrome/listing/<locale>.txt`, localized captures, and
    generated screenshots before the Chrome listing is localized.
-6. Test exact-locale, base-language, and English fallback behavior. Locale
+6. **Marketing site (`promo/web/`),** after step 5 produces the five listing
+   PNGs under `online-stores/generated/chrome/<locale>/`. Copy
+   `promo/web/locales/en.json` to `promo/web/locales/<locale>.json` and
+   translate page copy and screenshot captions. Register the locale in
+   `promo/web/locales/generate.mjs` (`LOCALES`, `HTML_LANG`, `LOCALE_META`,
+   `HARDWARE_BY_LOCALE`), add the language-switcher link and flag on
+   `promo/web/index.html`, `hreflang` alternates, and a `PATHS` entry in
+   `promo/web/locale.js`.
+7. Generate and verify the static site:
+
+   ```bash
+   npm run web:locales
+   npm run web:locales:check
+   ```
+
+   Output is `promo/web/<locale>/index.html`, localized key-click SVGs, slim
+   `promo/web/messages/<locale>.json`, and copied listing screenshots. Do not
+   hand-edit generated files.
+8. Test exact-locale, base-language, and English fallback behavior. Locale
    resolution tries the browser UI locale, its hyphen/underscore variant, its
    base language, then English.
+
+The full ordered checklist (store captures, intro reel, site generator details)
+is in [`refs/LOCALIZATION_INVENTORY.md`](../refs/LOCALIZATION_INVENTORY.md#add-a-locale-extension-and-website).
 
 For RTL languages, also set directionality from Chrome's bidi locale messages
 and review logical CSS properties, icon direction, focus order, and overlay
@@ -305,6 +326,8 @@ before capturing or uploading assets.
       changed docs locale.
 - [ ] Locale-specific store captures, annotations, and generated screenshots
       match; Chrome uploads are recorded where applicable.
+- [ ] `npm run web:locales` and `npm run web:locales:check` pass when
+      `promo/web/` copy or registered site locales changed.
 - [ ] Store packages include `_locales/` and preserve manifest `__MSG_*__`
       references: run the required `npm run package:<target>` commands and
       inspect the staged artifacts.
