@@ -3,7 +3,7 @@
  * No DOM queries or element mutation.
  */
 
-import { DEFAULT_SETTINGS, getSettings, resetAllSettings, setSettings, SETTINGS_STORAGE_KEY } from './settings-manager.js';
+import { applySettingsPartial, DEFAULT_SETTINGS, getSettings, resetAllSettings, setSettings, SETTINGS_STORAGE_KEY } from './settings-manager.js';
 import { getTheme, getThemeClickDefaults, normalizeThemeId } from './theme-manager.js';
 import { pathToPartial, setOverridePath } from './settings-path.js';
 
@@ -19,6 +19,8 @@ export class SettingsController {
     this._listeners = new Set();
     this._disposed = false;
     this._storageAttached = false;
+    this._pendingWrites = 0;
+    this._writeChain = Promise.resolve();
     this._onStorageChanged = this._onStorageChanged.bind(this);
   }
 
@@ -78,6 +80,7 @@ export class SettingsController {
    */
   async _onStorageChanged(changes, area) {
     if (this._disposed) return;
+    if (this._pendingWrites > 0) return;
     if (area !== 'sync' && area !== 'local') return;
     const entry = changes?.[SETTINGS_STORAGE_KEY];
     if (!entry) return;
@@ -112,9 +115,18 @@ export class SettingsController {
    */
   async updatePartial(partial) {
     if (this._disposed) return this.state;
-    this.state = await setSettings(partial);
+    this.state = applySettingsPartial(this.state, partial);
     this._emit();
-    return this.state;
+    this._pendingWrites += 1;
+    const write = this._writeChain.then(async () => {
+      if (this._disposed) return this.state;
+      this.state = await setSettings(partial, { base: this.state });
+      return this.state;
+    }).finally(() => {
+      this._pendingWrites = Math.max(0, this._pendingWrites - 1);
+    });
+    this._writeChain = write.then(() => {}, () => {});
+    return write;
   }
 
   /**

@@ -953,11 +953,12 @@ export async function getSettings() {
 }
 
 /**
+ * Merge a partial into a settings snapshot and normalize. Sync; does not write storage.
+ * @param {KeyPilotSettings} current
  * @param {Partial<KeyPilotSettings>} partial
- * @returns {Promise<KeyPilotSettings>}
+ * @returns {KeyPilotSettings}
  */
-export async function setSettings(partial) {
-  const current = await getSettings();
+export function applySettingsPartial(current, partial) {
   const p = partial && typeof partial === 'object' ? partial : {};
 
   // Shallow merge for top-level, plus deep merge for known nested settings.
@@ -1130,6 +1131,17 @@ export async function setSettings(partial) {
   next.scroll = normalizeScroll(next.scroll);
   next.deferredOpen = normalizeDeferredOpen(next.deferredOpen);
   next._updatedAt = Date.now();
+  return next;
+}
+
+/**
+ * @param {Partial<KeyPilotSettings>} partial
+ * @param {{ base?: KeyPilotSettings }} [opts]
+ * @returns {Promise<KeyPilotSettings>}
+ */
+export async function setSettings(partial, opts = {}) {
+  const current = opts.base && typeof opts.base === 'object' ? opts.base : await getSettings();
+  const next = applySettingsPartial(current, partial);
   await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
   return next;
 }

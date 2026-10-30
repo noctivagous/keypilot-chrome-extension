@@ -136,6 +136,19 @@ describe('SettingsController', () => {
     c.dispose();
   });
 
+  it('keeps overlay height when overlay width updates in the same turn', async () => {
+    const { createSettingsController } =
+      await import('../extension/src/modules/settings-controller.js');
+    const c = createSettingsController();
+    await c.load();
+    const height = c.update('clickMode.overlayFillMaxHeight', 873);
+    const width = c.update('clickMode.overlayFillMaxWidth', 400);
+    await Promise.all([height, width]);
+    assert.equal(c.state.clickMode.overlayFillMaxHeight, 873);
+    assert.equal(c.state.clickMode.overlayFillMaxWidth, 400);
+    c.dispose();
+  });
+
   it('applies external chrome.storage.onChanged snapshots', async () => {
     const { createSettingsController } =
       await import('../extension/src/modules/settings-controller.js');

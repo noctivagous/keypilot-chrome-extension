@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-10-30T02:17:22.516Z
+ * Generated on 2026-10-30T02:30:11.299Z
  */
 
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -3351,8 +3351,7 @@ async function getSettings() {
     };
   }
 }
-async function setSettings(partial) {
-  const current = await getSettings();
+function applySettingsPartial(current, partial) {
   const p = partial && typeof partial === "object" ? partial : {};
   const pPositions = p.panelPositions && typeof p.panelPositions === "object" ? p.panelPositions : null;
   const next = {
@@ -3494,6 +3493,11 @@ async function setSettings(partial) {
   next.scroll = normalizeScroll(next.scroll);
   next.deferredOpen = normalizeDeferredOpen(next.deferredOpen);
   next._updatedAt = Date.now();
+  return next;
+}
+async function setSettings(partial, opts = {}) {
+  const current = opts.base && typeof opts.base === "object" ? opts.base : await getSettings();
+  const next = applySettingsPartial(current, partial);
   await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
   return next;
 }
@@ -4509,6 +4513,8 @@ var SettingsController = class {
     this._listeners = /* @__PURE__ */ new Set();
     this._disposed = false;
     this._storageAttached = false;
+    this._pendingWrites = 0;
+    this._writeChain = Promise.resolve();
     this._onStorageChanged = this._onStorageChanged.bind(this);
   }
   get disposed() {
@@ -4566,6 +4572,7 @@ var SettingsController = class {
    */
   async _onStorageChanged(changes, area) {
     if (this._disposed) return;
+    if (this._pendingWrites > 0) return;
     if (area !== "sync" && area !== "local") return;
     const entry = changes?.[SETTINGS_STORAGE_KEY];
     if (!entry) return;
@@ -4597,9 +4604,20 @@ var SettingsController = class {
    */
   async updatePartial(partial) {
     if (this._disposed) return this.state;
-    this.state = await setSettings(partial);
+    this.state = applySettingsPartial(this.state, partial);
     this._emit();
-    return this.state;
+    this._pendingWrites += 1;
+    const write = this._writeChain.then(async () => {
+      if (this._disposed) return this.state;
+      this.state = await setSettings(partial, { base: this.state });
+      return this.state;
+    }).finally(() => {
+      this._pendingWrites = Math.max(0, this._pendingWrites - 1);
+    });
+    this._writeChain = write.then(() => {
+    }, () => {
+    });
+    return write;
   }
   /**
    * @param {string} overridePath
